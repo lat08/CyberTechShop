@@ -15,6 +15,7 @@ namespace CyberTechShop.Controllers
 
         public IActionResult Index()
         {
+            _logger.LogInformation("HomeController Index action called");
             return View();
         }
 
