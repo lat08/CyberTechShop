@@ -1,0 +1,72 @@
+@{
+    var currentAction = ViewContext.RouteData.Values["action"].ToString();
+}
+
+<div class="account-dashboard">
+    <div class="container">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-lg-3">
+                <div class="account-sidebar">
+                    <div class="user-info">
+                        <div class="user-avatar">
+                            <img src="@(string.IsNullOrEmpty(ViewBag.UserProfileImage) ? "/images/default-avatar.png" : ViewBag.UserProfileImage)" alt="Avatar">
+                        </div>
+                        <div class="user-details">
+                            <h4>@User.Identity.Name</h4>
+                            <span class="user-rank">@ViewBag.UserRank</span>
+                        </div>
+                    </div>
+                    <nav class="account-nav">
+                        <ul>
+                            <li class="@(currentAction == "Profile" ? "active" : "")">
+                                <a href="@Url.Action("Profile", "Account")">
+                                    <i class="fas fa-user"></i>
+                                    <span>Thông tin cá nhân</span>
+                                </a>
+                            </li>
+                            <li class="@(currentAction == "Orders" ? "active" : "")">
+                                <a href="@Url.Action("Orders", "Account")">
+                                    <i class="fas fa-shopping-bag"></i>
+                                    <span>Đơn hàng của tôi</span>
+                                </a>
+                            </li>
+                            <li class="@(currentAction == "Wishlist" ? "active" : "")">
+                                <a href="@Url.Action("Wishlist", "Account")">
+                                    <i class="fas fa-heart"></i>
+                                    <span>Sản phẩm yêu thích</span>
+                                </a>
+                            </li>
+                            <li class="@(currentAction == "Addresses" ? "active" : "")">
+                                <a href="@Url.Action("Addresses", "Account")">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    <span>Sổ địa chỉ</span>
+                                </a>
+                            </li>
+                            <li class="@(currentAction == "Security" ? "active" : "")">
+                                <a href="@Url.Action("Security", "Account")">
+                                    <i class="fas fa-shield-alt"></i>
+                                    <span>Bảo mật</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+            <!-- Main Content -->
+            <div class="col-lg-9">
+                <div class="account-content">
+                    @RenderBody()
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/account-dashboard.css">
+}
+
+@section Scripts {
+    @await RenderSectionAsync("Scripts", required: false)
+} 

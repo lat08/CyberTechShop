@@ -1,0 +1,263 @@
+﻿@model CyberTech.Models.HomeIndexViewModel
+@{
+    ViewBag.Title = "Trang chủ";
+}
+
+@section Styles {
+        <link rel="stylesheet" href="~/css/HomePage_Layout/styles.css">
+}
+
+<!-- Sidebar Categories -->
+<aside class="sidebar">
+    <ul class="category-menu">
+        @foreach (var category in Model.Categories)
+
+        {
+                <li class="category-item">
+                    <a href="@Url.Action("Category", "Product", new { categoryId = category.CategoryID })" class="category-link">
+                        <i class="@category.Icon"></i>
+                        <span>@category.Name</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                @if (category.Subcategories.Any())
+                {
+                            <div class="submenu">
+                                <div class="submenu-container">
+                            @foreach (var subcategory in category.Subcategories)
+
+                            {
+                                            <div class="submenu-section">
+                                                <h3 class="submenu-title">
+                                                    <a href="@Url.Action("Subcategory", "Product", new { subcategoryId = subcategory.SubcategoryID })">@subcategory.Name</a>
+                                                </h3>
+                                                <div class="submenu-links">
+                                        @foreach (var subSubcategory in subcategory.SubSubcategories)
+
+                                        {
+                                                            <a href="@Url.Action("SubSubcategory", "Product", new { subSubcategoryId = subSubcategory.SubSubcategoryID })" class="submenu-link">
+                                                @subSubcategory.Name
+                                                            </a>
+                                        }
+                                                </div>
+                                            </div>
+                            }
+                                </div>
+                            </div>
+                }
+                </li>
+        }
+    </ul>
+</aside>
+
+<!-- Main Content Area -->
+<div class="main-content">
+    <!-- Hero Banner -->
+    <div class="hero-banner">
+        <img src="" alt="Hero Banner">
+    </div>
+
+    <!-- Featured Products Section -->
+    @* <section class="featured-section">
+        <h2 class="section-title">Sản phẩm nổi bật</h2>
+        <div class="product-grid">
+            @foreach (var product in Model.Products.Where(p => p.Status == "Active"))
+            {
+                    <div class="product-card">
+                        <a href="@product.Url" class="product-link">
+                            <div class="product-image">
+                                <img src="@product.PrimaryImageUrl" alt="@product.Name" loading="lazy">
+                            @if (product.DiscountedPrice.HasValue)
+
+                            {
+                                        <div class="discount-badge">
+                                    @(((product.Price - product.DiscountedPrice.Value) / product.Price * 100).ToString("0"))%
+                                        </div>
+                            }
+                            </div>
+                            <div class="product-info">
+                                <h3 class="product-name">@product.Name</h3>
+                                <div class="product-price">
+                                @if (product.DiscountedPrice.HasValue)
+
+                                {
+                                            <span class="original-price">@product.Price.ToString("N0")đ</span>
+                                            <span class="discounted-price">@product.DiscountedPrice.Value.ToString("N0")đ</span>
+                                }
+
+                                else
+
+                                {
+                                            <span class="price">@product.Price.ToString("N0")đ</span>
+                                }
+                                </div>
+                            @if (product.Attributes.Any())
+
+                            {
+                                        <div class="product-attributes">
+                                    @foreach (var attr in product.Attributes.Take(2))
+
+                                    {
+                                                    <span class="attribute">@attr.Key: @attr.Value</span>
+                                    }
+                                        </div>
+                            }
+                                <div class="product-rating">
+                                    <div class="stars" style="--rating: @product.AverageRating"></div>
+                                    <span class="review-count">(@product.ReviewCount)</span>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+            }
+        </div>
+    </section> *@
+
+    <!-- Promotional Banners -->
+    <section class="promo-banners">
+        <div class="promo-banner">
+            <img src="https://file.hstatic.net/200000722513/file/thang_04_layout_web_-01.png" alt="Khuyến mãi">
+        </div>
+        <div class="promo-banner">
+            <img src="https://file.hstatic.net/200000722513/file/thang_04_layout_web_-04.png" alt="Khuyến mãi">
+        </div>
+        <div class="promo-banner">
+            <img src="https://file.hstatic.net/200000722513/file/thang_04_layout_web_-03.png" alt="Khuyến mãi">
+        </div>
+    </section>
+
+    <!-- Flash Sale Section -->
+    <section class="flash-sale">
+        <h2 class="section-title">Flash Sale</h2>
+        <div class="product-slider">
+            @foreach (var product in Model.Products.Where(p => p.HasDiscount))
+            {
+                <partial name="~/Views/Shared/_ProductCard.cshtml" model="product" />
+            }
+        </div>
+    </section>
+
+    <!-- Laptop Gaming Slider -->
+    <section class="product-category">
+        <h2 class="section-title">Laptop Gaming Bán Chạy</h2>
+        <div class="product-slider">
+            <div class="slider-track">
+                @foreach (var product in Model.LaptopGamingBestSellers)
+
+                {
+                        <partial name="~/Views/Shared/_ProductCard.cshtml" model="product" />
+                }
+            </div>
+        </div>
+    </section>
+
+    <!-- Laptop Văn Phòng Slider -->
+    <section class="product-category">
+        <h2 class="section-title">Laptop Văn Phòng Bán Chạy</h2>
+        <div class="product-slider">
+            <div class="slider-track">
+                @foreach (var product in Model.LaptopOfficeBestSellers)
+
+                {
+                        <partial name="~/Views/Shared/_ProductCard.cshtml" model="product" />
+                }
+            </div>
+        </div>
+    </section>
+
+    <!-- PC Gaming Slider -->
+    <section class="product-category">
+        <h2 class="section-title">PC Gaming Bán Chạy</h2>
+        <div class="product-slider">
+            <div class="slider-track">
+                @foreach (var product in Model.PcGamingBestSellers)
+
+                {
+                        <partial name="~/Views/Shared/_ProductCard.cshtml" model="product" />
+                }
+            </div>
+        </div>
+    </section>
+
+    <!-- Chuột Slider -->
+    <section class="product-category">
+        <h2 class="section-title">Chuột Bán Chạy</h2>
+        <div class="product-slider">
+            <div class="slider-track">
+                @foreach (var product in Model.MouseBestSellers)
+
+                {
+                        <partial name="~/Views/Shared/_ProductCard.cshtml" model="product" />
+                }
+            </div>
+        </div>
+    </section>
+
+    <!-- Màn Hình Slider -->
+    <section class="product-category">
+        <h2 class="section-title">Màn Hình Bán Chạy</h2>
+        <div class="product-slider">
+            <div class="slider-track">
+                @foreach (var product in Model.MonitorBestSellers)
+
+                {
+                        <partial name="~/Views/Shared/_ProductCard.cshtml" model="product" />
+                }
+            </div>
+        </div>
+    </section>
+
+    <!-- Bàn Phím Slider -->
+    <section class="product-category">
+        <h2 class="section-title">Bàn Phím Bán Chạy</h2>
+        <div class="product-slider">
+            <div class="slider-track">
+                @foreach (var product in Model.KeyboardBestSellers)
+
+                {
+                        <partial name="~/Views/Shared/_ProductCard.cshtml" model="product" />
+                }
+            </div>
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+        <script>
+            $(document).ready(function() {
+                $('.product-slider').slick({
+                    dots: true,
+                    infinite: false,
+                    speed: 300,
+                    slidesToShow: 4,
+                    slidesToScroll: 1,
+                    responsive: [
+                        {
+                            breakpoint: 1024,
+                            settings: {
+                                slidesToShow: 3,
+                                slidesToScroll: 1,
+                                infinite: false
+                            }
+                        },
+                        {
+                            breakpoint: 600,
+                            settings: {
+                                slidesToShow: 2,
+                                slidesToScroll: 1,
+                                infinite: false
+                            }
+                        },
+                        {
+                            breakpoint: 480,
+                            settings: {
+                                slidesToShow: 1,
+                                slidesToScroll: 1,
+                                infinite: false
+                            }
+                        }
+                    ]
+                });
+            });
+        </script>
+        <script src="~/js/slider.js"></script>
+}

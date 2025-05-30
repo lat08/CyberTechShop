@@ -1,0 +1,85 @@
+@model CyberTech.ViewModels.CartViewModel
+@{
+    ViewBag.Title = "Giỏ hàng";
+}
+
+<div class="cart-page">
+    <div class="container">
+        <h1 class="page-title">Giỏ hàng của bạn</h1>
+
+        @if (!Model.CartItems.Any())
+        {
+            <div class="empty-cart">
+                <i class="fas fa-shopping-cart"></i>
+                <h2>Giỏ hàng trống</h2>
+                <p>Bạn chưa có sản phẩm nào trong giỏ hàng</p>
+                <a href="@Url.Action("Index", "Product")" class="btn btn-primary">
+                    <i class="fas fa-shopping-bag me-2"></i>Tiếp tục mua sắm
+                </a>
+            </div>
+        }
+        else
+        {
+            <div class="cart-content">
+                <div class="cart-items">
+                    @foreach (var item in Model.CartItems)
+                    {
+                        <div class="cart-item" data-product-id="@item.ProductID">
+                            <div class="item-image">
+                                @* <img src="@(string.IsNullOrEmpty(item.ProductImage) ? "/images/no-image.png" : item.ProductImage)" alt="@item.ProductName"> *@
+                            </div>
+                            <div class="item-details">
+                                <h3 class="item-name">@item.ProductName</h3>
+                                <div class="item-price">@item.UnitPrice.ToString("N0") đ</div>
+                            </div>
+                            <div class="item-quantity">
+                                <button class="btn-quantity decrease" type="button">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                <input type="number" value="@item.Quantity" min="1" max="99">
+                                <button class="btn-quantity increase" type="button">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                            <div class="item-subtotal">
+                                @item.Subtotal.ToString("N0") đ
+                            </div>
+                            <button class="btn-remove" type="button" title="Xóa sản phẩm">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    }
+                </div>
+
+                <div class="cart-summary">
+                    <h3>Tổng quan đơn hàng</h3>
+                    <div class="summary-item">
+                        <span>Tạm tính:</span>
+                        <span class="total-price">@Model.TotalPrice.ToString("N0") đ</span>
+                    </div>
+                    <div class="summary-item">
+                        <span>Phí vận chuyển:</span>
+                        <span>Miễn phí</span>
+                    </div>
+                    <div class="summary-item total">
+                        <span>Tổng cộng:</span>
+                        <span class="final-price">@Model.TotalPrice.ToString("N0") đ</span>
+                    </div>
+                    @* <a href="@Url.Action("Checkout", "Order")" class="btn btn-checkout">
+                        <i class="fas fa-shopping-cart me-2"></i>Tiến hành thanh toán
+                    </a> *@
+                    <button class="btn btn-primary btn-checkout" id="checkout-btn">
+                    <i class="fas fa-credit-card me-2"></i>Thanh toán ngay
+                </button>
+                    <a href="@Url.Action("Index", "Product")" class="btn btn-continue">
+                        <i class="fas fa-arrow-left me-2"></i>Tiếp tục mua sắm
+                    </a>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/cart.js"></script>
+} 

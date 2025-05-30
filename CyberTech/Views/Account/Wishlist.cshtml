@@ -1,0 +1,135 @@
+@using System.Linq
+@model CyberTech.Models.Wishlist
+@{
+    ViewBag.Title = "Danh sách yêu thích";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/wishlist.css">
+}
+
+<div class="container">
+    <h1 class="page-title"><i class="fas fa-heart me-2"></i>Danh sách yêu thích</h1>
+    <p class="page-subtitle">Danh sách các sản phẩm bạn yêu thích</p>
+
+    <div class="wishlist-container">
+        @if (Model != null && Model.WishlistItems != null && Model.WishlistItems.Any())
+        {
+            <ul class="wishlist-list">
+                @foreach (var item in Model.WishlistItems.OrderByDescending(w => w.AddedDate))
+                {
+                    <li class="wishlist-item" data-wishlist-item-id="@item.WishlistItemID">
+                        <div class="product-image">
+                            @if (item.Product?.ProductImages != null && item.Product.ProductImages.Any())
+                            {
+                                <img src="@item.Product.ProductImages.First().ImageURL" alt="@item.Product.Name" class="wishlist-item-image">
+                            }
+                            else
+                            {
+                                <img src="/placeholder.svg?height=50&width=50" alt="@item.Product?.Name" class="wishlist-item-image">
+                            }
+                        </div>
+                        <div class="wishlist-item-info">
+                            <a href="@Url.Action("Details", "Product", new { id = item.ProductID })" class="wishlist-item-name">
+                                @item.Product?.Name
+                            </a>
+                            <span class="wishlist-item-price">@(item.Product?.Price.ToString("N0") ?? "0") VNĐ</span>
+                        </div>
+                        <div class="wishlist-item-actions">
+                            <button class="btn btn-primary add-to-cart" data-product-id="@item.ProductID">
+                                <i class="fas fa-shopping-cart me-2"></i>Thêm vào giỏ
+                            </button>
+                            <button class="btn btn-danger delete-btn" title="Xóa sản phẩm" data-wishlist-item-id="@item.WishlistItemID">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </li>
+                }
+            </ul>
+            <div class="wishlist-actions">
+                <a href="@Url.Action("Index", "Product")" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Tiếp tục mua sắm
+                </a>
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <i class="fas fa-heart fa-3x text-muted mb-3"></i>
+                <p>Danh sách yêu thích của bạn đang trống</p>
+                <a href="@Url.Action("Index", "Product")" class="btn btn-primary">
+                    <i class="fas fa-shopping-bag me-2"></i>Tiếp tục mua sắm
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Handle delete button click
+            $('.delete-btn').click(function() {
+                var wishlistItemId = $(this).data('wishlist-item-id');
+                var listItem = $(this).closest('.wishlist-item');
+
+                $.ajax({
+                    url: '@Url.Action("RemoveFromWishlist", "Wishlist")',
+                    type: 'POST',
+                    data: JSON.stringify({ wishlistItemId: wishlistItemId }),
+                    contentType: 'application/json',
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            listItem.fadeOut(300, function() {
+                                $(this).remove();
+                                if ($('.wishlist-item').length === 0) {
+                                    location.reload();
+                                }
+                            });
+                        } else {
+                            alert('Có lỗi xảy ra khi xóa sản phẩm');
+                        }
+                    },
+                    error: function() {
+                        alert('Có lỗi xảy ra khi xóa sản phẩm');
+                    }
+                });
+            });
+
+            // Handle add to cart button click
+            $('.add-to-cart').click(function() {
+                var productId = $(this).data('product-id');
+                var button = $(this);
+
+                $.ajax({
+                    url: '@Url.Action("AddToCart", "Cart")',
+                    type: 'POST',
+                    data: JSON.stringify({ productId: productId, quantity: 1 }),
+                    contentType: 'application/json',
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            button.prop('disabled', true)
+                                  .html('<i class="fas fa-check me-2"></i>Đã thêm');
+                            setTimeout(function() {
+                                button.prop('disabled', false)
+                                      .html('<i class="fas fa-shopping-cart me-2"></i>Thêm vào giỏ');
+                            }, 2000);
+                        } else {
+                            alert(response.message || 'Có lỗi xảy ra khi thêm vào giỏ hàng');
+                        }
+                    },
+                    error: function() {
+                        alert('Có lỗi xảy ra khi thêm vào giỏ hàng');
+                    }
+                });
+            });
+        });
+    </script>
+} 

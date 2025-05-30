@@ -1,0 +1,341 @@
+@model List<CyberTech.Models.Order>
+@{
+    ViewData["Title"] = "Đơn hàng của tôi";
+    Layout = "_Layout";
+}
+
+<div class="orders-section">
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <h2 class="section-title mb-4">Đơn hàng của tôi</h2>
+            </div>
+        </div>
+
+        <div class="orders-list">
+            @foreach (var order in Model)
+            {
+                <div class="order-card">
+                    <div class="order-header">
+                        <div class="order-info">
+                            <span class="order-number">Đơn hàng #@order.OrderID</span>
+                            <span class="order-date">@order.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                        </div>
+                        <span class="order-status status-@order.Status.ToLower()">@order.Status</span>
+                    </div>
+
+                    <div class="order-items">
+                        @foreach (var item in order.OrderItems)
+                        {
+                            <div class="order-item">
+                                <div class="item-image">
+                                    <img src="@(item.Product.ProductImages.FirstOrDefault(pi => pi.IsPrimary)?.ImageURL ?? item.Product.ProductImages.FirstOrDefault()?.ImageURL ?? "/placeholder.svg?height=500&width=500")" alt="@item.Product.Name">
+                                </div>
+                                <div class="item-details">
+                                    <div class="item-name">@item.Product.Name</div>
+                                    <div class="item-price">
+                                        @item.Quantity x @item.FinalSubtotal.ToString("N0")đ
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="order-summary">
+                        <div class="summary-row">
+                            <span>Tổng tiền hàng:</span>
+                            <span>@order.TotalPrice.ToString("N0")đ</span>
+                        </div>
+                        @if (order.DiscountAmount > 0)
+                        {
+                            <div class="summary-row discount">
+                                <span>Giảm giá:</span>
+                                <span>-@order.DiscountAmount.ToString("N0")đ</span>
+                            </div>
+                        }
+                        <div class="summary-row total">
+                            <span>Thành tiền:</span>
+                            <span>@order.FinalPrice.ToString("N0")đ</span>
+                        </div>
+                    </div>
+
+                    <div class="order-timeline">
+                        <div class="timeline">
+                            <div class="timeline-item @(order.Status == "Pending" ? "active" : "")">
+                                <div class="timeline-icon">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div class="timeline-content">
+                                    <h6>Chờ xác nhận</h6>
+                                    <p>@order.CreatedAt.ToString("dd/MM/yyyy HH:mm")</p>
+                                </div>
+                            </div>
+                            <div class="timeline-item @(order.Status == "Processing" ? "active" : "")">
+                                <div class="timeline-icon">
+                                    <i class="fas fa-cog"></i>
+                                </div>
+                                <div class="timeline-content">
+                                    <h6>Đang xử lý</h6>
+                                    <p>@(order.Status == "Processing" ? order.CreatedAt.AddHours(1).ToString("dd/MM/yyyy HH:mm") : "")</p>
+                                </div>
+                            </div>
+                            <div class="timeline-item @(order.Status == "Shipped" ? "active" : "")">
+                                <div class="timeline-icon">
+                                    <i class="fas fa-truck"></i>
+                                </div>
+                                <div class="timeline-content">
+                                    <h6>Đang giao hàng</h6>
+                                    <p>@(order.Status == "Shipped" ? order.CreatedAt.AddDays(1).ToString("dd/MM/yyyy HH:mm") : "")</p>
+                                </div>
+                            </div>
+                            <div class="timeline-item @(order.Status == "Delivered" ? "active" : "")">
+                                <div class="timeline-icon">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                                <div class="timeline-content">
+                                    <h6>Đã giao hàng</h6>
+                                    <p>@(order.Status == "Delivered" ? order.CreatedAt.AddDays(2).ToString("dd/MM/yyyy HH:mm") : "")</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (order.Status == "Pending")
+                    {
+                        <div class="order-actions">
+                            <button class="btn btn-danger cancel-order" data-order-id="@order.OrderID">
+                                <i class="fas fa-times"></i> Hủy đơn hàng
+                            </button>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .orders-section {
+            padding: 30px 0;
+        }
+
+        .order-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .order-header {
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .order-info {
+            display: flex;
+            gap: 20px;
+        }
+
+        .order-number {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .order-date {
+            color: #666;
+        }
+
+        .order-status {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-processing { background: #cce5ff; color: #004085; }
+        .status-shipped { background: #d4edda; color: #155724; }
+        .status-delivered { background: #d1e7dd; color: #0f5132; }
+        .status-cancelled { background: #f8d7da; color: #721c24; }
+
+        .order-items {
+            padding: 20px;
+        }
+
+        .order-item {
+            display: flex;
+            gap: 15px;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .order-item:last-child {
+            border-bottom: none;
+        }
+
+        .item-image {
+            width: 80px;
+            height: 80px;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .item-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .item-details {
+            flex: 1;
+        }
+
+        .item-name {
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .item-price {
+            color: #666;
+        }
+
+        .order-summary {
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border-top: 1px solid #eee;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .summary-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .summary-row.discount {
+            color: #dc3545;
+        }
+
+        .summary-row.total {
+            font-weight: 600;
+            font-size: 1.1em;
+            color: #dc3545;
+        }
+
+        .order-timeline {
+            padding: 20px;
+            background: #f8f9fa;
+            border-top: 1px solid #eee;
+        }
+
+        .timeline {
+            position: relative;
+            padding: 20px 0;
+        }
+
+        .timeline:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50px;
+            height: 100%;
+            width: 2px;
+            background: #e9ecef;
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-left: 80px;
+            margin-bottom: 30px;
+        }
+
+        .timeline-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .timeline-icon {
+            position: absolute;
+            left: 40px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            z-index: 1;
+        }
+
+        .timeline-item.active .timeline-icon {
+            background: #0077cc;
+            color: white;
+        }
+
+        .timeline-content {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .timeline-content h6 {
+            margin: 0 0 5px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .timeline-content p {
+            margin: 0;
+            color: #666;
+            font-size: 13px;
+        }
+
+        .order-actions {
+            padding: 15px 20px;
+            border-top: 1px solid #eee;
+            text-align: right;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('.cancel-order').click(function() {
+                var orderId = $(this).data('order-id');
+                if (confirm('Bạn có chắc muốn hủy đơn hàng #' + orderId + ' không?')) {
+                    $.post('@Url.Action("CancelOrder", "Account")', { id: orderId }, function(result) {
+                        if (result.success) {
+                            location.reload();
+                        } else {
+                            alert('Không thể hủy đơn hàng. ' + (result.message || 'Vui lòng thử lại sau.'));
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+} 

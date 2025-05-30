@@ -1,0 +1,40 @@
+@{
+    ViewData["Title"] = "Truy cập bị từ chối";
+    Layout = "_Layout";
+}
+
+<div class="account-container">
+    <div class="account-card">
+        <div class="account-header">
+            <div class="confirmation-icon">
+                <i class="fas fa-exclamation-circle"></i>
+            </div>
+            <h2>Truy cập bị từ chối</h2>
+            <p>Bạn không có quyền truy cập vào trang này.</p>
+        </div>
+
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            <div>
+                <strong>Lưu ý:</strong> Nếu bạn tin rằng đây là lỗi, vui lòng:
+                <ul>
+                    <li>Kiểm tra lại quyền truy cập của bạn</li>
+                    <li>Liên hệ với quản trị viên</li>
+                    <li>Đăng nhập lại nếu cần thiết</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="confirmation-actions">
+            <a asp-action="Index" asp-controller="Home" class="btn-account btn-primary">
+                <i class="fas fa-home"></i>
+                Quay lại trang chủ
+            </a>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/account-pages.css">
+        <link rel="stylesheet" href="~/css/HomePage_Layout/styles.css">
+} 

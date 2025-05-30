@@ -1,0 +1,442 @@
+@{
+    Layout = "~/Views/Shared/Admin/_Layout.cshtml";
+    var title = ViewBag.Title ?? "Happy Kitchen";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/Admin/product-management.css">
+}
+<!-- Page Header -->
+<div class="page-header">
+    <h1>Quản lý sản phẩm</h1>
+    <p>Quản lý danh mục và sản phẩm của nhà hàng</p>
+</div>
+
+<!-- Product Management Content -->
+<div class="product-management-container">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <button class="btn btn-primary" id="addProductBtn" data-bs-toggle="modal" data-bs-target="#addProductModal">
+            <i class="fas fa-plus me-2"></i> Thêm sản phẩm
+        </button>
+    </div>
+
+    <div class="row g-3 mb-4 align-items-center">
+        <div class="col-md-6">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0">
+                    <i class="fas fa-search text-muted"></i>
+                </span>
+                <input type="text" class="form-control border-start-0" id="productSearchInput"
+                       placeholder="Tìm kiếm sản phẩm...">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="btn-group" role="group" id="statusFilter">
+                <button type="button" class="btn btn-outline-primary active" data-status="all">Tất cả</button>
+                <button type="button" class="btn btn-outline-primary" data-status="1">Còn hàng</button>
+                <button type="button" class="btn btn-outline-primary" data-status="0">Hết hàng</button>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" id="sortFilter">
+                <option value="name_asc">Tên: A-Z</option>
+                <option value="name_desc">Tên: Z-A</option>
+                <option value="price_asc">Giá: Thấp-Cao</option>
+                <option value="price_desc">Giá: Cao-Thấp</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="product-content-container">
+        <div class="row">
+            <!-- Categories Sidebar -->
+            <div class="col-md-3 mb-4">
+                <div class="categories-sidebar">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0">Danh mục</h5>
+                        <button class="btn btn-sm btn-outline-primary" id="addCategoryBtn" data-bs-toggle="modal"
+                                data-bs-target="#addCategoryModal">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                    <ul class="categories-list" id="categoriesList">
+                        <!-- Categories will be dynamically loaded -->
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Products Content -->
+            <div class="col-md-9">
+                <div class="products-container">
+                    <div class="product-grid">
+                        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" id="productsGrid"></div>
+                    </div>
+
+                    <nav aria-label="Product pagination">
+                        <ul class="pagination justify-content-center mt-5" id="productPagination">
+                            <li class="page-item" id="paginationPrev">
+                                <a class="page-link" href="#" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                            <div class="d-flex" id="paginationItems"></div>
+                            <li class="page-item" id="paginationNext">
+                                <a class="page-link" href="#" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Product Modal -->
+<div class="modal fade product-modal" id="addProductModal" tabindex="-1" aria-labelledby="addProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addProductModalLabel">Thêm Sản phẩm Mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addProductForm" enctype="multipart/form-data">
+                    <div class="row">
+                        <!-- Cột thông tin cơ bản -->
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="productName" class="form-label">Tên Sản phẩm <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="productName" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="productCategory" class="form-label">Danh mục chính <span class="text-danger">*</span></label>
+                                <select class="form-select" id="productCategory" required>
+                                    <option value="" selected disabled>Chọn danh mục</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="productSubcategory" class="form-label">Danh mục phụ <span class="text-danger">*</span></label>
+                                <select class="form-select" id="productSubcategory" required>
+                                    <option value="" selected disabled>Chọn danh mục phụ</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="productSubSubcategory" class="form-label">Danh mục chi tiết <span class="text-danger">*</span></label>
+                                <select class="form-select" id="productSubSubcategory" required>
+                                    <option value="" selected disabled>Chọn danh mục chi tiết</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="productPrice" class="form-label">Giá bán (đ) <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="productPrice" min="0" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="productStatus" class="form-label">Trạng thái <span class="text-danger">*</span></label>
+                                <select class="form-select" id="productStatus" required>
+                                    <option value="active">Còn hàng</option>
+                                    <option value="inactive">Hết hàng</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="productStock" class="form-label">Số lượng <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="productStock" min="0" value="0" disabled>
+                            </div>
+                            <div class="mb-3">
+                                <label for="productBrand" class="form-label">Thương hiệu</label>
+                                <input type="text" class="form-control" id="productBrand">
+                            </div>
+                        </div>
+
+                        <!-- Cột mô tả và thuộc tính -->
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="productDescription" class="form-label">Mô tả sản phẩm</label>
+                                <textarea class="form-control" id="productDescription" rows="4"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Thuộc tính sản phẩm</label>
+                                <div id="productAttributes"></div>
+                                <button type="button" class="btn btn-outline-primary btn-sm mt-2" id="addAttributeBtn">
+                                    <i class="fas fa-plus me-1"></i> Thêm thuộc tính
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Cột hình ảnh -->
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Hình ảnh sản phẩm <span class="text-danger">*</span></label>
+                                <div class="image-upload-container">
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered" id="imageTable">
+                                            <thead>
+                                                <tr>
+                                                    <th>Tên ảnh</th>
+                                                    <th>Ảnh chính</th>
+                                                    <th>Xem ảnh</th>
+                                                    <th>Xóa</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="imageTableBody">
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="mt-2">
+                                        <input type="file" id="productImage" multiple accept="image/*" class="d-none">
+                                        <button type="button" class="btn btn-primary" id="uploadImageBtn">
+                                            <i class="fas fa-upload me-2"></i> Chọn ảnh
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" id="saveProductBtn">Thêm Sản phẩm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Product Modal -->
+<div class="modal fade product-modal" id="editProductModal" tabindex="-1" aria-labelledby="editProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editProductModalLabel">Chỉnh sửa Sản phẩm</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editProductForm" enctype="multipart/form-data">
+                    <input type="hidden" id="editProductId" name="ProductID">
+                    <div class="row">
+                        <!-- Cột thông tin cơ bản -->
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="editProductName" class="form-label">Tên Sản phẩm <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="editProductName" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editProductCategory" class="form-label">Danh mục chính <span class="text-danger">*</span></label>
+                                <select class="form-select" id="editProductCategory" required>
+                                    <option value="" selected disabled>Chọn danh mục</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editProductSubcategory" class="form-label">Danh mục phụ <span class="text-danger">*</span></label>
+                                <select class="form-select" id="editProductSubcategory" required>
+                                    <option value="" selected disabled>Chọn danh mục phụ</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editProductSubSubcategory" class="form-label">Danh mục chi tiết <span class="text-danger">*</span></label>
+                                <select class="form-select" id="editProductSubSubcategory" required>
+                                    <option value="" selected disabled>Chọn danh mục chi tiết</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editProductPrice" class="form-label">Giá bán (đ) <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="editProductPrice" min="0" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editProductStatus" class="form-label">Trạng thái <span class="text-danger">*</span></label>
+                                <select class="form-select" id="editProductStatus" required>
+                                    <option value="active">Còn hàng</option>
+                                    <option value="inactive">Hết hàng</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editProductStock" class="form-label">Số lượng <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="editProductStock" min="0" value="0">
+                            </div>
+                            <div class="mb-3">
+                                <label for="editProductBrand" class="form-label">Thương hiệu</label>
+                                <input type="text" class="form-control" id="editProductBrand">
+                            </div>
+                        </div>
+
+                        <!-- Cột mô tả và thuộc tính -->
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="editProductDescription" class="form-label">Mô tả sản phẩm</label>
+                                <textarea class="form-control" id="editProductDescription" rows="4"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Thuộc tính sản phẩm</label>
+                                <div id="editProductAttributes"></div>
+                                <button type="button" class="btn btn-outline-primary btn-sm mt-2" id="editAddAttributeBtn">
+                                    <i class="fas fa-plus me-1"></i> Thêm thuộc tính
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Cột hình ảnh -->
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Hình ảnh sản phẩm</label>
+                                <div class="image-upload-container">
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered" id="editImageTable">
+                                            <thead>
+                                                <tr>
+                                                    <th>Tên ảnh</th>
+                                                    <th>Ảnh chính</th>
+                                                    <th>Xem ảnh</th>
+                                                    <th>Xóa</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="editImageTableBody">
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="mt-2">
+                                        <input type="file" id="editProductImage" multiple accept="image/*" class="d-none">
+                                        <button type="button" class="btn btn-primary" id="editUploadImageBtn">
+                                            <i class="fas fa-upload me-2"></i> Chọn ảnh mới
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" id="updateProductBtn">Cập nhật Sản phẩm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Category Modal -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1" aria-labelledby="addCategoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addCategoryModalLabel">Thêm Danh mục</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">                <form id="addCategoryForm">                    <div class="mb-3">                        <label for="categoryName" class="form-label">Tên Danh mục <span class="text-danger">*</span></label>                        <input type="text" class="form-control" id="categoryName" placeholder="Nhập tên danh mục" required>                    </div>                                        <!-- SubSubcategory list for subcategory level -->                    <div id="subsubcategoryContainer" class="mb-3" style="display: none;">                        <label class="form-label">Danh mục chi tiết hiện có</label>                        <ul class="list-group" id="subsubcategoryList">                            <!-- Dynamic content -->                        </ul>                    </div>                </form>            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" id="saveCategoryBtn">Thêm Danh mục</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Category Modal -->
+<div class="modal fade" id="editCategoryModal" tabindex="-1" aria-labelledby="editCategoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editCategoryModalLabel">Sửa Danh mục</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editCategoryForm">
+                    <div class="mb-3">
+                        <label for="editCategoryName" class="form-label">Tên danh mục</label>
+                        <input type="text" class="form-control" id="editCategoryName" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" id="saveEditCategoryBtn">Lưu thay đổi</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteProductModal" tabindex="-1" aria-labelledby="deleteProductModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteProductModalLabel">Xác nhận xóa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc chắn muốn xóa sản phẩm <span id="deleteProductName" class="fw-bold"></span>?</p>
+                <p class="text-danger">Hành động này không thể hoàn tác.</p>
+                <input type="hidden" id="deleteProductId">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteProductBtn">Xóa</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add these modals after the existing deleteProductModal -->
+<div class="modal fade" id="deleteSubcategoryModal" tabindex="-1" aria-labelledby="deleteSubcategoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteSubcategoryModalLabel">Xác nhận xóa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc chắn muốn xóa danh mục phụ <span id="deleteSubcategoryName" class="fw-bold"></span>?</p>
+                <p class="text-danger">Hành động này sẽ xóa tất cả danh mục chi tiết và sản phẩm thuộc danh mục phụ này.</p>
+                <input type="hidden" id="deleteSubcategoryId">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteSubcategoryBtn">Xóa</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteSubSubcategoryModal" tabindex="-1" aria-labelledby="deleteSubSubcategoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteSubSubcategoryModalLabel">Xác nhận xóa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc chắn muốn xóa danh mục chi tiết <span id="deleteSubSubcategoryName" class="fw-bold"></span>?</p>
+                <p class="text-danger">Hành động này sẽ xóa tất cả sản phẩm thuộc danh mục chi tiết này.</p>
+                <input type="hidden" id="deleteSubSubcategoryId">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteSubSubcategoryBtn">Xóa</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Delete Category Modal -->
+<div class="modal fade" id="deleteCategoryModal" tabindex="-1" aria-labelledby="deleteCategoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteCategoryModalLabel">Xác nhận xóa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc chắn muốn xóa danh mục <span id="deleteCategoryName" class="fw-bold"></span>?</p>
+                <p class="text-danger">Hành động này sẽ xóa tất cả danh mục phụ, danh mục chi tiết và sản phẩm thuộc danh mục này.</p>
+                <input type="hidden" id="deleteCategoryId">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteCategoryBtn">Xóa</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/ProductManage/script.js"></script>
+}

@@ -1,0 +1,55 @@
+﻿@model CyberTech.Models.ProductViewModel
+@using CyberTech.Helpers
+
+<style>
+    .icon-container svg {
+        width: 16px;
+        height: 16px;
+    }
+</style>
+
+<div class="proloop slick-slide" data-id="@Model.ProductID" data-list-items-item_name="@Model.Name" data-list-items-item-price="@Model.Price" aria-hidden="true" style="width: 180px; margin: 0 10px; flex: 0 0 180px; max-width: 180px; box-sizing: border-box;">
+    <div class="proloop-block has-rating" id="collapi_item_loop_@Model.ProductID" data-id="@Model.ProductID">
+        <div class="proloop-img">
+            <a class="aspect-ratio fade-box" href="@Url.Action("ProductDetail", "Product", new { id = Model.ProductID })" title="@Model.Name" aria-label="@Model.Name">
+                <picture>
+                    <source srcset="@Model.PrimaryImageUrlSmall" media="(max-width: 767px)">
+                    <img class="img-default lazyloaded" src="@Model.PrimaryImageUrl" alt="@Model.Name">
+                </picture>
+            </a>
+            <div class="proloop-button">
+                <button aria-label="Xem nhanh" class="proloop-action quick-view full" data-id="@Model.ProductID" onclick="window.location.href='@Url.Action("ProductDetail", "Product", new { id = Model.ProductID })'">Xem nhanh</button>
+                <button aria-label="Thêm vào giỏ" class="proloop-action add-to-cart" data-id="@Model.ProductID">Thêm vào giỏ</button>
+            </div>
+        </div>
+        <div class="proloop-detail">
+            <h3 class="proloop-name">
+                <a href="@Url.Action("ProductDetail", "Product", new { id = Model.ProductID })">@Model.Name</a>
+            </h3>
+            <div class="proloop-technical">
+                @foreach (var attr in Model.Attributes)
+                {
+                    <div class="proloop-technical--line" data-tag="@attr.Key.ToLower()">
+                        <div class="icon-container">
+                            @Html.Raw(SvgHelper.GetIconSvg(attr.Key))
+                        </div>
+                        <span>@attr.Value</span>
+                    </div>
+                }
+            </div>
+            <div class="proloop-price">
+                <div class="proloop-price--default">
+                    <span class="proloop-price--highlight">@(Model.DiscountedPrice.HasValue ? Model.DiscountedPrice.Value.ToString("N0") + "₫" : Model.Price.ToString("N0") + "₫")</span>
+                    @if (Model.DiscountedPrice.HasValue)
+                    {
+                        <span class="proloop-price--compare">@Model.Price.ToString("N0")₫</span>
+                    }
+                </div>
+            </div>
+            <div class="proloop-rating">
+                <span class="number">@Model.AverageRating.ToString("F1")</span>
+                <span class="count">(@Model.ReviewCount đánh giá)</span>
+            </div>
+        </div>
+    </div>
+</div>
