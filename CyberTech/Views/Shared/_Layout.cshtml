@@ -11,6 +11,33 @@
     <link rel="stylesheet" href="~/css/site.css">
     <link rel="stylesheet" href="~/css/account.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Cart Badge Styles */
+        .cart-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background-color: #dc3545;
+            color: white;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            transition: transform 0.3s ease;
+        }
+        
+        .action-item {
+            position: relative;
+        }
+        
+        .cart-count.updated {
+            transform: scale(1.3);
+        }
+    </style>
     @RenderSection("Styles", required: false)
 </head>
 <body>
@@ -65,6 +92,7 @@
                         <div class="action-content">
                             <span><strong>Giỏ Hàng</strong></span>
                         </div>
+                        <span class="cart-badge cart-count">0</span>
                     </a>
                     <div class="action-item user-dropdown">
                         @if (User.Identity.IsAuthenticated)
@@ -209,6 +237,31 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/main.js"></script>
     <script src="~/js/utils.js"></script>
+    <script>
+        // Fetch initial cart count
+        $(document).ready(function() {
+            // Function to update cart count
+            window.updateCartCount = function(count) {
+                const cartCountElements = document.querySelectorAll('.cart-count');
+                cartCountElements.forEach(element => {
+                    element.textContent = count;
+                    element.classList.add('updated');
+                    setTimeout(() => element.classList.remove('updated'), 1000);
+                });
+            };
+            
+            // Fetch initial cart count
+            $.ajax({
+                url: '/Cart/GetCartCount',
+                type: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        updateCartCount(response.count);
+                    }
+                }
+            });
+        });
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

@@ -4,28 +4,29 @@
 }
 
 <div class="container py-5">
-    <div class="row justify-content-center">
+    <div class="row justify-content-center" style="margin: 0 auto;">
         <div class="col-md-8">
-            <div class="card shadow-sm">
-                <div class="card-body text-center p-5">
-                    <div class="mb-4">
-                        <i class="fas fa-check-circle text-success" style="font-size: 5rem;"></i>
-                    </div>
-                    <h2 class="mb-4">Thanh toán thành công!</h2>
-                    <p class="text-muted mb-4">
+            <div class="payment-card">
+                <div class="payment-result-icon success">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="payment-content">
+                    <h2>Thanh toán thành công!</h2>
+                    <div class="payment-details">
                         Cảm ơn bạn đã đặt hàng. Đơn hàng của bạn đã được thanh toán thành công.
                         @if (ViewBag.OrderId != null)
                         {
-                            <br />
-                            <span>Mã đơn hàng: <strong>#@ViewBag.OrderId</strong></span>
+                            <div class="order-id">
+                                Mã đơn hàng: <strong>#@ViewBag.OrderId</strong>
+                            </div>
                         }
-                    </p>
-                    <div class="d-grid gap-2 d-md-flex justify-content-md-center">
-                        <a href="@Url.Action("Orders", "Account")" class="btn btn-primary btn-lg px-4 me-md-2">
-                            <i class="fas fa-list me-2"></i>Xem đơn hàng
+                    </div>
+                    <div class="payment-actions">
+                        <a href="@Url.Action("Orders", "Account")" class="action-button primary">
+                            <i class="fas fa-list"></i>Xem đơn hàng
                         </a>
-                        <a href="@Url.Action("Index", "Home")" class="btn btn-outline-primary btn-lg px-4">
-                            <i class="fas fa-home me-2"></i>Về trang chủ
+                        <a href="@Url.Action("Index", "Home")" class="action-button secondary">
+                            <i class="fas fa-home"></i>Về trang chủ
                         </a>
                     </div>
                 </div>
@@ -36,25 +37,115 @@
 
 @section Styles {
     <style>
-        .card {
-            border: none;
-            border-radius: 15px;
+        .payment-card {
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            position: relative;
+            padding: 2rem;
+            transition: transform 0.3s ease;
         }
         
-        .btn {
+        .payment-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .payment-result-icon {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .payment-result-icon i {
+            font-size: 5.5rem;
+            border-radius: 50%;
+            padding: 0.5rem;
+        }
+        
+        .payment-result-icon.success i {
+            color: #28a745;
+            background-color: rgba(40, 167, 69, 0.1);
+        }
+        
+        .payment-content {
+            text-align: center;
+        }
+        
+        .payment-content h2 {
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: #333;
+        }
+        
+        .payment-details {
+            color: #6c757d;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+        
+        .order-id {
+            margin: 0.8rem 0;
+            padding: 0.5rem;
+            background-color: #f8f9fa;
             border-radius: 8px;
-            padding: 12px 24px;
+            display: inline-block;
+        }
+        
+        .payment-actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .action-button {
+            padding: 0.8rem 1.5rem;
+            border-radius: 10px;
             font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
             transition: all 0.3s ease;
+            text-decoration: none;
         }
         
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        .action-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
         
-        .text-success {
-            color: #28a745 !important;
+        .action-button.primary {
+            background-color: #0d6efd;
+            color: white;
+        }
+        
+        .action-button.primary:hover {
+            background-color: #0b5ed7;
+            color: white;
+        }
+        
+        .action-button.secondary {
+            background-color: white;
+            color: #0d6efd;
+            border: 1px solid #0d6efd;
+        }
+        
+        .action-button.secondary:hover {
+            background-color: #f8f9fa;
+            color: #0b5ed7;
+        }
+        
+        @@media (max-width: 768px) {
+            .payment-actions {
+                flex-direction: column;
+            }
+            
+            .action-button {
+                width: 100%;
+            }
         }
     </style>
 } 

@@ -263,6 +263,86 @@
                     }
                 });
             });
+            
+            // Add to cart functionality
+            $('.btn-add-cart').on('click', function() {
+                var button = $(this);
+                if (button.prop('disabled')) return;
+                
+                var productId = button.data('product-id');
+                var quantity = parseInt($('#quantity').val());
+                
+                // Hiệu ứng loading
+                var originalText = button.html();
+                button.html('<i class="fas fa-spinner fa-spin"></i> Đang thêm...').prop('disabled', true);
+                
+                $.ajax({
+                    url: '/Cart/AddToCart',
+                    type: 'POST',
+                    data: { productId: productId, quantity: quantity },
+                    success: function(response) {
+                        if (response.success) {
+                            // Update cart count badge
+                            if (response.cartCount !== undefined) {
+                                window.updateCartCount(response.cartCount);
+                            }
+                            
+                            // Hiệu ứng thành công
+                            button.html('<i class="fas fa-check"></i> Đã thêm').addClass('success');
+                            
+                            setTimeout(function() {
+                                button.html(originalText).removeClass('success').prop('disabled', false);
+                            }, 2000);
+                            
+                            utils.showToast('Đã thêm vào giỏ hàng', 'success');
+                        } else {
+                            button.html(originalText).prop('disabled', false);
+                            utils.showToast(response.message || 'Có lỗi xảy ra', 'error');
+                        }
+                    },
+                    error: function() {
+                        button.html(originalText).prop('disabled', false);
+                        utils.showToast('Có lỗi xảy ra', 'error');
+                    }
+                });
+            });
+            
+            // Buy now functionality
+            $('.btn-buy-now').on('click', function() {
+                var button = $(this);
+                if (button.prop('disabled')) return;
+                
+                var productId = button.data('product-id');
+                var quantity = parseInt($('#quantity').val());
+                
+                // Hiệu ứng loading
+                var originalText = button.html();
+                button.html('<i class="fas fa-spinner fa-spin"></i> Đang xử lý...').prop('disabled', true);
+                
+                $.ajax({
+                    url: '/Cart/AddToCart',
+                    type: 'POST',
+                    data: { productId: productId, quantity: quantity },
+                    success: function(response) {
+                        if (response.success) {
+                            // Update cart count before redirecting
+                            if (response.cartCount !== undefined) {
+                                window.updateCartCount(response.cartCount);
+                            }
+                            
+                            // Redirect to cart page
+                            window.location.href = '@Url.Action("Index", "Cart")';
+                        } else {
+                            button.html(originalText).prop('disabled', false);
+                            utils.showToast(response.message || 'Có lỗi xảy ra', 'error');
+                        }
+                    },
+                    error: function() {
+                        button.html(originalText).prop('disabled', false);
+                        utils.showToast('Có lỗi xảy ra', 'error');
+                    }
+                });
+            });
         });
     </script>
 }

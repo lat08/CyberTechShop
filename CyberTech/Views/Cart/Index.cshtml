@@ -669,6 +669,11 @@
                     type: 'POST',
                     success: (response) => {
                         if (response.success) {
+                            // Update cart count badge if available
+                            if (response.cartCount !== undefined) {
+                                window.updateCartCount(response.cartCount);
+                            }
+                            
                             // Refresh entire cart via AJAX
                             $.ajax({
                                 url: '/Cart/Index',
@@ -808,6 +813,11 @@
                     data: { cartItemId: cartItemId, quantity: quantity },
                     success: (response) => {
                         if (response.success) {
+                            // Update cart count badge if available
+                            if (response.cartCount !== undefined) {
+                                window.updateCartCount(response.cartCount);
+                            }
+                            
                             // Refresh the cart summary part via AJAX
                             $.ajax({
                                 url: '/Cart/Index',
@@ -854,6 +864,11 @@
                     data: { cartItemId: cartItemId },
                     success: (response) => {
                         if (response.success) {
+                            // Update cart count badge if available
+                            if (response.cartCount !== undefined) {
+                                window.updateCartCount(response.cartCount);
+                            }
+                            
                             // Refresh the entire cart HTML
                             $.ajax({
                                 url: '/Cart/Index',

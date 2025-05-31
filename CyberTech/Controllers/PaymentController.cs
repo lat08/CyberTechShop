@@ -118,7 +118,7 @@ namespace CyberTech.Controllers
                             // Update user's TotalSpent and OrderCount
                             if (order.User != null)
                             {
-                                order.User.TotalSpent += order.FinalPrice;
+                                order.User.TotalSpent += order.TotalPrice;
                                 order.User.OrderCount++;
 
                                 // Update user's rank if necessary

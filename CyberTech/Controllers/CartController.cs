@@ -29,6 +29,38 @@ namespace CyberTech.Controllers
             _cartService = cartService;
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetCartCount()
+        {
+            try
+            {
+                if (!User.Identity.IsAuthenticated)
+                {
+                    return Json(new { success = true, count = 0 });
+                }
+
+                var emailClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email);
+                if (emailClaim == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy thông tin người dùng" });
+                }
+
+                var user = await _userService.GetUserByEmailAsync(emailClaim.Value);
+                if (user == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy người dùng" });
+                }
+
+                int count = await _cartService.GetCartItemCountAsync(user.UserID);
+                return Json(new { success = true, count });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting cart count");
+                return Json(new { success = false, message = "Có lỗi xảy ra khi lấy số lượng giỏ hàng" });
+            }
+        }
+
         private decimal CalculateCartTotals(Cart cart, Voucher voucher, out decimal discountAmount)
         {
             // Calculate total price using original prices
@@ -276,7 +308,20 @@ namespace CyberTech.Controllers
                 cart.TotalPrice = cart.CartItems.Sum(ci => ci.Subtotal);
                 await _context.SaveChangesAsync();
 
-                return Json(new { success = true, message = "Đã thêm vào giỏ hàng", cart = new { totalPrice = cart.TotalPrice, cartItemsCount = cart.CartItems.Count } });
+                // Get total cart item count for badge
+                int cartCount = await _cartService.GetCartItemCountAsync(user.UserID);
+
+                return Json(new
+                {
+                    success = true,
+                    message = "Đã thêm vào giỏ hàng",
+                    cart = new
+                    {
+                        totalPrice = cart.TotalPrice,
+                        cartItemsCount = cart.CartItems.Count
+                    },
+                    cartCount = cartCount
+                });
             }
             catch (Exception ex)
             {
@@ -330,7 +375,20 @@ namespace CyberTech.Controllers
                 cart.TotalPrice = cart.CartItems.Sum(ci => ci.Subtotal);
                 await _context.SaveChangesAsync();
 
-                return Json(new { success = true, message = "Đã xóa sản phẩm khỏi giỏ hàng", cart = new { totalPrice = cart.TotalPrice, cartItemsCount = cart.CartItems.Count } });
+                // Get total cart item count for badge
+                int cartCount = await _cartService.GetCartItemCountAsync(user.UserID);
+
+                return Json(new
+                {
+                    success = true,
+                    message = "Đã xóa sản phẩm khỏi giỏ hàng",
+                    cart = new
+                    {
+                        totalPrice = cart.TotalPrice,
+                        cartItemsCount = cart.CartItems.Count
+                    },
+                    cartCount = cartCount
+                });
             }
             catch (Exception ex)
             {
@@ -363,7 +421,7 @@ namespace CyberTech.Controllers
 
                 if (cart == null || !cart.CartItems.Any())
                 {
-                    return Json(new { success = true, message = "Giỏ hàng đã trống" });
+                    return Json(new { success = true, message = "Giỏ hàng đã trống", cartCount = 0 });
                 }
 
                 _context.CartItems.RemoveRange(cart.CartItems);
@@ -371,7 +429,12 @@ namespace CyberTech.Controllers
                 HttpContext.Session.Remove("AppliedVoucherId");
                 await _context.SaveChangesAsync();
 
-                return Json(new { success = true, message = "Đã xóa toàn bộ giỏ hàng" });
+                return Json(new
+                {
+                    success = true,
+                    message = "Đã xóa toàn bộ giỏ hàng",
+                    cartCount = 0
+                });
             }
             catch (Exception ex)
             {
@@ -457,6 +520,9 @@ namespace CyberTech.Controllers
 
                 await _context.SaveChangesAsync();
 
+                // Get total cart item count for badge
+                int cartCount = await _cartService.GetCartItemCountAsync(user.UserID);
+
                 return Json(new
                 {
                     success = true,
@@ -473,7 +539,8 @@ namespace CyberTech.Controllers
                         cartItemsCount = cart.CartItems.Count
                     },
                     discountType = appliedVoucher?.DiscountType ?? "FIXED",
-                    discountPercent = appliedVoucher?.DiscountType == "PERCENT" ? appliedVoucher.DiscountValue : 0
+                    discountPercent = appliedVoucher?.DiscountType == "PERCENT" ? appliedVoucher.DiscountValue : 0,
+                    cartCount = cartCount
                 });
             }
             catch (Exception ex)
