@@ -60,7 +60,9 @@ namespace CyberTech.Services
                     EmailVerified = true,
                     RankId = 1,
                     TotalSpent = 0,
-                    OrderCount = 0
+                    OrderCount = 0,
+                    Gender = null,
+                    DateOfBirth = null
                 };
 
                 var hashedPassword = BCrypt.Net.BCrypt.HashPassword(password);
@@ -206,7 +208,9 @@ namespace CyberTech.Services
                     EmailVerified = true,
                     RankId = 1,
                     TotalSpent = 0,
-                    OrderCount = 0
+                    OrderCount = 0,
+                    Gender = null,
+                    DateOfBirth = null
                 };
 
                 var newAuthMethod = new UserAuthMethod
@@ -514,7 +518,10 @@ namespace CyberTech.Services
                         RankId = u.RankId,
                         EmailVerified = true,
                         UserStatus = u.UserStatus,
-                        CreatedAt = u.CreatedAt
+                        CreatedAt = u.CreatedAt,
+                        Gender = u.Gender,
+                        DateOfBirth = u.DateOfBirth,
+                        AuthMethods = u.AuthMethods
                     })
                     .FirstOrDefaultAsync();
             }
@@ -742,6 +749,317 @@ namespace CyberTech.Services
                 _logger.LogError(ex, "Lỗi trong HasAuthMethodAsync: {Message}", ex.Message);
                 return false;
             }
+        }
+
+        public async Task<bool> UpdateProfileAsync(string email, string name, string phone, byte? gender, DateTime? dateOfBirth)
+        {
+            try
+            {
+                var user = await _context.Users
+                    .FirstOrDefaultAsync(u => u.Email == email);
+
+                if (user == null) return false;
+
+                user.Name = name;
+                user.Phone = phone;
+                user.Gender = gender;
+                user.DateOfBirth = dateOfBirth;
+
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Cập nhật thông tin người dùng thành công: {Email}", email);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi cập nhật thông tin người dùng: {Email}", email);
+                return false;
+            }
+        }
+
+        public async Task<int> GetAddressCountAsync(int userId)
+        {
+            try
+            {
+                return await _context.UserAddresses
+                    .CountAsync(a => a.UserID == userId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi đếm số địa chỉ của người dùng {UserId}", userId);
+                return 0;
+            }
+        }
+
+        public async Task<bool> CanAddMoreAddressesAsync(int userId)
+        {
+            try
+            {
+                var addressCount = await GetAddressCountAsync(userId);
+                return addressCount < 6;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi kiểm tra khả năng thêm địa chỉ của người dùng {UserId}", userId);
+                return false;
+            }
+        }
+
+        public async Task<List<UserAddress>> GetUserAddressesAsync(int userId)
+        {
+            try
+            {
+                return await _context.UserAddresses
+                    .Where(a => a.UserID == userId)
+                    .OrderByDescending(a => a.IsPrimary)
+                    .ThenByDescending(a => a.CreatedAt)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi lấy danh sách địa chỉ của người dùng {UserId}", userId);
+                return new List<UserAddress>();
+            }
+        }
+
+        public async Task<UserAddress> GetAddressByIdAsync(int addressId, int userId)
+        {
+            try
+            {
+                return await _context.UserAddresses
+                    .FirstOrDefaultAsync(a => a.AddressID == addressId && a.UserID == userId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi lấy thông tin địa chỉ {AddressId} của người dùng {UserId}", addressId, userId);
+                return null;
+            }
+        }
+
+        public async Task<bool> AddAddressAsync(UserAddress address)
+        {
+            try
+            {
+                if (!await CanAddMoreAddressesAsync(address.UserID))
+                {
+                    return false;
+                }
+
+                address.CreatedAt = DateTime.Now;
+
+                if (address.IsPrimary)
+                {
+                    var existingPrimaryAddresses = await _context.UserAddresses
+                        .Where(a => a.UserID == address.UserID && a.IsPrimary)
+                        .ToListAsync();
+
+                    foreach (var existingAddress in existingPrimaryAddresses)
+                    {
+                        existingAddress.IsPrimary = false;
+                    }
+                }
+
+                await _context.UserAddresses.AddAsync(address);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi thêm địa chỉ cho người dùng {UserId}", address.UserID);
+                return false;
+            }
+        }
+
+        public async Task<bool> UpdateAddressAsync(UserAddress address)
+        {
+            try
+            {
+                var existingAddress = await _context.UserAddresses
+                    .FirstOrDefaultAsync(a => a.AddressID == address.AddressID && a.UserID == address.UserID);
+
+                if (existingAddress == null)
+                {
+                    return false;
+                }
+
+                existingAddress.RecipientName = address.RecipientName;
+                existingAddress.Phone = address.Phone;
+                existingAddress.AddressLine = address.AddressLine;
+                existingAddress.City = address.City;
+                existingAddress.District = address.District;
+                existingAddress.Ward = address.Ward;
+                existingAddress.IsPrimary = address.IsPrimary;
+
+                if (address.IsPrimary)
+                {
+                    var otherPrimaryAddresses = await _context.UserAddresses
+                        .Where(a => a.UserID == address.UserID && a.AddressID != address.AddressID && a.IsPrimary)
+                        .ToListAsync();
+
+                    foreach (var otherAddress in otherPrimaryAddresses)
+                    {
+                        otherAddress.IsPrimary = false;
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi cập nhật địa chỉ {AddressId} của người dùng {UserId}", address.AddressID, address.UserID);
+                return false;
+            }
+        }
+
+        public async Task<bool> DeleteAddressAsync(int addressId, int userId)
+        {
+            try
+            {
+                var address = await _context.UserAddresses
+                    .FirstOrDefaultAsync(a => a.AddressID == addressId && a.UserID == userId);
+
+                if (address == null)
+                {
+                    return false;
+                }
+
+                if (address.IsPrimary)
+                {
+                    return false;
+                }
+
+                _context.UserAddresses.Remove(address);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi xóa địa chỉ {AddressId} của người dùng {UserId}", addressId, userId);
+                return false;
+            }
+        }
+
+        public async Task<bool> SetPrimaryAddressAsync(int addressId, int userId)
+        {
+            try
+            {
+                var address = await _context.UserAddresses
+                    .FirstOrDefaultAsync(a => a.AddressID == addressId && a.UserID == userId);
+
+                if (address == null)
+                {
+                    _logger.LogWarning($"Address {addressId} not found for user {userId}");
+                    return false;
+                }
+
+                // Nếu địa chỉ đã là mặc định thì không cần thay đổi
+                if (address.IsPrimary)
+                {
+                    return true;
+                }
+
+                // Cập nhật tất cả địa chỉ của user thành không mặc định
+                var userAddresses = await _context.UserAddresses
+                    .Where(a => a.UserID == userId)
+                    .ToListAsync();
+
+                foreach (var addr in userAddresses)
+                {
+                    addr.IsPrimary = false;
+                }
+
+                // Đặt địa chỉ được chọn làm mặc định
+                address.IsPrimary = true;
+
+                await _context.SaveChangesAsync();
+                _logger.LogInformation($"Set address {addressId} as primary for user {userId}");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error setting primary address {addressId} for user {userId}");
+                return false;
+            }
+        }
+
+        public async Task<bool> DeleteAddress(int addressId)
+        {
+            var address = await _context.UserAddresses.FindAsync(addressId);
+            if (address == null) return false;
+
+            _context.UserAddresses.Remove(address);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<List<WishlistItem>> GetWishlistItems(string userId)
+        {
+            return await _context.WishlistItems
+                .Include(w => w.Product)
+                    .ThenInclude(p => p.ProductImages)
+                .Where(w => w.Wishlist.UserID.ToString() == userId)
+                .OrderByDescending(w => w.AddedDate)
+                .ToListAsync();
+        }
+
+        public async Task<bool> AddToWishlist(string userId, int productId)
+        {
+            var wishlist = await _context.Wishlists
+                .FirstOrDefaultAsync(w => w.UserID.ToString() == userId);
+
+            if (wishlist == null)
+            {
+                wishlist = new Wishlist
+                {
+                    UserID = int.Parse(userId)
+                };
+                _context.Wishlists.Add(wishlist);
+                await _context.SaveChangesAsync();
+            }
+
+            var existingItem = await _context.WishlistItems
+                .FirstOrDefaultAsync(w => w.WishlistID == wishlist.WishlistID && w.ProductID == productId);
+
+            if (existingItem != null) return false;
+
+            var wishlistItem = new WishlistItem
+            {
+                WishlistID = wishlist.WishlistID,
+                ProductID = productId,
+                AddedDate = DateTime.Now
+            };
+
+            _context.WishlistItems.Add(wishlistItem);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> RemoveFromWishlist(string userId, int productId)
+        {
+            var wishlist = await _context.Wishlists
+                .FirstOrDefaultAsync(w => w.UserID.ToString() == userId);
+
+            if (wishlist == null) return false;
+
+            var wishlistItem = await _context.WishlistItems
+                .FirstOrDefaultAsync(w => w.WishlistID == wishlist.WishlistID && w.ProductID == productId);
+
+            if (wishlistItem == null) return false;
+
+            _context.WishlistItems.Remove(wishlistItem);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> IsInWishlist(string userId, int productId)
+        {
+            var wishlist = await _context.Wishlists
+                .FirstOrDefaultAsync(w => w.UserID.ToString() == userId);
+
+            if (wishlist == null) return false;
+
+            return await _context.WishlistItems
+                .AnyAsync(w => w.WishlistID == wishlist.WishlistID && w.ProductID == productId);
         }
     }
 }

@@ -1659,3 +1659,63 @@ main {
         text-align: center;
     }
 }
+
+/* Toast Styles */
+.toast {
+    min-width: 300px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    margin-bottom: 10px;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.toast.show {
+    opacity: 1;
+}
+
+.toast.bg-success {
+    background-color: #28a745 !important;
+    color: white !important;
+}
+
+.toast.bg-error {
+    background-color: #dc3545 !important;
+    color: white !important;
+}
+
+.toast.bg-info {
+    background-color: #17a2b8 !important;
+    color: white !important;
+}
+
+.toast.bg-warning {
+    background-color: #ffc107 !important;
+    color: #212529 !important;
+}
+
+.toast .toast-body {
+    padding: 12px 15px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.toast .btn-close {
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+}
+
+.toast .btn-close:hover {
+    opacity: 1;
+}
+
+.toast .btn-close-white {
+    filter: brightness(0) invert(1);
+}
+
+#toast-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}

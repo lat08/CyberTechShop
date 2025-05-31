@@ -779,3 +779,40 @@ img {
 .cart-count.updated {
     transform: scale(1.2);
 }
+
+.btn-wishlist {
+    width: 45px;
+    height: 45px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-wishlist:hover {
+    border-color: #dc3545;
+    background: #fff5f5;
+}
+
+.btn-wishlist i {
+    font-size: 1.2rem;
+    color: #dc3545;
+    transition: all 0.3s ease;
+}
+
+.btn-wishlist:hover i {
+    transform: scale(1.1);
+}
+
+.btn-wishlist.fas {
+    background: #dc3545;
+    border-color: #dc3545;
+}
+
+.btn-wishlist.fas i {
+    color: white;
+}

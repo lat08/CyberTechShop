@@ -1,0 +1,41 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "E:\\OOAD\\CyberTechShop\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{087B7766-E8A4-4772-9F0A-4A8AB2303F6C}|CyberTech\\CyberTechShop.csproj|e:\\ooad\\cybertechshop\\cybertech\\views\\account\\profile.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{087B7766-E8A4-4772-9F0A-4A8AB2303F6C}|CyberTech\\CyberTechShop.csproj|solutionrelative:cybertech\\views\\account\\profile.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{75188d03-9892-4ae2-abf1-207126247ce5}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Profile.cshtml",
+              "DocumentMoniker": "E:\\OOAD\\CyberTechShop\\CyberTech\\Views\\Account\\Profile.cshtml",
+              "RelativeDocumentMoniker": "CyberTech\\Views\\Account\\Profile.cshtml",
+              "ToolTip": "E:\\OOAD\\CyberTechShop\\CyberTech\\Views\\Account\\Profile.cshtml",
+              "RelativeToolTip": "CyberTech\\Views\\Account\\Profile.cshtml",
+              "ViewState": "AgIAABwAAAAAAAAAAAApwCoAAAAmAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-05-30T06:52:28.056Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

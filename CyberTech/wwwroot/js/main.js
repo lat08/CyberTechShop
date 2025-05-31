@@ -5,6 +5,8 @@ document.addEventListener("DOMContentLoaded", () => {
     initializeToastSystem();
     initializeLoadingOverlay();
     initializePasswordToggle();
+    initializeTooltips();
+    initializePopovers();
 });
 
 // Cart functionality
@@ -320,18 +322,36 @@ function addRequiredStyles() {
 addRequiredStyles();
 
 // Password visibility toggle functionality
-document.addEventListener('DOMContentLoaded', function() {
+function initializePasswordToggle() {
     const passwordToggles = document.querySelectorAll('.password-toggle');
-    
     passwordToggles.forEach(toggle => {
         toggle.addEventListener('click', function() {
-            const passwordInput = this.previousElementSibling;
-            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-            passwordInput.setAttribute('type', type);
-            
-            // Toggle icon
+            const input = this.previousElementSibling;
+            const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+            input.setAttribute('type', type);
             this.querySelector('i').classList.toggle('fa-eye');
             this.querySelector('i').classList.toggle('fa-eye-slash');
         });
     });
-}); 
+}
+
+function initializeTooltips() {
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function(tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+}
+
+function initializePopovers() {
+    const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+    popoverTriggerList.map(function(popoverTriggerEl) {
+        return new bootstrap.Popover(popoverTriggerEl);
+    });
+}
+
+// Handle image loading errors
+document.addEventListener('error', function(e) {
+    if (e.target.tagName.toLowerCase() === 'img') {
+        e.target.src = '/images/no-image.png';
+    }
+}, true); 

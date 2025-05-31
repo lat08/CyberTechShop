@@ -4,7 +4,9 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Facebook;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.OAuth;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
@@ -36,6 +38,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 // Configure Dependency Injection
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IRecaptchaService, RecaptchaService>();
 
@@ -135,7 +138,25 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseStaticFiles();
+
+// Configure MIME types
+app.UseStaticFiles(new StaticFileOptions
+{
+    ServeUnknownFileTypes = false,
+    OnPrepareResponse = ctx =>
+    {
+        // Add security headers
+        ctx.Context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
+    },
+    ContentTypeProvider = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider
+    {
+        Mappings =
+        {
+            [".js"] = "application/javascript"
+        }
+    }
+});
+
 app.UseRouting();
 app.UseSession();
 app.UseAuthentication();

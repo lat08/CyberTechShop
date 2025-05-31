@@ -1,32 +1,46 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
-using CyberTech.Models;
-using CyberTech.ViewModels;
-using CyberTech.Services;
-using Microsoft.EntityFrameworkCore;
 using CyberTech.Data;
+using CyberTech.Models;
+using CyberTech.Services;
+using CyberTech.ViewModels;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System;
+using System.Linq;
 using System.Security.Claims;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace CyberTech.Controllers
 {
-    [Authorize]
     public class CartController : Controller
     {
         private readonly ApplicationDbContext _context;
         private readonly IUserService _userService;
         private readonly ILogger<CartController> _logger;
 
-        public CartController(
-            ApplicationDbContext context,
-            IUserService userService,
-            ILogger<CartController> logger)
+        public CartController(ApplicationDbContext context, IUserService userService, ILogger<CartController> logger)
         {
-            _context = context ?? throw new ArgumentNullException(nameof(context));
-            _userService = userService ?? throw new ArgumentNullException(nameof(userService));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _context = context;
+            _userService = userService;
+            _logger = logger;
         }
 
+        private decimal CalculateCartTotals(Cart cart, Voucher voucher, out decimal discountAmount)
+        {
+            decimal subtotal = cart.CartItems.Sum(ci => ci.Subtotal);
+            discountAmount = 0;
+
+            if (voucher != null && IsVoucherValid(voucher, cart))
+            {
+                discountAmount = CalculateVoucherDiscount(voucher, cart);
+            }
+
+            return subtotal - discountAmount;
+        }
+
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> Index()
         {
@@ -39,104 +53,98 @@ namespace CyberTech.Controllers
                     return Unauthorized("Invalid user identifier.");
                 }
 
-                _logger.LogInformation("Email claim found: {Email}", emailClaim.Value);
-
                 var user = await _userService.GetUserByEmailAsync(emailClaim.Value);
-                if (user == null)
-                {
-                    _logger.LogError("User not found for email: {Email}", emailClaim.Value);
-                    return RedirectToAction("Login", "Account", new { returnUrl = Url.Action("Index", "Cart") });
-                }
+                if (user == null) return NotFound();
 
-                _logger.LogInformation("User found: UserID={UserID}, Email={Email}", user.UserID, user.Email);
+                var cart = await _context.Carts
+                    .Include(c => c.CartItems)
+                        .ThenInclude(ci => ci.Product)
+                            .ThenInclude(p => p.ProductImages)
+                    .FirstOrDefaultAsync(c => c.UserID == user.UserID);
 
-                // Get or create cart
-                var cart = await GetOrCreateCartAsync(user.UserID);
                 if (cart == null)
                 {
-                    _logger.LogError("Failed to get or create cart for user: {UserId}", user.UserID);
-                    return View(new CartViewModel()); // Return empty cart view
+                    cart = new Cart { UserID = user.UserID, TotalPrice = 0 };
+                    _context.Carts.Add(cart);
+                    await _context.SaveChangesAsync();
                 }
 
-                _logger.LogInformation("Cart query result: {Cart}", cart != null ?
-                    $"CartID={cart.CartID}, UserID={cart.UserID}, TotalPrice={cart.TotalPrice}, Items={cart.CartItems?.Count ?? 0}" :
-                    "Cart is null");
+                var userAddresses = await _userService.GetUserAddressesAsync(user.UserID);
 
-                // Load cart items with related data
-                var cartItems = await LoadCartItemsAsync(cart.CartID);
-
-                var viewModel = new CartViewModel
+                var appliedVoucherId = HttpContext.Session.GetInt32("AppliedVoucherId");
+                Voucher appliedVoucher = null;
+                if (appliedVoucherId.HasValue)
                 {
-                    CartItems = cartItems.Select(ci => new CartItemViewModel
-                    {
-                        ProductID = ci.ProductID,
-                        ProductName = ci.Product?.Name ?? "Unknown Product",
-                        Quantity = ci.Quantity,
-                        Subtotal = ci.Subtotal,
-                        // ProductImage = ci.Product?.ProductImages?.FirstOrDefault()?.ImageURL ?? "/images/no-image.png"
-                    }).ToList(),
-                    TotalPrice = cart.TotalPrice
+                    appliedVoucher = await _context.Vouchers
+                        .Include(v => v.VoucherProducts)
+                        .FirstOrDefaultAsync(v => v.VoucherID == appliedVoucherId.Value);
+                }
+
+                decimal discountAmount;
+                cart.TotalPrice = CalculateCartTotals(cart, appliedVoucher, out discountAmount);
+
+                var model = new CartViewModel
+                {
+                    Cart = cart,
+                    CartItems = cart.CartItems.ToList(),
+                    UserAddresses = userAddresses,
+                    AppliedVoucher = appliedVoucher
                 };
 
-                return View(viewModel);
+                return View(model);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in Cart Index action");
-                return View(new CartViewModel()); // Return empty cart view on error
+                _logger.LogError(ex, "Error loading cart for user {Email}", User.Identity.Name);
+                return View(new CartViewModel());
             }
         }
 
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> AddToCart(int productId, int quantity = 1)
         {
             try
             {
-                if (productId <= 0 || quantity <= 0)
-                {
-                    return Json(new { success = false, message = "Invalid product or quantity" });
-                }
-
                 var emailClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email);
                 if (emailClaim == null)
                 {
-                    _logger.LogError("Email claim not found in user claims");
-                    return Unauthorized("Invalid user identifier.");
+                    return Json(new { success = false, message = "Không tìm thấy thông tin người dùng" });
                 }
-
-                _logger.LogInformation("Email claim found: {Email}", emailClaim.Value);
 
                 var user = await _userService.GetUserByEmailAsync(emailClaim.Value);
                 if (user == null)
                 {
-                    _logger.LogError("User not found for email: {Email}", emailClaim.Value);
-                    return Json(new { success = false, message = "User not found" });
+                    return Json(new { success = false, message = "Không tìm thấy người dùng" });
                 }
 
-                _logger.LogInformation("User found: UserID={UserID}, Email={Email}", user.UserID, user.Email);
+                var product = await _context.Products.FindAsync(productId);
+                if (product == null || product.Stock < quantity)
+                {
+                    return Json(new { success = false, message = "Sản phẩm không tồn tại hoặc không đủ hàng" });
+                }
 
-                // Get or create cart
-                var cart = await GetOrCreateCartAsync(user.UserID);
+                var cart = await _context.Carts
+                    .Include(c => c.CartItems)
+                        .ThenInclude(ci => ci.Product)
+                    .FirstOrDefaultAsync(c => c.UserID == user.UserID);
+
                 if (cart == null)
                 {
-                    return Json(new { success = false, message = "Failed to get or create cart" });
+                    cart = new Cart { UserID = user.UserID, TotalPrice = 0 };
+                    _context.Carts.Add(cart);
+                    await _context.SaveChangesAsync();
                 }
 
-                // Verify product exists
-                var product = await _context.Products.FindAsync(productId);
-                if (product == null)
-                {
-                    return Json(new { success = false, message = "Product not found" });
-                }
-
-                // Update or add cart item
-                var cartItem = await _context.CartItems
-                    .FirstOrDefaultAsync(ci => ci.CartID == cart.CartID && ci.ProductID == productId);
-
+                var cartItem = cart.CartItems.FirstOrDefault(ci => ci.ProductID == productId);
                 if (cartItem != null)
                 {
                     cartItem.Quantity += quantity;
-                    cartItem.Subtotal = cartItem.Quantity * product.Price;
+                    if (cartItem.Quantity > product.Stock)
+                    {
+                        cartItem.Quantity = product.Stock;
+                    }
+                    cartItem.Subtotal = cartItem.Quantity * product.GetEffectivePrice();
                 }
                 else
                 {
@@ -145,43 +153,441 @@ namespace CyberTech.Controllers
                         CartID = cart.CartID,
                         ProductID = productId,
                         Quantity = quantity,
-                        Subtotal = product.Price * quantity
+                        Subtotal = quantity * product.GetEffectivePrice()
                     };
-                    _context.CartItems.Add(cartItem);
+                    cart.CartItems.Add(cartItem);
                 }
 
-                // Update cart total
-                cart.TotalPrice = await _context.CartItems
-                    .Where(ci => ci.CartID == cart.CartID)
-                    .SumAsync(ci => ci.Subtotal);
-
+                cart.TotalPrice = cart.CartItems.Sum(ci => ci.Subtotal);
                 await _context.SaveChangesAsync();
 
-                return Json(new { success = true, message = "Added to cart successfully" });
+                return Json(new { success = true, message = "Đã thêm vào giỏ hàng", cart = new { totalPrice = cart.TotalPrice, cartItemsCount = cart.CartItems.Count } });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error adding product {ProductId} to cart", productId);
-                return Json(new { success = false, message = "An error occurred while adding to cart" });
+                _logger.LogError(ex, "Error adding to cart for product {ProductId}", productId);
+                return Json(new { success = false, message = "Có lỗi xảy ra khi thêm vào giỏ hàng" });
             }
         }
+
+        // Helper method to calculate the effective price based on sale options
+        private decimal CalculateEffectivePrice(Product product)
+        {
+            return product.GetEffectivePrice();
+        }
+
+        [Authorize]
         [HttpPost]
-        public async Task<IActionResult> CreateOrder()
+        public async Task<IActionResult> RemoveFromCart(int cartItemId)
         {
             try
             {
                 var emailClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email);
                 if (emailClaim == null)
                 {
-                    _logger.LogError("Email claim not found in user claims");
-                    return Unauthorized("Invalid user identifier.");
+                    return Json(new { success = false, message = "Không tìm thấy thông tin người dùng" });
                 }
 
                 var user = await _userService.GetUserByEmailAsync(emailClaim.Value);
                 if (user == null)
                 {
-                    _logger.LogError("User not found for email: {Email}", emailClaim.Value);
-                    return Json(new { success = false, message = "User not found" });
+                    return Json(new { success = false, message = "Không tìm thấy người dùng" });
+                }
+
+                var cart = await _context.Carts
+                    .Include(c => c.CartItems)
+                        .ThenInclude(ci => ci.Product)
+                    .FirstOrDefaultAsync(c => c.UserID == user.UserID);
+
+                if (cart == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy giỏ hàng" });
+                }
+
+                var cartItem = cart.CartItems.FirstOrDefault(ci => ci.CartItemID == cartItemId);
+                if (cartItem == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy sản phẩm trong giỏ hàng" });
+                }
+
+                cart.CartItems.Remove(cartItem);
+                cart.TotalPrice = cart.CartItems.Sum(ci => ci.Subtotal);
+                await _context.SaveChangesAsync();
+
+                return Json(new { success = true, message = "Đã xóa sản phẩm khỏi giỏ hàng", cart = new { totalPrice = cart.TotalPrice, cartItemsCount = cart.CartItems.Count } });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error removing cart item {CartItemId}", cartItemId);
+                return Json(new { success = false, message = "Có lỗi xảy ra khi xóa sản phẩm" });
+            }
+        }
+
+        [Authorize]
+        [HttpPost]
+        public async Task<IActionResult> ClearCart()
+        {
+            try
+            {
+                var emailClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email);
+                if (emailClaim == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy thông tin người dùng" });
+                }
+
+                var user = await _userService.GetUserByEmailAsync(emailClaim.Value);
+                if (user == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy người dùng" });
+                }
+
+                var cart = await _context.Carts
+                    .Include(c => c.CartItems)
+                    .FirstOrDefaultAsync(c => c.UserID == user.UserID);
+
+                if (cart == null || !cart.CartItems.Any())
+                {
+                    return Json(new { success = true, message = "Giỏ hàng đã trống" });
+                }
+
+                _context.CartItems.RemoveRange(cart.CartItems);
+                cart.TotalPrice = 0;
+                HttpContext.Session.Remove("AppliedVoucherId");
+                await _context.SaveChangesAsync();
+
+                return Json(new { success = true, message = "Đã xóa toàn bộ giỏ hàng" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error clearing cart for user {Email}", User.Identity.Name);
+                return Json(new { success = false, message = "Có lỗi xảy ra khi xóa giỏ hàng" });
+            }
+        }
+
+        [Authorize]
+        [HttpPost]
+        public async Task<IActionResult> UpdateQuantity(int cartItemId, int quantity)
+        {
+            try
+            {
+                Console.WriteLine($"\n=== DEBUG: Updating quantity for cart item {cartItemId} to {quantity} ===");
+
+                var emailClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email);
+                if (emailClaim == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy thông tin người dùng" });
+                }
+
+                var user = await _userService.GetUserByEmailAsync(emailClaim.Value);
+                if (user == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy người dùng" });
+                }
+
+                var cart = await _context.Carts
+                    .Include(c => c.CartItems)
+                        .ThenInclude(ci => ci.Product)
+                    .FirstOrDefaultAsync(c => c.UserID == user.UserID);
+
+                if (cart == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy giỏ hàng" });
+                }
+
+                var cartItem = cart.CartItems.FirstOrDefault(ci => ci.CartItemID == cartItemId);
+                if (cartItem == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy sản phẩm trong giỏ hàng" });
+                }
+
+                if (quantity <= 0)
+                {
+                    return Json(new { success = false, message = "Số lượng phải lớn hơn 0" });
+                }
+
+                if (quantity > cartItem.Product.Stock)
+                {
+                    return Json(new { success = false, message = "Số lượng vượt quá tồn kho" });
+                }
+
+                cartItem.Quantity = quantity;
+                cartItem.Subtotal = quantity * cartItem.Product.GetEffectivePrice();
+
+                var appliedVoucherId = HttpContext.Session.GetInt32("AppliedVoucherId");
+                Voucher appliedVoucher = null;
+                if (appliedVoucherId.HasValue)
+                {
+                    appliedVoucher = await _context.Vouchers
+                        .Include(v => v.VoucherProducts)
+                        .FirstOrDefaultAsync(v => v.VoucherID == appliedVoucherId.Value);
+                }
+
+                decimal discountAmount;
+                cart.TotalPrice = CalculateCartTotals(cart, appliedVoucher, out discountAmount);
+
+                await _context.SaveChangesAsync();
+
+                Console.WriteLine($"Updated cart item subtotal: {cartItem.Subtotal}");
+                Console.WriteLine($"Cart total after update: {cart.TotalPrice}");
+                Console.WriteLine($"Discount amount: {discountAmount}");
+
+                return Json(new
+                {
+                    success = true,
+                    message = "Đã cập nhật số lượng",
+                    subtotal = cartItem.Subtotal,
+                    cart = new
+                    {
+                        subtotal = cart.CartItems.Sum(ci => ci.Subtotal),
+                        discountAmount = discountAmount,
+                        totalPrice = cart.TotalPrice,
+                        cartItemsCount = cart.CartItems.Count
+                    },
+                    discountType = appliedVoucher?.DiscountType ?? "FIXED",
+                    discountPercent = appliedVoucher?.DiscountType == "PERCENT" ? appliedVoucher.DiscountValue : 0
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in UpdateQuantity: {ex.Message}");
+                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+                return Json(new { success = false, message = "Có lỗi xảy ra khi cập nhật số lượng" });
+            }
+        }
+
+        [Authorize]
+        [HttpPost]
+        public async Task<IActionResult> ApplyVoucher(string voucherCode)
+        {
+            try
+            {
+                Console.WriteLine($"\n=== DEBUG: Applying Voucher {voucherCode} ===");
+                var emailClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email);
+                if (emailClaim == null)
+                {
+                    Console.WriteLine("Error: Email claim not found");
+                    return Json(new { success = false, message = "Không tìm thấy thông tin người dùng" });
+                }
+
+                var user = await _userService.GetUserByEmailAsync(emailClaim.Value);
+                if (user == null)
+                {
+                    Console.WriteLine("Error: User not found");
+                    return Json(new { success = false, message = "Không tìm thấy người dùng" });
+                }
+                Console.WriteLine($"User found: {user.UserID}");
+
+                var cart = await _context.Carts
+                    .Include(c => c.CartItems)
+                        .ThenInclude(ci => ci.Product)
+                    .FirstOrDefaultAsync(c => c.UserID == user.UserID);
+
+                if (cart == null || !cart.CartItems.Any())
+                {
+                    Console.WriteLine("Error: Cart is empty");
+                    return Json(new { success = false, message = "Giỏ hàng trống" });
+                }
+                Console.WriteLine($"Cart found with {cart.CartItems.Count} items");
+
+                var voucher = await _context.Vouchers
+                    .Include(v => v.VoucherProducts)
+                    .FirstOrDefaultAsync(v => v.Code == voucherCode && v.IsActive && v.ValidFrom <= DateTime.Now && v.ValidTo >= DateTime.Now);
+
+                if (voucher == null)
+                {
+                    Console.WriteLine("Error: Invalid or expired voucher");
+                    return Json(new { success = false, message = "Mã giảm giá không hợp lệ hoặc đã hết hạn" });
+                }
+                Console.WriteLine($"Voucher found: {voucher.Code}, Type: {voucher.DiscountType}, Value: {voucher.DiscountValue}");
+
+                if (voucher.QuantityAvailable.HasValue && voucher.QuantityAvailable <= 0)
+                {
+                    Console.WriteLine("Error: Voucher quantity exhausted");
+                    return Json(new { success = false, message = "Mã giảm giá đã hết số lượng sử dụng" });
+                }
+
+                if (!IsVoucherValid(voucher, cart))
+                {
+                    Console.WriteLine("Error: Voucher not applicable to cart items");
+                    return Json(new { success = false, message = "Mã giảm giá không áp dụng cho sản phẩm trong giỏ hàng" });
+                }
+
+                decimal subtotal = cart.CartItems.Sum(ci => ci.Subtotal);
+                Console.WriteLine($"Cart subtotal before discount: {subtotal:C}");
+
+                // Calculate discount amount based on discount type
+                decimal discountAmount = CalculateVoucherDiscount(voucher, cart);
+                decimal finalTotal = subtotal - discountAmount;
+
+                Console.WriteLine($"Calculated discount amount: {discountAmount:C}");
+                Console.WriteLine($"Final total after discount: {finalTotal:C}");
+
+                HttpContext.Session.SetInt32("AppliedVoucherId", voucher.VoucherID);
+                cart.TotalPrice = finalTotal;
+                await _context.SaveChangesAsync();
+
+                Console.WriteLine("=== Voucher Application Complete ===\n");
+
+                return Json(new
+                {
+                    success = true,
+                    message = "Đã áp dụng mã giảm giá",
+                    cart = new
+                    {
+                        totalPrice = finalTotal,
+                        subtotal = subtotal,
+                        discountAmount = discountAmount,
+                        cartItemsCount = cart.CartItems.Count
+                    },
+                    discountType = voucher.DiscountType,
+                    discountPercent = voucher.DiscountType == "PERCENT" ? voucher.DiscountValue : 0,
+                    voucherCode = voucher.Code
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in ApplyVoucher: {ex.Message}");
+                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+                return Json(new { success = false, message = "Có lỗi xảy ra khi áp dụng mã giảm giá" });
+            }
+        }
+
+        private decimal CalculateVoucherDiscount(Voucher voucher, Cart cart)
+        {
+            decimal cartTotal = cart.CartItems.Sum(ci => ci.Subtotal);
+            decimal discountAmount = 0;
+            Console.WriteLine($"\n=== DEBUG: Calculating Voucher Discount ===");
+            Console.WriteLine($"Cart Total: {cartTotal:C}");
+            Console.WriteLine($"Voucher Type: {voucher.AppliesTo}");
+            Console.WriteLine($"Discount Type: {voucher.DiscountType}");
+            Console.WriteLine($"Discount Value: {voucher.DiscountValue}");
+
+            if (voucher.AppliesTo == "Order")
+            {
+                Console.WriteLine("\n--- Order Level Discount ---");
+                // Apply discount to entire order
+                if (voucher.DiscountType == "PERCENT")
+                {
+                    discountAmount = cartTotal * (voucher.DiscountValue / 100);
+                    Console.WriteLine($"Percentage Discount: {voucher.DiscountValue}%");
+                    Console.WriteLine($"Calculated Discount Amount: {discountAmount:C}");
+                }
+                else if (voucher.DiscountType == "FIXED")
+                {
+                    discountAmount = Math.Min(voucher.DiscountValue, cartTotal);
+                    Console.WriteLine($"Fixed Discount Amount: {voucher.DiscountValue:C}");
+                    Console.WriteLine($"Applied Discount (Min of discount and cart total): {discountAmount:C}");
+                }
+            }
+            else if (voucher.AppliesTo == "Product")
+            {
+                Console.WriteLine("\n--- Product Level Discount ---");
+                // Apply discount to specific products only
+                var applicableProductIds = voucher.VoucherProducts.Select(vp => vp.ProductID).ToList();
+                Console.WriteLine($"Applicable Product IDs: {string.Join(", ", applicableProductIds)}");
+
+                var eligibleCartItems = cart.CartItems.Where(ci => applicableProductIds.Contains(ci.ProductID)).ToList();
+                Console.WriteLine($"Number of eligible items in cart: {eligibleCartItems.Count}");
+
+                if (eligibleCartItems.Any())
+                {
+                    decimal eligibleTotal = eligibleCartItems.Sum(ci => ci.Subtotal);
+                    Console.WriteLine($"Total eligible items subtotal: {eligibleTotal:C}");
+
+                    if (voucher.DiscountType == "PERCENT")
+                    {
+                        discountAmount = eligibleTotal * (voucher.DiscountValue / 100);
+                        Console.WriteLine($"Percentage Discount: {voucher.DiscountValue}%");
+                        Console.WriteLine($"Calculated Discount Amount: {discountAmount:C}");
+                    }
+                    else if (voucher.DiscountType == "FIXED")
+                    {
+                        discountAmount = Math.Min(voucher.DiscountValue, eligibleTotal);
+                        Console.WriteLine($"Fixed Discount Amount: {voucher.DiscountValue:C}");
+                        Console.WriteLine($"Applied Discount (Min of discount and eligible total): {discountAmount:C}");
+                    }
+                }
+            }
+
+            Console.WriteLine($"\nFinal Discount Amount: {discountAmount:C}");
+            Console.WriteLine("=====================================\n");
+            return discountAmount;
+        }
+
+        [Authorize]
+        [HttpPost]
+        public async Task<IActionResult> ClearVoucher()
+        {
+            try
+            {
+                var emailClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email);
+                if (emailClaim == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy thông tin người dùng" });
+                }
+
+                var user = await _userService.GetUserByEmailAsync(emailClaim.Value);
+                if (user == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy người dùng" });
+                }
+
+                var cart = await _context.Carts
+                    .Include(c => c.CartItems)
+                    .FirstOrDefaultAsync(c => c.UserID == user.UserID);
+
+                if (cart == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy giỏ hàng" });
+                }
+
+                HttpContext.Session.Remove("AppliedVoucherId");
+                decimal subtotal = cart.CartItems.Sum(ci => ci.Subtotal);
+                cart.TotalPrice = subtotal;
+                await _context.SaveChangesAsync();
+
+                return Json(new
+                {
+                    success = true,
+                    message = "Đã xóa mã giảm giá",
+                    cart = new
+                    {
+                        totalPrice = subtotal,
+                        subtotal = subtotal,
+                        discountAmount = 0,
+                        cartItemsCount = cart.CartItems.Count
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error clearing voucher for user {Email}", User.Identity.Name);
+                return Json(new { success = false, message = "Có lỗi xảy ra khi xóa mã giảm giá" });
+            }
+        }
+
+        [Authorize]
+        [HttpPost]
+        public async Task<IActionResult> Checkout(int addressId)
+        {
+            try
+            {
+                var emailClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email);
+                if (emailClaim == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy thông tin người dùng" });
+                }
+
+                var user = await _userService.GetUserByEmailAsync(emailClaim.Value);
+                if (user == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy người dùng" });
+                }
+
+                var address = await _userService.GetAddressByIdAsync(addressId, user.UserID);
+                if (address == null)
+                {
+                    return Json(new { success = false, message = "Địa chỉ không hợp lệ" });
                 }
 
                 var cart = await _context.Carts
@@ -191,221 +597,185 @@ namespace CyberTech.Controllers
 
                 if (cart == null || !cart.CartItems.Any())
                 {
-                    return Json(new { success = false, message = "Giỏ hàng của bạn đang trống" });
+                    return Json(new { success = false, message = "Giỏ hàng trống" });
                 }
 
-                // Check stock
-                foreach (var item in cart.CartItems)
+                var appliedVoucherId = HttpContext.Session.GetInt32("AppliedVoucherId");
+                Voucher appliedVoucher = null;
+                decimal discountAmount = 0;
+                decimal subtotal = cart.CartItems.Sum(ci => ci.Subtotal);
+                decimal finalPrice = subtotal;
+
+                if (appliedVoucherId.HasValue)
                 {
-                    if (item.Quantity > item.Product.Stock)
+                    appliedVoucher = await _context.Vouchers.FindAsync(appliedVoucherId.Value);
+                    if (appliedVoucher != null && IsVoucherValid(appliedVoucher, cart))
                     {
-                        return Json(new
-                        {
-                            success = false,
-                            message = $"Sản phẩm '{item.Product.Name}' chỉ còn {item.Product.Stock} trong kho"
-                        });
+                        discountAmount = CalculateVoucherDiscount(appliedVoucher, cart);
+                        finalPrice = subtotal - discountAmount;
                     }
                 }
 
-                // Calculate totals
-                decimal totalPrice = cart.TotalPrice;
-                decimal totalDiscount = 0;
-
-                // Calculate user rank discount if exists
-
-                decimal finalPrice = totalPrice - totalDiscount;
-
+                // Create order
                 var order = new Order
                 {
                     UserID = user.UserID,
-                    TotalPrice = totalPrice,
-                    DiscountAmount = totalDiscount,
+                    TotalPrice = subtotal,
+                    DiscountAmount = discountAmount,
                     FinalPrice = finalPrice,
                     Status = "Pending",
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.Now,
+                    UserAddressID = addressId
                 };
 
-                foreach (var item in cart.CartItems)
+                // Add order items
+                foreach (var cartItem in cart.CartItems)
                 {
-                    // Calculate item totals
-                    decimal itemSubtotal = item.Subtotal;
-                    decimal itemDiscount = 0;
+                    Console.WriteLine($"Processing cart item {cartItem.CartItemID} with subtotal {cartItem.Subtotal}");
+                    decimal itemDiscountAmount = 0;
+                    decimal itemFinalSubtotal = cartItem.Subtotal;
 
-                    // Calculate item discount based on user rank
-
-                    decimal itemFinalSubtotal = itemSubtotal - itemDiscount;
-
-                    var orderItem = new OrderItem
+                    // Apply product-specific voucher discount if applicable
+                    if (appliedVoucher != null && appliedVoucher.AppliesTo == "Product")
                     {
-                        ProductID = item.ProductID,
-                        Quantity = item.Quantity,
-                        Subtotal = itemSubtotal,
-                        DiscountAmount = itemDiscount,
-                        FinalSubtotal = itemFinalSubtotal,
-                        CreatedAt = DateTime.Now
-                    };
-                    order.OrderItems.Add(orderItem);
+                        Console.WriteLine($"Voucher {appliedVoucher.Code} applies to Product. DiscountType: {appliedVoucher.DiscountType}");
+                        var applicableProductIds = appliedVoucher.VoucherProducts?.Select(vp => vp.ProductID).ToList() ?? new List<int>();
 
-                    // Update stock
-                    item.Product.Stock -= item.Quantity;
+                        if (applicableProductIds.Contains(cartItem.ProductID))
+                        {
+                            Console.WriteLine($"Cart item {cartItem.CartItemID} is eligible for product-specific voucher.");
+                            if (appliedVoucher.DiscountType == "PERCENT")
+                            {
+                                itemDiscountAmount = cartItem.Subtotal * (appliedVoucher.DiscountValue / 100);
+                                itemFinalSubtotal = cartItem.Subtotal - itemDiscountAmount;
+                            }
+                            else if (appliedVoucher.DiscountType == "FIXED")
+                            {
+                                // For fixed discounts on multiple products, distribute proportionally
+                                decimal eligibleItemsTotal = cart.CartItems
+                                    .Where(ci => applicableProductIds.Contains(ci.ProductID))
+                                    .Sum(ci => ci.Subtotal);
+
+                                if (eligibleItemsTotal > 0)
+                                {
+                                    decimal proportion = cartItem.Subtotal / eligibleItemsTotal;
+                                    itemDiscountAmount = Math.Min(appliedVoucher.DiscountValue * proportion, cartItem.Subtotal);
+                                    itemFinalSubtotal = cartItem.Subtotal - itemDiscountAmount;
+                                }
+                            }
+                            Console.WriteLine($"Product-specific discount for item {cartItem.CartItemID}: DiscountAmount = {itemDiscountAmount}, FinalSubtotal = {itemFinalSubtotal}");
+                        }
+                    }
+                    // For order-level discounts, distribute proportionally
+                    else if (appliedVoucher != null && appliedVoucher.AppliesTo == "Order" && subtotal > 0)
+                    {
+                        Console.WriteLine($"Voucher {appliedVoucher.Code} applies to Order. DiscountType: {appliedVoucher.DiscountType}");
+                        decimal proportion = cartItem.Subtotal / subtotal;
+                        itemDiscountAmount = discountAmount * proportion;
+                        itemFinalSubtotal = cartItem.Subtotal - itemDiscountAmount;
+                        Console.WriteLine($"Order-level discount for item {cartItem.CartItemID}: Proportion = {proportion}, DiscountAmount = {itemDiscountAmount}, FinalSubtotal = {itemFinalSubtotal}");
+                    }
+                    else if (appliedVoucher == null)
+                    {
+                        Console.WriteLine($"No voucher applied for item {cartItem.CartItemID}.");
+                    }
+
+                    order.OrderItems.Add(new OrderItem
+                    {
+                        ProductID = cartItem.ProductID,
+                        Quantity = cartItem.Quantity,
+                        UnitPrice = cartItem.Product.GetEffectivePrice(),
+                        Subtotal = cartItem.Subtotal,
+                        DiscountAmount = itemDiscountAmount,
+                        FinalSubtotal = itemFinalSubtotal
+                    });
                 }
 
                 _context.Orders.Add(order);
-
-                // Clear cart items
                 _context.CartItems.RemoveRange(cart.CartItems);
                 cart.TotalPrice = 0;
 
+                // Update user stats
+                user.OrderCount += 1;
+                user.TotalSpent += order.FinalPrice;
+
+                // Update voucher quantity
+                if (appliedVoucher != null && appliedVoucher.QuantityAvailable.HasValue)
+                {
+                    appliedVoucher.QuantityAvailable--;
+                }
+
+                // Save changes to get the OrderID
                 await _context.SaveChangesAsync();
 
-                return Json(new
+                bool paymentSuccess = new Random().Next(0, 2) == 1;
+                if (paymentSuccess)
                 {
-                    success = true,
-                    message = "Đặt hàng thành công",
-                    orderId = order.OrderID,
-                    redirectUrl = Url.Action("OrderDetails", "Account", new { id = order.OrderID })
-                });
+                    var payment = new Payment
+                    {
+                        OrderID = order.OrderID,
+                        PaymentMethod = "Momo",
+                        PaymentStatus = "Completed",
+                        Amount = order.FinalPrice,
+                        PaymentDate = DateTime.Now
+                    };
+                    _context.Payments.Add(payment);
+                    order.Status = "Processing";
+                }
+                else
+                {
+                    var payment = new Payment
+                    {
+                        OrderID = order.OrderID,
+                        PaymentMethod = "Momo",
+                        PaymentStatus = "Failed",
+                        Amount = order.FinalPrice,
+                        PaymentDate = DateTime.Now
+                    };
+                    _context.Payments.Add(payment);
+                    order.Status = "Cancelled";
+                }
+
+                HttpContext.Session.Remove("AppliedVoucherId");
+                await _context.SaveChangesAsync();
+
+                return Json(new { success = paymentSuccess, message = paymentSuccess ? "Thanh toán thành công" : "Thanh toán thất bại" });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating order for user: {Email}", User.FindFirst(ClaimTypes.Email)?.Value);
-                return Json(new { success = false, message = "Có lỗi xảy ra khi tạo đơn hàng" });
-            }
-        }
-        [HttpPost]
-        public async Task<IActionResult> UpdateQuantity(int productId, int quantity)
-        {
-            try
-            {
-                if (productId <= 0 || quantity <= 0)
-                {
-                    return Json(new { success = false, message = "Invalid product or quantity" });
-                }
-
-                var emailClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email);
-                if (emailClaim == null)
-                {
-                    _logger.LogError("Email claim not found in user claims");
-                    return Unauthorized("Invalid user identifier.");
-                }
-
-                var user = await _userService.GetUserByEmailAsync(emailClaim.Value);
-                if (user == null)
-                {
-                    return Json(new { success = false, message = "User not found" });
-                }
-
-                var cartItem = await _context.CartItems
-                    .Include(ci => ci.Cart)
-                    .Include(ci => ci.Product)
-                    .FirstOrDefaultAsync(ci =>
-                        ci.ProductID == productId &&
-                        ci.Cart.UserID == user.UserID);
-
-                if (cartItem == null)
-                {
-                    return Json(new { success = false, message = "Cart item not found" });
-                }
-
-                cartItem.Quantity = quantity;
-                cartItem.Subtotal = cartItem.Product.Price * quantity;
-
-                // Update cart total
-                cartItem.Cart.TotalPrice = await _context.CartItems
-                    .Where(ci => ci.CartID == cartItem.CartID)
-                    .SumAsync(ci => ci.Subtotal);
-
-                await _context.SaveChangesAsync();
-
-                return Json(new
-                {
-                    success = true,
-                    subtotal = cartItem.Subtotal,
-                    totalPrice = cartItem.Cart.TotalPrice
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating quantity for product {ProductId}", productId);
-                return Json(new { success = false, message = "An error occurred while updating quantity" });
+                _logger.LogError(ex, "Error during checkout for user {Email}", User.Identity.Name);
+                return Json(new { success = false, message = "Có lỗi xảy ra khi thanh toán" });
             }
         }
 
-        [HttpPost]
-        public async Task<IActionResult> RemoveItem(int productId)
+        private bool IsVoucherValid(Voucher voucher, Cart cart)
         {
-            try
+            // Check if voucher is active and within valid date range
+            if (!voucher.IsActive || voucher.ValidFrom > DateTime.Now || voucher.ValidTo < DateTime.Now)
             {
-                if (productId <= 0)
-                {
-                    return Json(new { success = false, message = "Invalid product ID" });
-                }
-
-                var emailClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email);
-                if (emailClaim == null)
-                {
-                    _logger.LogError("Email claim not found in user claims");
-                    return Unauthorized("Invalid user identifier.");
-                }
-
-                var user = await _userService.GetUserByEmailAsync(emailClaim.Value);
-                if (user == null)
-                {
-                    return Json(new { success = false, message = "User not found" });
-                }
-
-                var cartItem = await _context.CartItems
-                    .Include(ci => ci.Cart)
-                    .FirstOrDefaultAsync(ci =>
-                        ci.ProductID == productId &&
-                        ci.Cart.UserID == user.UserID);
-
-                if (cartItem == null)
-                {
-                    return Json(new { success = false, message = "Cart item not found" });
-                }
-
-                _context.CartItems.Remove(cartItem);
-
-                // Update cart total
-                cartItem.Cart.TotalPrice = await _context.CartItems
-                    .Where(ci => ci.CartID == cartItem.CartID)
-                    .SumAsync(ci => ci.Subtotal);
-
-                await _context.SaveChangesAsync();
-
-                return Json(new { success = true, totalPrice = cartItem.Cart.TotalPrice });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error removing product {ProductId} from cart", productId);
-                return Json(new { success = false, message = "An error occurred while removing item" });
-            }
-        }
-
-        // Helper methods
-        private async Task<Cart> GetOrCreateCartAsync(int userId)
-        {
-            var cart = await _context.Carts
-                .FirstOrDefaultAsync(c => c.UserID == userId);
-
-            if (cart == null)
-            {
-                cart = new Cart { UserID = userId };
-                _context.Carts.Add(cart);
-                await _context.SaveChangesAsync();
+                return false;
             }
 
-            return cart;
-        }
+            // Check if voucher has available quantity
+            if (voucher.QuantityAvailable.HasValue && voucher.QuantityAvailable <= 0)
+            {
+                return false;
+            }
 
-        private async Task<List<CartItem>> LoadCartItemsAsync(int cartId)
-        {
-            return await _context.CartItems
-                .Include(ci => ci.Product)
-                    .ThenInclude(p => p.ProductImages)
-                .Where(ci => ci.CartID == cartId)
-                .ToListAsync();
+            // Check if voucher applies to the entire order
+            if (voucher.AppliesTo == "Order")
+            {
+                return true;
+            }
+
+            // Check if voucher applies to specific products in the cart
+            if (voucher.AppliesTo == "Product" && voucher.VoucherProducts != null)
+            {
+                var applicableProductIds = voucher.VoucherProducts.Select(vp => vp.ProductID).ToList();
+                return cart.CartItems.Any(ci => applicableProductIds.Contains(ci.ProductID));
+            }
+
+            return false;
         }
     }
 }

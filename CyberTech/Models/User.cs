@@ -65,6 +65,10 @@ namespace CyberTech.Models
         [Required]
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
+        // 1 = Male, 2 = Female
+        public byte? Gender { get; set; }
+
+        public DateTime? DateOfBirth { get; set; }
 
         // Navigation properties
         [ForeignKey("RankId")]

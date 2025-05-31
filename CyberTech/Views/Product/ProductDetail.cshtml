@@ -81,6 +81,9 @@
                 <button class="btn-add-cart" data-product-id="@Model.Product.ProductID" @(Model.Product.Stock <= 0 ? "disabled" : "")>
                     <i class="fas fa-shopping-cart"></i> THÊM VÀO GIỎ
                 </button>
+                <button class="btn-wishlist" data-product-id="@Model.Product.ProductID">
+                    <i class="far fa-heart"></i>
+                </button>
             </div>
 
             <div class="product-delivery">
@@ -220,4 +223,46 @@
 
 @section Scripts {
     <script src="~/js/ProductDetail/script.js"></script>
+    <script>
+        $(function() {
+            // Check if product is in wishlist
+            var productId = @Model.Product.ProductID;
+            $.get('/Account/IsInWishlist', { productId: productId }, function(response) {
+                if (response) {
+                    $('.btn-wishlist i').removeClass('far').addClass('fas');
+                }
+            });
+
+            // Toggle wishlist
+            $('.btn-wishlist').on('click', function() {
+                var button = $(this);
+                var icon = button.find('i');
+
+                $.ajax({
+                    url: '/Account/ToggleWishlist',
+                    type: 'POST',
+                    data: { productId: productId },
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            if (icon.hasClass('far')) {
+                                icon.removeClass('far').addClass('fas');
+                                utils.showToast('Đã thêm vào danh sách yêu thích', 'success');
+                            } else {
+                                icon.removeClass('fas').addClass('far');
+                                utils.showToast('Đã xóa khỏi danh sách yêu thích', 'success');
+                            }
+                        } else {
+                            utils.showToast(response.message || 'Có lỗi xảy ra', 'error');
+                        }
+                    },
+                    error: function() {
+                        utils.showToast('Có lỗi xảy ra', 'error');
+                    }
+                });
+            });
+        });
+    </script>
 }

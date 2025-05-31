@@ -33,9 +33,6 @@ namespace CyberTech.Models
         [Required]
         public DateTime AddedDate { get; set; } = DateTime.Now;
 
-        [Required]
-        public int Quantity { get; set; } = 1;
-
         [ForeignKey("WishlistID")]
         public virtual Wishlist Wishlist { get; set; }
 

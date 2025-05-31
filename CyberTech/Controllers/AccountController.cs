@@ -142,8 +142,11 @@ namespace CyberTech.Controllers
                 var email = info.Principal.FindFirst(ClaimTypes.Email)?.Value;
                 var name = info.Principal.FindFirst(ClaimTypes.Name)?.Value;
 
-                string picture = null;
-                if (provider == "Google") picture = info.Principal.FindFirst("picture")?.Value;
+                string pictureUrl = null;
+                if (provider == "Google")
+                {
+                    pictureUrl = info.Principal.FindFirst("picture")?.Value;
+                }
                 else if (provider == "Facebook")
                 {
                     var pictureClaim = info.Principal.FindFirst("picture");
@@ -152,7 +155,7 @@ namespace CyberTech.Controllers
                         try
                         {
                             var pictureData = JsonDocument.Parse(pictureClaim.Value);
-                            picture = pictureData.RootElement.GetProperty("data").GetProperty("url").GetString();
+                            pictureUrl = pictureData.RootElement.GetProperty("data").GetProperty("url").GetString();
                         }
                         catch
                         {
@@ -161,7 +164,7 @@ namespace CyberTech.Controllers
                     }
                 }
 
-                _logger.LogInformation("External login info: Provider={Provider}, Email={Email}, Name={Name}, Picture={Picture}", provider, email, name, picture);
+                _logger.LogInformation("External login info: Provider={Provider}, Email={Email}, Name={Name}, Picture={Picture}", provider, email, name, pictureUrl);
 
                 if (string.IsNullOrEmpty(providerId) || string.IsNullOrEmpty(email))
                 {
@@ -176,8 +179,8 @@ namespace CyberTech.Controllers
                     if (existingUser.UserStatus != "Active")
                     {
                         _logger.LogWarning("User attempted to login with external provider but account is {Status}: {Email}", existingUser.UserStatus, email);
-                        ModelState.AddModelError("", $"Tài khoản của bạn hiện đang {(existingUser.UserStatus == "Suspended" ? "bị khóa" : "không hoạt động")}"); // Changed from UserStatus.Suspended
-                        TempData["ErrorMessage"] = $"Tài khoản của bạn hiện đang {(existingUser.UserStatus == "Suspended" ? "bị khóa" : "không hoạt động")}"; // Changed from UserStatus.Suspended
+                        ModelState.AddModelError("", $"Tài khoản của bạn hiện đang {(existingUser.UserStatus == "Suspended" ? "bị khóa" : "không hoạt động")}");
+                        TempData["ErrorMessage"] = $"Tài khoản của bạn hiện đang {(existingUser.UserStatus == "Suspended" ? "bị khóa" : "không hoạt động")}";
                         return RedirectToAction("Login");
                     }
 
@@ -185,14 +188,18 @@ namespace CyberTech.Controllers
                     if (existingAuthMethod == null)
                     {
                         _logger.LogInformation("User {Email} exists but doesn't have {Provider} auth method. Adding it now.", email, provider);
-                        var authMethodSuccess = await _userService.AddAuthMethodAsync(existingUser.UserID, provider, providerId);
-                        if (!authMethodSuccess)
+                        var authMethod = new UserAuthMethod
                         {
-                            _logger.LogWarning("Failed to add {Provider} auth method for user {Email}", provider, email);
-                            ModelState.AddModelError("", $"Không thể thêm phương thức đăng nhập {provider} cho tài khoản hiện có");
-                            TempData["ErrorMessage"] = $"Không thể thêm phương thức đăng nhập {provider} cho tài khoản hiện có";
-                            return RedirectToAction("Login");
-                        }
+                            UserID = existingUser.UserID,
+                            AuthType = provider,
+                            AuthKey = providerId
+                        };
+                        _context.UserAuthMethods.Add(authMethod);
+                        await _context.SaveChangesAsync();
+                    }
+                    else if (!string.IsNullOrEmpty(pictureUrl))
+                    {
+                        await _context.SaveChangesAsync();
                     }
                 }
 
@@ -205,11 +212,11 @@ namespace CyberTech.Controllers
                     return RedirectToAction("Login");
                 }
 
-                if (!string.IsNullOrEmpty(picture) && string.IsNullOrEmpty(user.ProfileImageURL))
+                if (!string.IsNullOrEmpty(pictureUrl))
                 {
                     try
                     {
-                        user.ProfileImageURL = picture;
+                        user.ProfileImageURL = pictureUrl;
                         await _context.SaveChangesAsync();
                         _logger.LogInformation("Updated profile picture from {Provider} for user {Email}", provider, email);
                     }
@@ -474,6 +481,16 @@ namespace CyberTech.Controllers
         [HttpGet]
         public IActionResult AccessDenied() => View();
 
+        private async Task SetCommonViewBagProperties(User user)
+        {
+            ViewBag.UserProfileImage = user.ProfileImageURL ?? "/images/default-avatar.png";
+            ViewBag.UserRank = user.Rank?.RankName ?? "Thành viên";
+            ViewBag.NextRank = await _context.Ranks
+                .Where(r => r.MinTotalSpent > user.TotalSpent)
+                .OrderBy(r => r.MinTotalSpent)
+                .FirstOrDefaultAsync();
+        }
+
         [HttpGet]
         [Authorize]
         public async Task<IActionResult> Profile()
@@ -497,20 +514,14 @@ namespace CyberTech.Controllers
                 await _context.SaveChangesAsync();
             }
 
-            ViewBag.UserProfileImage = user.ProfileImageURL;
-            ViewBag.UserRank = user.Rank?.RankName ?? "Thành viên";
-            ViewBag.NextRank = await _context.Ranks
-                .Where(r => r.MinTotalSpent > user.TotalSpent)
-                .OrderBy(r => r.MinTotalSpent)
-                .FirstOrDefaultAsync();
-
+            await SetCommonViewBagProperties(user);
             return View(user);
         }
 
         [HttpPost]
         [Authorize]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UpdateProfile(string name, string phone)
+        public async Task<IActionResult> UpdateProfile(string name, string phone, string gender, string dateOfBirth)
         {
             try
             {
@@ -518,19 +529,78 @@ namespace CyberTech.Controllers
                 if (emailClaim == null)
                 {
                     _logger.LogError("Email claim not found in user claims");
-                    return Unauthorized("Invalid user identifier.");
+                    return Json(new { success = false, message = "Không tìm thấy thông tin người dùng" });
                 }
 
-                _logger.LogInformation("Email claim found: {Email}", emailClaim.Value);
+                if (string.IsNullOrEmpty(name))
+                {
+                    return Json(new { success = false, message = "Tên không được để trống" });
+                }
 
+                DateTime? dob = null;
+                if (!string.IsNullOrEmpty(dateOfBirth))
+                {
+                    if (!DateTime.TryParse(dateOfBirth, out var parsedDob))
+                    {
+                        return Json(new { success = false, message = "Ngày sinh không hợp lệ" });
+                    }
+                    dob = parsedDob;
+                }
+
+                byte? genderValue = null;
+                if (!string.IsNullOrEmpty(gender))
+                {
+                    if (!byte.TryParse(gender, out var parsedGender) || (parsedGender != 1 && parsedGender != 2))
+                    {
+                        return Json(new { success = false, message = "Giới tính không hợp lệ" });
+                    }
+                    genderValue = parsedGender;
+                }
+
+                var success = await _userService.UpdateProfileAsync(emailClaim.Value, name, phone, genderValue, dob);
+                if (!success)
+                {
+                    return Json(new { success = false, message = "Không thể cập nhật thông tin" });
+                }
+
+                // Cập nhật session và claims
                 var user = await _userService.GetUserByEmailAsync(emailClaim.Value);
-                if (user == null) return Json(new { success = false, message = "Không tìm thấy người dùng" });
+                if (user != null)
+                {
+                    // Cập nhật session
+                    HttpContext.Session.SetString("Name", user.Name);
+                    HttpContext.Session.SetString("Phone", user.Phone ?? "");
+                    HttpContext.Session.SetString("Gender", user.Gender?.ToString() ?? "");
+                    HttpContext.Session.SetString("DateOfBirth", user.DateOfBirth?.ToString("o") ?? "");
 
-                user.Name = name;
-                user.Phone = phone;
-                await _context.SaveChangesAsync();
+                    // Cập nhật claims
+                    var identity = User.Identity as ClaimsIdentity;
+                    if (identity != null)
+                    {
+                        // Xóa claims cũ
+                        var nameClaim = identity.FindFirst(ClaimTypes.Name);
+                        var phoneClaim = identity.FindFirst("Phone");
+                        var genderClaim = identity.FindFirst("Gender");
+                        var dobClaim = identity.FindFirst("DateOfBirth");
 
-                return Json(new { success = true });
+                        if (nameClaim != null) identity.RemoveClaim(nameClaim);
+                        if (phoneClaim != null) identity.RemoveClaim(phoneClaim);
+                        if (genderClaim != null) identity.RemoveClaim(genderClaim);
+                        if (dobClaim != null) identity.RemoveClaim(dobClaim);
+
+                        // Thêm claims mới
+                        identity.AddClaim(new Claim(ClaimTypes.Name, user.Name));
+                        identity.AddClaim(new Claim("Phone", user.Phone ?? ""));
+                        identity.AddClaim(new Claim("Gender", user.Gender?.ToString() ?? ""));
+                        identity.AddClaim(new Claim("DateOfBirth", user.DateOfBirth?.ToString("o") ?? ""));
+
+                        // Cập nhật cookie authentication
+                        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
+                            new ClaimsPrincipal(identity));
+                    }
+                }
+
+                return Json(new { success = true, message = "Cập nhật thông tin thành công" });
             }
             catch (Exception ex)
             {
@@ -542,7 +612,7 @@ namespace CyberTech.Controllers
         [HttpGet]
         [Authorize]
         [Route("Account/Orders")]
-        public async Task<IActionResult> Orders()
+        public async Task<IActionResult> Orders(int page = 1, string search = null, string status = null, string date = null, string paymentStatus = null)
         {
             try
             {
@@ -558,16 +628,69 @@ namespace CyberTech.Controllers
                 var user = await _userService.GetUserByEmailAsync(emailClaim.Value);
                 if (user == null) return NotFound();
 
-                var orders = await _context.Orders
+                // Ensure user has a rank
+                if (user.RankId == null)
+                {
+                    user.RankId = 1;
+                    await _context.SaveChangesAsync();
+                }
+
+                await SetCommonViewBagProperties(user);
+
+                const int pageSize = 3;
+                var query = _context.Orders
                     .Include(o => o.OrderItems)
                         .ThenInclude(oi => oi.Product)
                             .ThenInclude(p => p.ProductImages)
-                    .Where(o => o.UserID == user.UserID)
+                    .Include(o => o.Payments)
+                    .Where(o => o.UserID == user.UserID);
+
+                // Apply filters
+                if (!string.IsNullOrEmpty(search))
+                {
+                    query = query.Where(o => o.OrderID.ToString().Contains(search));
+                }
+
+                if (!string.IsNullOrEmpty(status))
+                {
+                    query = query.Where(o => o.Status == status);
+                }
+
+                if (!string.IsNullOrEmpty(paymentStatus))
+                {
+                    query = query.Where(o => o.Payments.Any(p => p.PaymentStatus == paymentStatus));
+                }
+
+                if (!string.IsNullOrEmpty(date))
+                {
+                    if (DateTime.TryParse(date, out DateTime filterDate))
+                    {
+                        query = query.Where(o => o.CreatedAt.Date == filterDate.Date);
+                    }
+                }
+
+                // Get total count before pagination
+                var totalOrders = await query.CountAsync();
+                var totalPages = (int)Math.Ceiling(totalOrders / (double)pageSize);
+
+                // Ensure page is within valid range
+                page = Math.Max(1, Math.Min(page, totalPages > 0 ? totalPages : 1));
+
+                // Apply pagination
+                var orders = await query
                     .OrderByDescending(o => o.CreatedAt)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
                     .ToListAsync();
 
-                ViewBag.UserProfileImage = user.ProfileImageURL;
-                ViewBag.UserRank = user.Rank?.RankName ?? "Thành viên";
+                ViewBag.CurrentPage = page;
+                ViewBag.TotalPages = totalPages;
+                ViewBag.TotalOrders = totalOrders;
+                ViewBag.SearchTerm = search;
+                ViewBag.StatusFilter = status;
+                ViewBag.DateFilter = date;
+                ViewBag.PaymentStatusFilter = paymentStatus;
+
                 return View(orders);
             }
             catch (Exception ex)
@@ -581,165 +704,75 @@ namespace CyberTech.Controllers
         [Authorize]
         public async Task<IActionResult> OrderDetails(int id)
         {
-            var emailClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email);
-            if (emailClaim == null)
+            try
             {
-                _logger.LogError("Email claim not found in user claims");
-                return Unauthorized("Invalid user identifier.");
+                var emailClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email);
+                if (emailClaim == null)
+                {
+                    _logger.LogError("Email claim not found in user claims");
+                    return Unauthorized("Invalid user identifier.");
+                }
+
+                var user = await _userService.GetUserByEmailAsync(emailClaim.Value);
+                if (user == null) return NotFound();
+
+                var order = await _context.Orders
+                    .Include(o => o.OrderItems)
+                        .ThenInclude(oi => oi.Product)
+                    .Include(o => o.Payments)
+                    .Include(o => o.UserAddress)
+                    .FirstOrDefaultAsync(o => o.OrderID == id && o.UserID == user.UserID);
+
+                if (order == null) return NotFound();
+
+                var payment = order.Payments?.FirstOrDefault();
+                var result = new
+                {
+                    orderId = order.OrderID,
+                    createdAt = order.CreatedAt,
+                    status = order.Status,
+                    totalPrice = order.TotalPrice,
+                    discountAmount = order.DiscountAmount,
+                    finalPrice = order.FinalPrice,
+                    paymentMethod = payment?.PaymentMethod,
+                    paymentStatus = payment?.PaymentStatus,
+                    paymentDate = payment?.PaymentDate,
+                    address = order.UserAddress != null ? new
+                    {
+                        recipientName = order.UserAddress.RecipientName,
+                        addressLine = order.UserAddress.AddressLine,
+                        city = order.UserAddress.City,
+                        district = order.UserAddress.District,
+                        ward = order.UserAddress.Ward,
+                        phone = order.UserAddress.Phone
+                    } : null,
+                    orderItems = order.OrderItems.Select(oi => new
+                    {
+                        orderItemId = oi.OrderItemID,
+                        quantity = oi.Quantity,
+                        unitPrice = oi.UnitPrice,
+                        finalSubtotal = oi.FinalSubtotal,
+                        product = new
+                        {
+                            name = oi.Product.Name,
+                            imageUrl = oi.Product.ProductImages.FirstOrDefault()?.ImageURL ?? "/images/no-image.png"
+                        }
+                    })
+                };
+
+                return Json(result);
             }
-
-            _logger.LogInformation("Email claim found: {Email}", emailClaim.Value);
-
-            var user = await _userService.GetUserByEmailAsync(emailClaim.Value);
-            if (user == null) return NotFound();
-
-            var order = await _context.Orders
-                .Include(o => o.OrderItems)
-                    .ThenInclude(oi => oi.Product)
-                .FirstOrDefaultAsync(o => o.OrderID == id && o.UserID == user.UserID);
-
-            if (order == null) return NotFound();
-
-            ViewBag.UserProfileImage = user.ProfileImageURL;
-            ViewBag.UserRank = user.Rank?.RankName ?? "Thành viên";
-            return View(order);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading order details for order {OrderId}", id);
+                return Json(new { success = false, message = "Có lỗi xảy ra khi tải thông tin đơn hàng" });
+            }
         }
 
         [HttpPost]
         [Authorize]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CancelOrder(int id)
-        {
-            var emailClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email);
-            if (emailClaim == null)
-            {
-                _logger.LogError("Email claim not found in user claims");
-                return Unauthorized("Invalid user identifier.");
-            }
-
-            _logger.LogInformation("Email claim found: {Email}", emailClaim.Value);
-
-            var user = await _userService.GetUserByEmailAsync(emailClaim.Value);
-            if (user == null) return Json(new { success = false, message = "Không tìm thấy người dùng" });
-
-            var order = await _context.Orders
-                .FirstOrDefaultAsync(o => o.OrderID == id && o.UserID == user.UserID);
-
-            if (order == null) return Json(new { success = false, message = "Không tìm thấy đơn hàng" });
-            if (order.Status != "Pending" || (DateTime.Now - order.CreatedAt).TotalHours > 1)
-                return Json(new { success = false, message = "Không thể hủy đơn hàng" });
-
-            order.Status = "Cancelled";
-            await _context.SaveChangesAsync();
-            return Json(new { success = true, message = "Hủy đơn hàng thành công" });
-        }
-
-        [HttpGet]
-        [Authorize]
-        public async Task<IActionResult> Addresses()
-        {
-            var emailClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email);
-            if (emailClaim == null)
-            {
-                _logger.LogError("Email claim not found in user claims");
-                return Unauthorized("Invalid user identifier.");
-            }
-
-            _logger.LogInformation("Email claim found: {Email}", emailClaim.Value);
-
-            var user = await _userService.GetUserByEmailAsync(emailClaim.Value);
-            var addresses = await _context.UserAddresses.Where(a => a.UserID == user.UserID).ToListAsync();
-
-            ViewBag.UserProfileImage = user.ProfileImageURL;
-            ViewBag.UserRank = user.Rank?.RankName ?? "Thành viên";
-            return View(addresses);
-        }
-
-        [HttpPost]
-        [Authorize]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddAddress(UserAddress address)
-        {
-            var emailClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email);
-            if (emailClaim == null)
-            {
-                _logger.LogError("Email claim not found in user claims");
-                return Unauthorized("Invalid user identifier.");
-            }
-
-            _logger.LogInformation("Email claim found: {Email}", emailClaim.Value);
-
-            var user = await _userService.GetUserByEmailAsync(emailClaim.Value);
-            address.UserID = user.UserID;
-            address.CreatedAt = DateTime.Now;
-            _context.UserAddresses.Add(address);
-            await _context.SaveChangesAsync();
-            return Json(new { success = true });
-        }
-
-        [HttpPost]
-        [Authorize]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteAddress(int id)
-        {
-            var emailClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email);
-            if (emailClaim == null)
-            {
-                _logger.LogError("Email claim not found in user claims");
-                return Unauthorized("Invalid user identifier.");
-            }
-
-            _logger.LogInformation("Email claim found: {Email}", emailClaim.Value);
-
-            var user = await _userService.GetUserByEmailAsync(emailClaim.Value);
-            var address = await _context.UserAddresses.FirstOrDefaultAsync(a => a.AddressID == id && a.UserID == user.UserID);
-            if (address != null)
-            {
-                _context.UserAddresses.Remove(address);
-                await _context.SaveChangesAsync();
-                return Json(new { success = true });
-            }
-            return Json(new { success = false });
-        }
-
-        [HttpGet]
-        [Authorize]
-        public async Task<IActionResult> Wishlist()
-        {
-            var emailClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email);
-            if (emailClaim == null)
-            {
-                _logger.LogError("Email claim not found in user claims");
-                return Unauthorized("Invalid user identifier.");
-            }
-
-            _logger.LogInformation("Email claim found: {Email}", emailClaim.Value);
-
-            var user = await _userService.GetUserByEmailAsync(emailClaim.Value);
-            if (user == null) return NotFound();
-
-            var wishlist = await _context.Wishlists
-                .Include(w => w.WishlistItems)
-                    .ThenInclude(wi => wi.Product)
-                        .ThenInclude(p => p.ProductImages)
-                .FirstOrDefaultAsync(w => w.UserID == user.UserID);
-
-            if (wishlist == null)
-            {
-                wishlist = new Wishlist { UserID = user.UserID };
-                _context.Wishlists.Add(wishlist);
-                await _context.SaveChangesAsync();
-            }
-
-            ViewBag.UserProfileImage = user.ProfileImageURL;
-            ViewBag.UserRank = user.Rank?.RankName ?? "Thành viên";
-            return View(wishlist);
-        }
-
-        [HttpPost]
-        [Authorize]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> RemoveFromWishlist(int id)
         {
             try
             {
@@ -750,46 +783,269 @@ namespace CyberTech.Controllers
                     return Unauthorized("Invalid user identifier.");
                 }
 
-                _logger.LogInformation("Email claim found: {Email}", emailClaim.Value);
-
                 var user = await _userService.GetUserByEmailAsync(emailClaim.Value);
                 if (user == null) return Json(new { success = false, message = "Không tìm thấy người dùng" });
 
-                var wishlistItem = await _context.Wishlists
-                    .FirstOrDefaultAsync(w => w.WishlistID == id && w.UserID == user.UserID);
+                var order = await _context.Orders
+                    .Include(o => o.Payments)
+                    .FirstOrDefaultAsync(o => o.OrderID == id && o.UserID == user.UserID);
 
-                if (wishlistItem == null) return Json(new { success = false, message = "Không tìm thấy sản phẩm trong danh sách yêu thích" });
+                if (order == null) return Json(new { success = false, message = "Không tìm thấy đơn hàng" });
 
-                _context.Wishlists.Remove(wishlistItem);
+                // Check if there's a successful payment
+                var hasSuccessfulPayment = order.Payments?.Any(p => p.PaymentStatus == "Completed") ?? false;
+                if (hasSuccessfulPayment)
+                {
+                    return Json(new { success = false, message = "Không thể hủy đơn hàng đã thanh toán thành công" });
+                }
+
+                var timeSinceOrder = DateTime.Now - order.CreatedAt;
+                if ((order.Status != "Pending" && order.Status != "Processing") || timeSinceOrder.TotalHours > 5)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = timeSinceOrder.TotalHours > 5
+                            ? "Không thể hủy đơn hàng sau 5 giờ kể từ khi đặt hàng"
+                            : "Chỉ có thể hủy đơn hàng đang ở trạng thái chờ xử lý hoặc đang xử lý"
+                    });
+                }
+
+                order.Status = "Cancelled";
                 await _context.SaveChangesAsync();
-
-                return Json(new { success = true });
+                return Json(new { success = true, message = "Hủy đơn hàng thành công" });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Lỗi xóa sản phẩm khỏi danh sách yêu thích");
-                return Json(new { success = false, message = "Có lỗi xảy ra khi xóa sản phẩm" });
+                _logger.LogError(ex, "Error cancelling order {OrderId}", id);
+                return Json(new { success = false, message = "Có lỗi xảy ra khi hủy đơn hàng" });
             }
         }
 
         [HttpGet]
         [Authorize]
-        public async Task<IActionResult> Settings()
+        public async Task<IActionResult> Addresses()
         {
-            var emailClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email);
-            if (emailClaim == null)
+            try
             {
-                _logger.LogError("Email claim not found in user claims");
-                return Unauthorized("Invalid user identifier.");
+                var emailClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email);
+                if (emailClaim == null)
+                {
+                    _logger.LogError("Email claim not found in user claims");
+                    return Unauthorized("Invalid user identifier.");
+                }
+
+                var user = await _userService.GetUserByEmailAsync(emailClaim.Value);
+                if (user == null) return NotFound();
+
+                await SetCommonViewBagProperties(user);
+
+                var addresses = await _userService.GetUserAddressesAsync(user.UserID);
+                var addressCount = await _userService.GetAddressCountAsync(user.UserID);
+                var canAddMore = await _userService.CanAddMoreAddressesAsync(user.UserID);
+
+                ViewBag.AddressCount = addressCount;
+                ViewBag.CanAddMore = canAddMore;
+
+                return View(addresses);
             }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading addresses for user {Email}", User.Identity.Name);
+                return View(new List<UserAddress>());
+            }
+        }
 
-            _logger.LogInformation("Email claim found: {Email}", emailClaim.Value);
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddAddress(UserAddress address)
+        {
+            try
+            {
+                var emailClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email);
+                if (emailClaim == null)
+                {
+                    _logger.LogError("Email claim not found in user claims");
+                    return Json(new { success = false, message = "Không tìm thấy thông tin người dùng" });
+                }
 
-            var user = await _userService.GetUserByEmailAsync(emailClaim.Value);
-            ViewBag.CanChangePassword = await _userService.HasPasswordAuthAsync(user.Email);
-            ViewBag.UserProfileImage = user.ProfileImageURL;
-            ViewBag.UserRank = user.Rank?.RankName ?? "Thành viên";
-            return View();
+                var user = await _userService.GetUserByEmailAsync(emailClaim.Value);
+                if (user == null)
+                {
+                    _logger.LogError("User not found for email: {Email}", emailClaim.Value);
+                    return Json(new { success = false, message = "Không tìm thấy người dùng" });
+                }
+
+                if (!await _userService.CanAddMoreAddressesAsync(user.UserID))
+                {
+                    _logger.LogWarning("User {Email} has reached address limit", emailClaim.Value);
+                    return Json(new { success = false, message = "Bạn đã đạt đến giới hạn 6 địa chỉ" });
+                }
+
+                address.UserID = user.UserID;
+                var success = await _userService.AddAddressAsync(address);
+
+                if (!success)
+                {
+                    _logger.LogError("Failed to add address for user {Email}", emailClaim.Value);
+                    return Json(new { success = false, message = "Không thể thêm địa chỉ" });
+                }
+
+                return Json(new { success = true, message = "Thêm địa chỉ thành công" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Có lỗi xảy ra khi thêm địa chỉ" });
+            }
+        }
+
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditAddress(UserAddress address)
+        {
+            try
+            {
+                var emailClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email);
+                if (emailClaim == null)
+                {
+                    _logger.LogError("Email claim not found in user claims");
+                    return Json(new { success = false, message = "Không tìm thấy thông tin người dùng" });
+                }
+
+                var user = await _userService.GetUserByEmailAsync(emailClaim.Value);
+                if (user == null)
+                {
+                    _logger.LogError("User not found for email: {Email}", emailClaim.Value);
+                    return Json(new { success = false, message = "Không tìm thấy người dùng" });
+                }
+
+                var existingAddress = await _userService.GetAddressByIdAsync(address.AddressID, user.UserID);
+                if (existingAddress == null)
+                {
+                    _logger.LogWarning("Address {AddressId} not found for user {Email}", address.AddressID, emailClaim.Value);
+                    return Json(new { success = false, message = "Không tìm thấy địa chỉ" });
+                }
+
+                address.UserID = user.UserID;
+                var success = await _userService.UpdateAddressAsync(address);
+
+                if (!success)
+                {
+                    _logger.LogError("Failed to update address {AddressId} for user {Email}", address.AddressID, emailClaim.Value);
+                    return Json(new { success = false, message = "Không thể cập nhật địa chỉ" });
+                }
+
+                return Json(new { success = true, message = "Cập nhật địa chỉ thành công" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Có lỗi xảy ra khi cập nhật địa chỉ" });
+            }
+        }
+
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteAddress(int id)
+        {
+            try
+            {
+                var emailClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email);
+                if (emailClaim == null)
+                {
+                    _logger.LogError("Email claim not found in user claims");
+                    return Json(new { success = false, message = "Không tìm thấy thông tin người dùng" });
+                }
+
+                var user = await _userService.GetUserByEmailAsync(emailClaim.Value);
+                if (user == null)
+                {
+                    _logger.LogError("User not found for email: {Email}", emailClaim.Value);
+                    return Json(new { success = false, message = "Không tìm thấy người dùng" });
+                }
+
+                var address = await _userService.GetAddressByIdAsync(id, user.UserID);
+                if (address == null)
+                {
+                    _logger.LogWarning("Address {AddressId} not found for user {Email}", id, emailClaim.Value);
+                    return Json(new { success = false, message = "Không tìm thấy địa chỉ" });
+                }
+
+                if (address.IsPrimary)
+                {
+                    _logger.LogWarning("Cannot delete primary address {AddressId} for user {Email}", id, emailClaim.Value);
+                    return Json(new { success = false, message = "Không thể xóa địa chỉ mặc định" });
+                }
+
+                var success = await _userService.DeleteAddressAsync(id, user.UserID);
+
+                if (!success)
+                {
+                    _logger.LogError("Failed to delete address {AddressId} for user {Email}", id, emailClaim.Value);
+                    return Json(new { success = false, message = "Không thể xóa địa chỉ" });
+                }
+
+                _logger.LogInformation("Successfully deleted address {AddressId} for user {Email}", id, emailClaim.Value);
+                return Json(new { success = true, message = "Xóa địa chỉ thành công" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Có lỗi xảy ra khi xóa địa chỉ" });
+            }
+        }
+
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SetPrimaryAddress(int id)
+        {
+            try
+            {
+                var emailClaim = User.FindFirst(ClaimTypes.Email);
+                if (emailClaim == null)
+                {
+                    _logger.LogWarning("User email claim not found");
+                    return Json(new { success = false, message = "Không tìm thấy thông tin người dùng" });
+                }
+
+                var user = await _userService.GetUserByEmailAsync(emailClaim.Value);
+                if (user == null)
+                {
+                    _logger.LogWarning($"User not found for email: {emailClaim.Value}");
+                    return Json(new { success = false, message = "Không tìm thấy người dùng" });
+                }
+
+                var address = await _userService.GetAddressByIdAsync(id, user.UserID);
+                if (address == null)
+                {
+                    _logger.LogWarning($"Address {id} not found for user {user.UserID}");
+                    return Json(new { success = false, message = "Không tìm thấy địa chỉ" });
+                }
+
+                if (address.IsPrimary)
+                {
+                    return Json(new { success = true, message = "Địa chỉ này đã là mặc định" });
+                }
+
+                var result = await _userService.SetPrimaryAddressAsync(id, user.UserID);
+                if (result)
+                {
+                    _logger.LogInformation($"Set address {id} as primary for user {user.UserID}");
+                    return Json(new { success = true, message = "Đặt địa chỉ mặc định thành công" });
+                }
+                else
+                {
+                    _logger.LogWarning($"Failed to set address {id} as primary for user {user.UserID}");
+                    return Json(new { success = false, message = "Không thể đặt địa chỉ mặc định" });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error setting primary address {id}");
+                return Json(new { success = false, message = "Có lỗi xảy ra khi đặt địa chỉ mặc định" });
+            }
         }
 
         [HttpPost]
@@ -821,14 +1077,151 @@ namespace CyberTech.Controllers
             return Json(new { success = true, message = "Đổi mật khẩu thành công" });
         }
 
+        [HttpGet]
+        public async Task<IActionResult> Wishlist(int page = 1)
+        {
+
+            var emailClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email);
+            if (emailClaim == null)
+            {
+                _logger.LogError("Email claim not found in user claims");
+                return Unauthorized("Invalid user identifier.");
+            }
+
+            _logger.LogInformation("Email claim found: {Email}", emailClaim.Value);
+
+            var user = await _userService.GetUserByEmailAsync(emailClaim.Value);
+            if (user == null) return NotFound();
+
+            // Ensure user has a rank
+            if (user.RankId == null)
+            {
+                user.RankId = 1;
+                await _context.SaveChangesAsync();
+            }
+
+            await SetCommonViewBagProperties(user);
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return RedirectToAction("Login", "Account");
+
+            const int pageSize = 6;
+            var query = _context.WishlistItems
+                .Include(w => w.Wishlist)
+                .Include(w => w.Product)
+                    .ThenInclude(p => p.ProductImages)
+                .Where(w => w.Wishlist.UserID == int.Parse(userId));
+
+            // Get total count before pagination
+            var totalItems = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+
+            // Ensure page is within valid range
+            page = Math.Max(1, Math.Min(page, totalPages));
+
+            // Apply pagination
+            var wishlistItems = await query
+                .OrderByDescending(w => w.AddedDate)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = totalPages;
+            ViewBag.TotalItems = totalItems;
+
+            return View(wishlistItems);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleWishlist(int productId)
+        {
+            try
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
+                    return Json(new { success = false, message = "Vui lòng đăng nhập để thực hiện chức năng này" });
+
+                var userWishlist = await _context.Wishlists
+                    .FirstOrDefaultAsync(w => w.UserID == int.Parse(userId));
+
+                if (userWishlist == null)
+                {
+                    userWishlist = new Wishlist
+                    {
+                        UserID = int.Parse(userId)
+                    };
+                    _context.Wishlists.Add(userWishlist);
+                    await _context.SaveChangesAsync();
+                }
+
+                var existingItem = await _context.WishlistItems
+                    .FirstOrDefaultAsync(w => w.WishlistID == userWishlist.WishlistID && w.ProductID == productId);
+
+                if (existingItem != null)
+                {
+                    _context.WishlistItems.Remove(existingItem);
+                    await _context.SaveChangesAsync();
+                    return Json(new { success = true, message = "Đã xóa khỏi danh sách yêu thích" });
+                }
+                else
+                {
+                    var newItem = new WishlistItem
+                    {
+                        WishlistID = userWishlist.WishlistID,
+                        ProductID = productId,
+                        AddedDate = DateTime.Now
+                    };
+                    _context.WishlistItems.Add(newItem);
+                    await _context.SaveChangesAsync();
+                    return Json(new { success = true, message = "Đã thêm vào danh sách yêu thích" });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error toggling wishlist for product {ProductId}", productId);
+                return Json(new { success = false, message = "Có lỗi xảy ra khi thực hiện thao tác" });
+            }
+        }
+
         private async Task SignInUserAsync(User user, bool isPersistent)
         {
+            // Get user's auth methods
+            var authMethods = await _context.UserAuthMethods
+                .Where(uam => uam.UserID == user.UserID)
+                .ToListAsync();
+
+            // Check if user has external auth methods
+            var hasExternalAuth = authMethods.Any(uam => uam.AuthType == "Google" || uam.AuthType == "Facebook");
+
+            // If user has external auth and no profile image, try to get it from the auth method
+            if (hasExternalAuth && string.IsNullOrEmpty(user.ProfileImageURL))
+            {
+                var externalAuth = authMethods.FirstOrDefault(uam => uam.AuthType == "Google" || uam.AuthType == "Facebook");
+                if (externalAuth != null)
+                {
+                    await _context.SaveChangesAsync();
+                }
+            }
+
             var claims = new[]
             {
                 new Claim(ClaimTypes.NameIdentifier, user.UserID.ToString()),
                 new Claim(ClaimTypes.Name, user.Name),
                 new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Role, user.Role.ToString())
+                new Claim(ClaimTypes.Role, user.Role.ToString()),
+                new Claim("Username", user.Username),
+                new Claim("ProfileImage", user.ProfileImageURL ?? "/images/default-avatar.png"),
+                new Claim("Phone", user.Phone ?? ""),
+                new Claim("TotalSpent", user.TotalSpent.ToString()),
+                new Claim("OrderCount", user.OrderCount.ToString()),
+                new Claim("RankId", user.RankId?.ToString() ?? "1"),
+                new Claim("EmailVerified", user.EmailVerified.ToString()),
+                new Claim("UserStatus", user.UserStatus),
+                new Claim("CreatedAt", user.CreatedAt.ToString("o")),
+                new Claim("Gender", user.Gender?.ToString() ?? ""),
+                new Claim("DateOfBirth", user.DateOfBirth?.ToString("o") ?? "")
             };
 
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -840,8 +1233,22 @@ namespace CyberTech.Controllers
                 ExpiresUtc = isPersistent ? DateTime.UtcNow.AddDays(30) : null
             });
 
+            // Store all user information in session
             HttpContext.Session.SetString("UserId", user.UserID.ToString());
-            HttpContext.Session.SetString("UserRole", user.Role.ToString());
+            HttpContext.Session.SetString("Username", user.Username);
+            HttpContext.Session.SetString("Email", user.Email);
+            HttpContext.Session.SetString("Name", user.Name);
+            HttpContext.Session.SetString("Role", user.Role.ToString());
+            HttpContext.Session.SetString("ProfileImage", user.ProfileImageURL ?? "/images/default-avatar.png");
+            HttpContext.Session.SetString("Phone", user.Phone ?? "");
+            HttpContext.Session.SetString("TotalSpent", user.TotalSpent.ToString());
+            HttpContext.Session.SetString("OrderCount", user.OrderCount.ToString());
+            HttpContext.Session.SetString("RankId", user.RankId?.ToString() ?? "1");
+            HttpContext.Session.SetString("EmailVerified", user.EmailVerified.ToString());
+            HttpContext.Session.SetString("UserStatus", user.UserStatus);
+            HttpContext.Session.SetString("CreatedAt", user.CreatedAt.ToString("o"));
+            HttpContext.Session.SetString("Gender", user.Gender?.ToString() ?? "");
+            HttpContext.Session.SetString("DateOfBirth", user.DateOfBirth?.ToString("o") ?? "");
         }
     }
 }

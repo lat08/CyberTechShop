@@ -30,8 +30,6 @@ namespace CyberTech.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal FinalSubtotal { get; set; }
 
-        [Required]
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         // Navigation properties
         [ForeignKey("OrderID")]

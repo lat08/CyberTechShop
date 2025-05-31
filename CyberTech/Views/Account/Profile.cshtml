@@ -1,114 +1,535 @@
 @model CyberTech.Models.User
 @{
-    ViewData["Title"] = "Thông tin cá nhân";
-    Layout = "_AccountLayout";
+    ViewData["Title"] = "Thông tin tài khoản";
 }
 
-<div class="profile-section">
-    <div class="profile-header">
-        <div class="profile-avatar">
-            <img src="@(string.IsNullOrEmpty(Model.ProfileImageURL) ? "/images/default-avatar.png" : Model.ProfileImageURL)" alt="Avatar">
+<div class="account-dashboard">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-lg-3">
+            @Html.Partial("_AccountSidebar")
         </div>
-        <div class="profile-info">
-            <h2>@Model.Name</h2>
-            <p class="text-muted">@Model.Email</p>
-            <div class="profile-stats">
-                <div class="stat-item">
-                    <div class="stat-value">@Model.OrderCount</div>
-                    <div class="stat-label">Đơn hàng</div>
+        <!-- Main Content -->
+        <div class="col-lg-9">
+            <div class="account-content-main">
+                <!-- Rank Progress Section -->
+                <div class="rank-progress">
+                    <div class="rank-info">
+                        <div>
+                            <h3 class="rank-name">@ViewBag.UserRank</h3>
+                            @if (Model.Rank?.DiscountPercent > 0)
+                            {
+                                <span class="rank-discount">Giảm giá @Model.Rank.DiscountPercent%</span>
+                            }
+                        </div>
+                        @if (ViewBag.NextRank != null)
+                        {
+                            <div class="next-rank">
+                                <span>Rank tiếp theo: @ViewBag.NextRank.RankName</span>
+                                @if (ViewBag.NextRank.DiscountPercent > 0)
+                                {
+                                    <span class="rank-discount">Giảm giá @ViewBag.NextRank.DiscountPercent%</span>
+                                }
+                            </div>
+                        }
+                    </div>
+                    @if (ViewBag.NextRank != null)
+                    {
+                        var progress = (Model.TotalSpent / ViewBag.NextRank.MinTotalSpent) * 100;
+                        <div class="progress">
+                            <div class="progress-bar" style="width: @(Math.Min(progress, 100))%"></div>
+                        </div>
+                        <div class="rank-stats">
+                            <span>Đã chi tiêu: @Model.TotalSpent.ToString("N0")đ</span>
+                            <span>Cần thêm: @((ViewBag.NextRank.MinTotalSpent - Model.TotalSpent).ToString("N0"))đ</span>
+                        </div>
+                    }
                 </div>
-                <div class="stat-item">
-                    <div class="stat-value">@Model.TotalSpent?.ToString("N0")đ</div>
-                    <div class="stat-label">Tổng chi tiêu</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value">@Model.Rank?.DiscountPercent%</div>
-                    <div class="stat-label">Giảm giá</div>
+
+                <!-- Profile Section -->
+                <div class="profile-section">
+                    <div class="profile-header">
+                        <div class="profile-avatar">
+                            <img src="@(Model.ProfileImageURL ?? "/images/default-avatar.png")" alt="@Model.Name" id="profileImage">
+                            <div class="avatar-overlay">
+                                <label for="imageUpload" class="upload-btn">
+                                    <i class="fas fa-camera"></i>
+                                </label>
+                                <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+                            </div>
+                        </div>
+                        <div class="profile-info">
+                            <h2>@Model.Name</h2>
+                            <p class="text-muted">@Model.Email</p>
+                            <div class="profile-stats">
+                                <div class="stat-item">
+                                    <span class="stat-value">@Model.OrderCount</span>
+                                    <span class="stat-label">Đơn hàng</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-value">@Model.TotalSpent.ToString("N0")đ</span>
+                                    <span class="stat-label">Đã chi tiêu</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-value">@Model.CreatedAt.ToString("dd/MM/yyyy")</span>
+                                    <span class="stat-label">Ngày tham gia</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="profile-content">
+                        <form id="profileForm" asp-action="UpdateProfile" method="post">
+                            @Html.AntiForgeryToken()
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="name">Họ và tên</label>
+                                        <input type="text" class="form-control" id="name" name="name" value="@Model.Name" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="phone">Số điện thoại</label>
+                                        <input type="text" class="form-control" id="phone" name="phone" value="@Model.Phone">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Giới tính</label>
+                                        <div class="gender-options">
+                                            <script>
+                                                console.log("Gender: @Model.Phone");
+                                            </script>
+                                            <label class="gender-option">
+                                                <input type="radio" name="gender" value="1" @(Model.Gender == 1 ? "checked" : "")>
+                                                <span class="gender-label">Nam</span>
+                                            </label>
+                                            <label class="gender-option">
+                                                <input type="radio" name="gender" value="2" @(Model.Gender == 2 ? "checked" : "")>
+                                                <span class="gender-label">Nữ</span>
+                                            </label>
+                                            <label class="gender-option">
+                                                <input type="radio" name="gender" value="0" @(Model.Gender == null ? "checked" : "")>
+                                                <span class="gender-label">Không xác định</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="dateOfBirth">Ngày sinh</label>
+                                        <input type="date" class="form-control" id="dateOfBirth" name="dateOfBirth" 
+                                               value="@(Model.DateOfBirth.HasValue ? Model.DateOfBirth.Value.ToString("yyyy-MM-dd") : "")"
+                                               max="@DateTime.Now.AddYears(-18).ToString("yyyy-MM-dd")"
+                                               min="@DateTime.Now.AddYears(-100).ToString("yyyy-MM-dd")">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>Lưu thay đổi
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- Change Password Section -->
+                        @if (Model.AuthMethods.Any(am => am.AuthType == "Password"))
+                        {
+                            <div class="change-password-section">
+                                <h4>Đổi mật khẩu</h4>
+                                <form id="changePasswordForm">
+                                    @Html.AntiForgeryToken()
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label for="currentPassword">Mật khẩu hiện tại</label>
+                                                <input type="password" class="form-control" id="currentPassword" name="currentPassword" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label for="newPassword">Mật khẩu mới</label>
+                                                <input type="password" class="form-control" id="newPassword" name="newPassword" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label for="confirmPassword">Xác nhận mật khẩu</label>
+                                                <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-actions">
+                                        <button type="submit" class="btn btn-outline-primary">
+                                            <i class="fas fa-key me-2"></i>Đổi mật khẩu
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="change-password-section">
+                                <h4>Đổi mật khẩu</h4>
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Tài khoản của bạn được đăng nhập thông qua @Model.AuthMethods.FirstOrDefault()?.AuthType. 
+                                    Bạn không thể thay đổi mật khẩu trực tiếp từ đây.
+                                </div>
+                            </div>
+                        }
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <div class="rank-progress">
-        <div class="rank-info">
-            <div class="rank-name">@Model.Rank?.RankName</div>
-            <div class="rank-discount">Giảm giá @Model.Rank?.DiscountPercent%</div>
-        </div>
-        <div class="progress">
-            @{
-                var nextRank = ViewBag.NextRank as CyberTech.Models.Rank;
-                var progress = 0;
-                if (nextRank != null)
-                {
-                    progress = (int)((Model.TotalSpent ?? 0) / nextRank.MinTotalSpent * 100);
-                }
-            }
-            <div class="progress-bar" style="width: @progress%"></div>
-        </div>
-        <div class="rank-stats">
-            <span>Đã chi: @Model.TotalSpent?.ToString("N0")đ</span>
-            @if (nextRank != null)
-            {
-                <span>Còn @((nextRank.MinTotalSpent - (Model.TotalSpent ?? 0)).ToString("N0"))đ để lên @nextRank.RankName</span>
-            }
-        </div>
-    </div>
-
-    <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0">Thông tin cá nhân</h5>
-        </div>
-        <div class="card-body">
-            <form id="profileForm" method="post" action="@Url.Action("UpdateProfile", "Account")">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label>Họ và tên</label>
-                            <input type="text" class="form-control" name="Name" value="@Model.Name">
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label>Số điện thoại</label>
-                            <input type="tel" class="form-control" name="Phone" value="@Model.Phone">
-                        </div>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" class="form-control" value="@Model.Email" readonly>
-                </div>
-                <div class="form-group">
-                    <label>Ngày tham gia</label>
-                    <input type="text" class="form-control" value="@Model.CreatedAt.ToString("dd/MM/yyyy")" readonly>
-                </div>
-                <button type="submit" class="btn btn-primary">Cập nhật thông tin</button>
-            </form>
-        </div>
-    </div>
 </div>
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/account-dashboard.css">
+    <style>
+        .profile-section {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+            gap: 30px;
+        }
+
+        .profile-avatar {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 3px solid #e9ecef;
+        }
+
+        .profile-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .avatar-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .profile-avatar:hover .avatar-overlay {
+            opacity: 1;
+        }
+
+        .upload-btn {
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .upload-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .profile-info h2 {
+            margin: 0 0 5px;
+            font-size: 24px;
+            color: #333;
+        }
+
+        .profile-info p {
+            margin: 0 0 15px;
+            color: #6c757d;
+        }
+
+        .profile-stats {
+            display: flex;
+            gap: 30px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            display: block;
+            font-size: 20px;
+            font-weight: 600;
+            color: #0077cc;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #6c757d;
+        }
+
+        .profile-content {
+            margin-top: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #495057;
+            font-weight: 500;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: #0077cc;
+            box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.15);
+        }
+
+        .gender-options {
+            display: flex;
+            gap: 20px;
+        }
+
+        .gender-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .gender-label {
+            color: #495057;
+        }
+
+        .form-actions {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #0077cc;
+            border: none;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+            transform: translateY(-1px);
+        }
+
+        .btn-outline-primary {
+            border: 2px solid #0077cc;
+            color: #0077cc;
+            background: transparent;
+        }
+
+        .btn-outline-primary:hover {
+            background: #0077cc;
+            color: white;
+        }
+
+        .change-password-section {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .change-password-section h4 {
+            margin-bottom: 20px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        @@media (max-width: 768px) {
+            .profile-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .profile-stats {
+                justify-content: center;
+            }
+
+            .gender-options {
+                justify-content: center;
+            }
+        }
+    </style>
+}
+
 @section Scripts {
-    <script>
-        $(document).ready(function() {
-            $('#profileForm').on('submit', function(e) {
-                e.preventDefault();
+<script>
+    $(function() {
+        // Handle profile image upload
+        $('#imageUpload').on('change', function(e) {
+            var file = e.target.files[0];
+            if (file) {
+                var formData = new FormData();
+                formData.append('image', file);
+
                 $.ajax({
-                    url: $(this).attr('action'),
+                    url: '/Account/UpdateProfileImage',
                     type: 'POST',
-                    data: $(this).serialize(),
+                    data: formData,
+                    processData: false,
+                    contentType: false,
                     success: function(response) {
                         if (response.success) {
-                            toastr.success('Cập nhật thông tin thành công');
+                            $('#profileImage').attr('src', response.imageUrl);
+                            utils.showToast('Cập nhật ảnh đại diện thành công', 'success');
                         } else {
-                            toastr.error(response.message || 'Có lỗi xảy ra');
+                            utils.showToast(response.message || 'Không thể cập nhật ảnh đại diện', 'error');
                         }
                     },
                     error: function() {
-                        toastr.error('Có lỗi xảy ra');
+                        utils.showToast('Có lỗi xảy ra khi cập nhật ảnh đại diện', 'error');
                     }
                 });
+            }
+        });
+
+        // Handle profile update
+        $('#profileForm').on('submit', function(e) {
+            e.preventDefault();
+            var form = $(this);
+            
+            // Validate form
+            var name = $('#name').val();
+            if (!name) {
+                utils.showToast('Vui lòng nhập họ tên', 'error');
+                return;
+            }
+
+            var phone = $('#phone').val();
+            if (phone && !/^[0-9]{10}$/.test(phone)) {
+                utils.showToast('Số điện thoại không hợp lệ', 'error');
+                return;
+            }
+
+            var dateOfBirth = $('#dateOfBirth').val();
+            if (dateOfBirth) {
+                var dob = new Date(dateOfBirth);
+                var today = new Date();
+                var age = today.getFullYear() - dob.getFullYear();
+                if (age < 18 || age > 100) {
+                    utils.showToast('Tuổi phải từ 18 đến 100', 'error');
+                    return;
+                }
+            }
+            
+            $.ajax({
+                url: form.attr('action'),
+                type: 'POST',
+                data: form.serialize(),
+                success: function(response) {
+                    if (response.success) {
+                        utils.showToast(response.message || 'Cập nhật thông tin thành công', 'success');
+                        // Reload page after 1 second to show updated info
+                        setTimeout(function() {
+                            window.location.reload();
+                        }, 1000);
+                    } else {
+                        utils.showToast(response.message || 'Có lỗi xảy ra', 'error');
+                    }
+                },
+                error: function() {
+                    utils.showToast('Có lỗi xảy ra khi cập nhật thông tin', 'error');
+                }
             });
         });
-    </script>
+
+        // Handle password change
+        $('#changePasswordForm').on('submit', function(e) {
+            e.preventDefault();
+            var form = $(this);
+            var newPassword = $('#newPassword').val();
+            var confirmPassword = $('#confirmPassword').val();
+
+            if (newPassword !== confirmPassword) {
+                utils.showToast('Mật khẩu xác nhận không khớp', 'error');
+                return;
+            }
+
+            $.ajax({
+                url: '/Account/ChangePassword',
+                type: 'POST',
+                data: form.serialize(),
+                success: function(response) {
+                    if (response.success) {
+                        utils.showToast('Đổi mật khẩu thành công', 'success');
+                        form[0].reset();
+                    } else {
+                        utils.showToast(response.message || 'Có lỗi xảy ra', 'error');
+                    }
+                },
+                error: function() {
+                    utils.showToast('Có lỗi xảy ra khi đổi mật khẩu', 'error');
+                }
+            });
+        });
+
+        // Phone number validation
+        $('#phone').on('input', function() {
+            var phone = $(this).val();
+            var phoneRegex = /^[0-9]{10}$/;
+            if (phone && !phoneRegex.test(phone)) {
+                $(this).addClass('is-invalid');
+            } else {
+                $(this).removeClass('is-invalid');
+            }
+        });
+
+        // Date of birth validation
+        $('#dateOfBirth').on('change', function() {
+            var dob = new Date($(this).val());
+            var today = new Date();
+            var age = today.getFullYear() - dob.getFullYear();
+            
+            if (age < 18 || age > 100) {
+                $(this).addClass('is-invalid');
+                utils.showToast('Tuổi phải từ 18 đến 100', 'error');
+            } else {
+                $(this).removeClass('is-invalid');
+            }
+        });
+    });
+</script>
 } 

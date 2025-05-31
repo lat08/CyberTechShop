@@ -37,5 +37,10 @@ namespace CyberTech.Models
         public List<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
 
         public virtual ICollection<Payment> Payments { get; set; }
+
+        public int? UserAddressID { get; set; }
+
+        [ForeignKey("UserAddressID")]
+        public virtual UserAddress UserAddress { get; set; }
     }
 }

@@ -1,0 +1,187 @@
+is_global = true
+build_property.TargetFramework = net8.0
+build_property.TargetPlatformMinVersion = 
+build_property.UsingMicrosoftNETSdkWeb = true
+build_property.ProjectTypeGuids = 
+build_property.InvariantGlobalization = 
+build_property.PlatformNeutralAssembly = 
+build_property.EnforceExtendedAnalyzerRules = 
+build_property._SupportedPlatformList = Linux,macOS,Windows
+build_property.RootNamespace = CyberTechShop
+build_property.RootNamespace = CyberTechShop
+build_property.ProjectDir = e:\OOAD\CyberTechShop\CyberTech\
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = 
+build_property.RazorLangVersion = 8.0
+build_property.SupportLocalizedComponentNames = 
+build_property.GenerateRazorMetadataSourceChecksumAttributes = 
+build_property.MSBuildProjectDirectory = e:\OOAD\CyberTechShop\CyberTech
+build_property._RazorSourceGeneratorDebug = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/Account/AccessDenied.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxBY2Nlc3NEZW5pZWQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/Account/Addresses.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxBZGRyZXNzZXMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/Account/ForgotPassword.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxGb3Jnb3RQYXNzd29yZC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/Account/Login.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxMb2dpbi5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/Account/Orders.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxPcmRlcnMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/Account/Profile.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxQcm9maWxlLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/Account/Register.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxSZWdpc3Rlci5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/Account/ResetPassword.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxSZXNldFBhc3N3b3JkLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/Account/ResetPasswordConfirmation.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxSZXNldFBhc3N3b3JkQ29uZmlybWF0aW9uLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/Account/Wishlist.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxXaXNobGlzdC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/Account/_AccountSidebar.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxfQWNjb3VudFNpZGViYXIuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/Cart/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ2FydFxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/Home/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/Home/Privacy.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxQcml2YWN5LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/Home/Product.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxQcm9kdWN0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/Home/t.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVx0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/Information/About.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSW5mb3JtYXRpb25cQWJvdXQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/Information/Careers.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSW5mb3JtYXRpb25cQ2FyZWVycy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/Information/Contact.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSW5mb3JtYXRpb25cQ29udGFjdC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/Information/FAQ.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSW5mb3JtYXRpb25cRkFRLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/Information/InstallmentGuide.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSW5mb3JtYXRpb25cSW5zdGFsbG1lbnRHdWlkZS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/Information/News.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSW5mb3JtYXRpb25cTmV3cy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/Information/Payment.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSW5mb3JtYXRpb25cUGF5bWVudC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/Information/PaymentGuide.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSW5mb3JtYXRpb25cUGF5bWVudEd1aWRlLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/Information/Privacy.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSW5mb3JtYXRpb25cUHJpdmFjeS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/Information/Shipping.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSW5mb3JtYXRpb25cU2hpcHBpbmcuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/Information/ShoppingGuide.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSW5mb3JtYXRpb25cU2hvcHBpbmdHdWlkZS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/Information/Warranty.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSW5mb3JtYXRpb25cV2FycmFudHkuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/ProductManage/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUHJvZHVjdE1hbmFnZVxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/Product/Detail.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUHJvZHVjdFxEZXRhaWwuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/Product/ProductDetail.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUHJvZHVjdFxQcm9kdWN0RGV0YWlsLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/Product/ProductList.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUHJvZHVjdFxQcm9kdWN0TGlzdC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/Product/Search.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUHJvZHVjdFxTZWFyY2guY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/Shared/Admin/_Layout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXEFkbWluXF9MYXlvdXQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/Shared/Error.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXEVycm9yLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/Shared/Product/_ProductCard.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXFByb2R1Y3RcX1Byb2R1Y3RDYXJkLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/Shared/_AccountSidebar.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9BY2NvdW50U2lkZWJhci5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/Shared/_ProductCard.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9Qcm9kdWN0Q2FyZC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/Shared/_ValidationScriptsPartial.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9WYWxpZGF0aW9uU2NyaXB0c1BhcnRpYWwuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/_ViewImports.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdJbXBvcnRzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/_ViewStart.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdTdGFydC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[e:/OOAD/CyberTechShop/CyberTech/Views/Shared/_Layout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9MYXlvdXQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = b-vf45e865eo

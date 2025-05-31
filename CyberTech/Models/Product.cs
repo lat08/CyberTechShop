@@ -59,6 +59,30 @@ namespace CyberTech.Models
         [Required]
         public DateTime UpdatedAt { get; set; } = DateTime.Now;
 
+        // Calculate the effective price based on sale options
+        public decimal GetEffectivePrice()
+        {
+            // If SalePrice is directly set, use it
+            if (SalePrice.HasValue)
+            {
+                return SalePrice.Value;
+            }
+            // If SalePercentage is set, calculate the sale price
+            else if (SalePercentage.HasValue)
+            {
+                return Price * (1 - (SalePercentage.Value / 100));
+            }
+            // Otherwise use the regular price
+            else
+            {
+                return Price;
+            }
+        }
+
+        // Check if the product is on sale
+        [NotMapped]
+        public bool IsOnSale => (SalePrice.HasValue && SalePrice.Value < Price) || SalePercentage.HasValue;
+
         public virtual ICollection<ProductImage> ProductImages { get; set; }
         public virtual ICollection<ProductAttributeValue> ProductAttributeValues { get; set; }
         public virtual ICollection<Wishlist> Wishlists { get; set; }

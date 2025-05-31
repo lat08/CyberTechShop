@@ -23,5 +23,20 @@ namespace CyberTech.Services
         Task<bool> InvalidatePasswordResetTokenAsync(string token);
         Task<bool> IsPasswordResetTokenExpiredAsync(string token);
         Task<int> GetPasswordResetAttemptsAsync(string email);
+        Task<bool> UpdateProfileAsync(string email, string name, string phone, byte? gender, DateTime? dateOfBirth);
+        Task<int> GetAddressCountAsync(int userId);
+        Task<bool> CanAddMoreAddressesAsync(int userId);
+        Task<List<UserAddress>> GetUserAddressesAsync(int userId);
+        Task<UserAddress> GetAddressByIdAsync(int addressId, int userId);
+        Task<bool> AddAddressAsync(UserAddress address);
+        Task<bool> UpdateAddressAsync(UserAddress address);
+        Task<bool> DeleteAddressAsync(int addressId, int userId);
+        Task<bool> SetPrimaryAddressAsync(int addressId, int userId);
+
+        // Wishlist methods
+        Task<List<WishlistItem>> GetWishlistItems(string userId);
+        Task<bool> AddToWishlist(string userId, int productId);
+        Task<bool> RemoveFromWishlist(string userId, int productId);
+        Task<bool> IsInWishlist(string userId, int productId);
     }
 }

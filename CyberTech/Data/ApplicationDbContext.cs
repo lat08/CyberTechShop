@@ -17,7 +17,6 @@ namespace CyberTech.Data
         public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
         public DbSet<Category> Categories { get; set; }
         public DbSet<WishlistItem> WishlistItems { get; set; }
-
         public DbSet<CategoryAttributes> CategoryAttributes { get; set; }
         public DbSet<Subcategory> Subcategories { get; set; }
         public DbSet<SubSubcategory> SubSubcategories { get; set; }
@@ -38,32 +37,31 @@ namespace CyberTech.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Configure table names for all entities
             modelBuilder.Entity<User>().ToTable("Users");
             modelBuilder.Entity<UserAuthMethod>().ToTable("UserAuthMethods");
             modelBuilder.Entity<Rank>().ToTable("Ranks");
-            modelBuilder.Entity<UserAddress>().ToTable("UserAddress");
+            modelBuilder.Entity<UserAddress>().ToTable("UserAddresses");
             modelBuilder.Entity<PasswordResetToken>().ToTable("PasswordResetTokens");
             modelBuilder.Entity<Category>().ToTable("Category");
             modelBuilder.Entity<CategoryAttributes>().ToTable("CategoryAttributes");
             modelBuilder.Entity<Subcategory>().ToTable("Subcategory");
             modelBuilder.Entity<SubSubcategory>().ToTable("SubSubcategory");
-            modelBuilder.Entity<Product>().ToTable("Product");
-            modelBuilder.Entity<ProductImage>().ToTable("ProductImage");
+            modelBuilder.Entity<Product>().ToTable("Products");
+            modelBuilder.Entity<ProductImage>().ToTable("ProductImages");
             modelBuilder.Entity<ProductAttribute>().ToTable("ProductAttribute");
             modelBuilder.Entity<AttributeValue>().ToTable("AttributeValue");
             modelBuilder.Entity<ProductAttributeValue>().ToTable("ProductAttributeValue");
-            modelBuilder.Entity<Wishlist>().ToTable("Wishlist");
-            modelBuilder.Entity<Cart>().ToTable("Cart");
-            modelBuilder.Entity<CartItem>().ToTable("CartItem");
+            modelBuilder.Entity<Wishlist>().ToTable("Wishlists");
+            modelBuilder.Entity<Cart>().ToTable("Carts");
+            modelBuilder.Entity<CartItem>().ToTable("CartItems");
             modelBuilder.Entity<Voucher>().ToTable("Vouchers");
+            modelBuilder.Entity<VoucherProducts>().ToTable("VoucherProducts");
             modelBuilder.Entity<Order>().ToTable("Orders");
             modelBuilder.Entity<OrderItem>().ToTable("OrderItems");
-            modelBuilder.Entity<Payment>().ToTable("Payment");
-            modelBuilder.Entity<Review>().ToTable("Review");
-            modelBuilder.Entity<WishlistItem>().ToTable("WishlistItem");
+            modelBuilder.Entity<Payment>().ToTable("Payments");
+            modelBuilder.Entity<Review>().ToTable("Reviews");
+            modelBuilder.Entity<WishlistItem>().ToTable("WishlistItems");
 
-            // Configure VoucherProducts composite key
             modelBuilder.Entity<VoucherProducts>()
                 .HasKey(vp => new { vp.VoucherID, vp.ProductID });
 
@@ -77,37 +75,34 @@ namespace CyberTech.Data
                 .WithMany(p => p.VoucherProducts)
                 .HasForeignKey(vp => vp.ProductID);
 
-            // Cấu hình khóa chính cho bảng ProductAttributeValue
             modelBuilder.Entity<ProductAttributeValue>()
                 .HasKey(pav => new { pav.ProductID, pav.ValueID });
 
-            // Cấu hình mối quan hệ nhiều-nhiều giữa Product và AttributeValue
             modelBuilder.Entity<ProductAttributeValue>()
                 .HasOne(pav => pav.AttributeValue)
                 .WithMany(av => av.ProductAttributeValues)
                 .HasForeignKey(pav => pav.ValueID);
 
-
-            // Cấu hình các trường tính toán
-            modelBuilder.Entity<Order>().ToTable("Orders");
             modelBuilder.Entity<Order>()
                 .HasKey(o => o.OrderID);
+
             modelBuilder.Entity<Order>()
                 .HasOne(o => o.User)
-                .WithMany(c => c.Orders)
+                .WithMany(u => u.Orders)
                 .HasForeignKey(o => o.UserID);
+
             modelBuilder.Entity<Order>()
                 .HasMany(o => o.OrderItems)
                 .WithOne(oi => oi.Order)
                 .HasForeignKey(oi => oi.OrderID);
+
             modelBuilder.Entity<Order>()
                 .Property(o => o.Status)
                 .HasDefaultValue("Pending");
 
-            // Thêm cấu hình cho OrderItem
-            modelBuilder.Entity<OrderItem>().ToTable("OrderItem");
             modelBuilder.Entity<OrderItem>()
                 .HasKey(oi => oi.OrderItemID);
+
             modelBuilder.Entity<OrderItem>()
                 .HasOne(oi => oi.Product)
                 .WithMany(p => p.OrderItems)

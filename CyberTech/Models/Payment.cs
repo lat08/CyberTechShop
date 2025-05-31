@@ -24,8 +24,7 @@ namespace CyberTech.Models
         [StringLength(50)]
         public string PaymentStatus { get; set; } = "Pending";
 
-        [Required]
-        public DateTime PaymentDate { get; set; } = DateTime.Now;
+        public DateTime? PaymentDate { get; set; } = DateTime.Now;
 
         // Navigation property
         [ForeignKey("OrderID")]

@@ -4,26 +4,26 @@ GO
 
 -- Lệnh Xóa 24 Table có trong sql
 -- Nhóm 1: Các bảng phụ thuộc nhiều cấp (xóa trước)
-DROP TABLE IF EXISTS Review;
+DROP TABLE IF EXISTS Reviews;
 DROP TABLE IF EXISTS OrderItems;
-DROP TABLE IF EXISTS CartItem;
-DROP TABLE IF EXISTS WishlistItem;
-DROP TABLE IF EXISTS ProductAttributeValue;
-DROP TABLE IF EXISTS ProductImage;
+DROP TABLE IF EXISTS CartItems;
+DROP TABLE IF EXISTS WishlistItems;
+DROP TABLE IF EXISTS ProductAttributeValues;
+DROP TABLE IF EXISTS ProductImages;
 DROP TABLE IF EXISTS VoucherProducts;
 
 -- Nhóm 2: Các bảng phụ thuộc cấp trung gian
-DROP TABLE IF EXISTS Wishlist;
-DROP TABLE IF EXISTS Payment;
-DROP TABLE IF EXISTS Shipping;
+DROP TABLE IF EXISTS Wishlists;
+DROP TABLE IF EXISTS Payments;
+DROP TABLE IF EXISTS Shippings;
 
 -- Nhóm 3: Các bảng phụ thuộc trực tiếp vào Product
-DROP TABLE IF EXISTS Product;
+DROP TABLE IF EXISTS Products;
 
 -- Nhóm 4: Các bảng phụ thuộc vào Users và Orders
 DROP TABLE IF EXISTS Orders;
-DROP TABLE IF EXISTS Cart;
-DROP TABLE IF EXISTS UserAddress;
+DROP TABLE IF EXISTS Carts;
+DROP TABLE IF EXISTS UserAddresses;
 DROP TABLE IF EXISTS PasswordResetTokens;
 DROP TABLE IF EXISTS UserAuthMethods;
 
@@ -33,21 +33,20 @@ DROP TABLE IF EXISTS Subcategory;
 DROP TABLE IF EXISTS CategoryAttributes;
 
 -- Nhóm 6: Các bảng phụ thuộc vào ProductAttribute
-DROP TABLE IF EXISTS AttributeValue;
+DROP TABLE IF EXISTS AttributeValues;
 
 -- Nhóm 7: Các bảng độc lập (xóa cuối)
 DROP TABLE IF EXISTS Users;
 DROP TABLE IF EXISTS Category;
-DROP TABLE IF EXISTS ProductAttribute;
+DROP TABLE IF EXISTS ProductAttributes;
 DROP TABLE IF EXISTS Vouchers;
 DROP TABLE IF EXISTS Ranks;
-DROP TABLE IF EXISTS Staff;
+DROP TABLE IF EXISTS Staffs;
 
 
 -- =======================================================
 -- NHÓM 1: Các bảng độc lập (không có foreign key)
 -- =======================================================
-
 CREATE TABLE Ranks (
     RankId          INT             IDENTITY(1,1)   NOT NULL PRIMARY KEY,
     RankName        NVARCHAR(50)                    NOT NULL UNIQUE,
@@ -56,7 +55,8 @@ CREATE TABLE Ranks (
     PriorityLevel   INT                             NOT NULL CHECK (PriorityLevel >= 0),
     Description     NVARCHAR(255)                   NULL
 );
-INSERT INTO [shoptmdt3].[dbo].[Ranks] (
+
+INSERT INTO Ranks (
     RankName, 
     MinTotalSpent, 
     DiscountPercent, 
@@ -68,7 +68,7 @@ INSERT INTO [shoptmdt3].[dbo].[Ranks] (
     (N'Vàng', 2000000.00, 10.00, 3, N'Cho khách hàng trung thành với chi tiêu đáng kể, được giảm giá tốt hơn.'),
     (N'Bạch Kim', 5000000.00, 15.00, 4, N'Cho khách hàng chi tiêu cao với quyền lợi cao cấp.'),
     (N'Kim Cương', 10000000.00, 20.00, 5, N'Xếp hạng cao nhất với quyền lợi độc quyền và giảm giá tối đa.');
--- 3. Bảng Category
+
 CREATE TABLE Category (
     CategoryID      INT             IDENTITY(1,1)   NOT NULL PRIMARY KEY,
     Name            NVARCHAR(100)                   NOT NULL UNIQUE,
@@ -82,7 +82,7 @@ CREATE TABLE ProductAttribute (
     AttributeType   NVARCHAR(50)                     NOT NULL
 );
 
--- 5. Bảng Vouchers
+-- Bảng Vouchers
 CREATE TABLE Vouchers (
     VoucherID       INT             IDENTITY(1,1)   NOT NULL PRIMARY KEY,
     Code            VARCHAR(50)                     NOT NULL UNIQUE,
@@ -93,13 +93,15 @@ CREATE TABLE Vouchers (
     ValidFrom       DATETIME                        NOT NULL,
     ValidTo         DATETIME                        NOT NULL,
     IsActive        BIT                             NOT NULL DEFAULT 1,
-    AppliesTo VARCHAR(10) NOT NULL DEFAULT 'Order' CHECK (AppliesTo IN ('Order', 'Product')),
+    AppliesTo       VARCHAR(10)                     NOT NULL DEFAULT 'Order' CHECK (AppliesTo IN ('Order', 'Product')),
     CHECK (ValidTo > ValidFrom)
 );
 
+-- =======================================================
+-- NHÓM 2: Các bảng phụ thuộc cấp 1
+-- =======================================================
 
-
--- 6. Bảng CategoryAttributes (phụ thuộc Category)
+-- Bảng CategoryAttributes (unchanged, already plural)
 CREATE TABLE CategoryAttributes (
     CategoryAttributeID INT IDENTITY(1,1) PRIMARY KEY,
     CategoryID INT NOT NULL,
@@ -116,6 +118,7 @@ CREATE TABLE Subcategory (
     FOREIGN KEY (CategoryID) REFERENCES Category(CategoryID)
 );
 
+
 -- 8. Bảng AttributeValue (phụ thuộc ProductAttribute)
 CREATE TABLE AttributeValue (
     ValueID         INT             IDENTITY(1,1)   NOT NULL PRIMARY KEY,
@@ -124,7 +127,8 @@ CREATE TABLE AttributeValue (
     FOREIGN KEY (AttributeID) REFERENCES ProductAttribute(AttributeID) ON DELETE CASCADE
 );
 
--- 9. Bảng Users (phụ thuộc Ranks)
+
+-- Bảng Users (unchanged, already plural)
 CREATE TABLE Users (
     UserID          INT             IDENTITY(1,1)   NOT NULL PRIMARY KEY,
     Name            NVARCHAR(100)                   NOT NULL,
@@ -140,6 +144,8 @@ CREATE TABLE Users (
     EmailVerified   BIT                             NOT NULL DEFAULT 0,
     UserStatus      VARCHAR(20)                     NOT NULL DEFAULT 'Active' CHECK (UserStatus IN ('Active', 'Inactive', 'Suspended')),
     CreatedAt       DATETIME                        NOT NULL DEFAULT GETDATE(),
+    Gender          TINYINT                         NULL, -- 1=Male, 2=Female
+    DateOfBirth     DATE                            NULL,
     FOREIGN KEY (RankId) REFERENCES Ranks(RankId) ON DELETE SET NULL
 );
 
@@ -151,7 +157,7 @@ CREATE TABLE SubSubcategory (
     FOREIGN KEY (SubcategoryID) REFERENCES Subcategory(SubcategoryID) ON DELETE CASCADE
 );
 
--- 11. Bảng UserAuthMethods (phụ thuộc Users)
+-- Bảng UserAuthMethods (unchanged, already plural)
 CREATE TABLE UserAuthMethods (
     ID              INT             IDENTITY(1,1)   NOT NULL PRIMARY KEY,
     UserID          INT                             NOT NULL,
@@ -162,7 +168,7 @@ CREATE TABLE UserAuthMethods (
     CONSTRAINT UQ_UserAuthMethods UNIQUE (UserID, AuthType, AuthKey)
 );
 
--- 12. Bảng PasswordResetTokens (phụ thuộc Users)
+-- Bảng PasswordResetTokens (unchanged, already plural)
 CREATE TABLE PasswordResetTokens (
     ID              INT             IDENTITY(1,1)   NOT NULL PRIMARY KEY,
     UserID          INT                             NOT NULL,
@@ -173,8 +179,8 @@ CREATE TABLE PasswordResetTokens (
     FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE
 );
 
--- 13. Bảng UserAddress (phụ thuộc Users)
-CREATE TABLE UserAddress (
+-- Bảng UserAddresses (changed from UserAddress)
+CREATE TABLE UserAddresses (
     AddressID       INT             IDENTITY(1,1)   NOT NULL PRIMARY KEY,
     UserID          INT                             NOT NULL,
     RecipientName   NVARCHAR(100)                   NOT NULL,
@@ -188,33 +194,32 @@ CREATE TABLE UserAddress (
     FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE
 );
 
--- 14. Bảng Cart (phụ thuộc Users)
-CREATE TABLE Cart (
+-- Bảng Carts (changed from Cart)
+CREATE TABLE Carts (
     CartID          INT             IDENTITY(1,1)   NOT NULL PRIMARY KEY,
     UserID          INT                             NOT NULL,
     TotalPrice      DECIMAL(18,2)                   NOT NULL DEFAULT 0.00 CHECK (TotalPrice >= 0),
     FOREIGN KEY (UserID) REFERENCES Users(UserID)
 );
 
--- 15. Bảng Orders (phụ thuộc Users)
+-- Bảng Orders (unchanged, already plural)
 CREATE TABLE Orders (
     OrderID         INT             IDENTITY(1,1)   NOT NULL PRIMARY KEY,
     UserID          INT                             NOT NULL,
     TotalPrice      DECIMAL(18,2)                   NOT NULL DEFAULT 0.00 CHECK (TotalPrice >= 0),
     DiscountAmount  DECIMAL(18,2)                   NOT NULL DEFAULT 0.00 CHECK (DiscountAmount >= 0),
-    FinalPrice      AS (TotalPrice - DiscountAmount) PERSISTED,
+    FinalPrice      DECIMAL(18,2)                   NOT NULL DEFAULT 0.00 CHECK (FinalPrice >= 0),  
     Status          VARCHAR(50)                     NOT NULL DEFAULT 'Pending' CHECK (Status IN ('Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Returned')),
     CreatedAt       DATETIME                        NOT NULL DEFAULT GETDATE(),
     FOREIGN KEY (UserID) REFERENCES Users(UserID)
 );
 
-
 -- =======================================================
--- NHÓM 4: Các bảng phụ thuộc cấp 3
+-- NHÓM 3: Các bảng phụ thuộc cấp 2
 -- =======================================================
 
--- 16. Bảng Product (phụ thuộc SubSubcategory)
-CREATE TABLE Product (
+-- Bảng Products (changed from Product)
+CREATE TABLE Products (
     ProductID       INT             IDENTITY(1,1)   NOT NULL PRIMARY KEY,
     Name            NVARCHAR(100)                   NOT NULL,
     Description     TEXT                            NULL,
@@ -229,97 +234,100 @@ CREATE TABLE Product (
     UpdatedAt       DATETIME                       NOT NULL DEFAULT GETDATE(),
     FOREIGN KEY (SubSubcategoryID) REFERENCES SubSubcategory(SubSubcategoryID)
 );
+
+-- Bảng VoucherProducts (unchanged, already plural)
 CREATE TABLE VoucherProducts (
     VoucherID INT NOT NULL,
     ProductID INT NOT NULL,
     PRIMARY KEY (VoucherID, ProductID),
     FOREIGN KEY (VoucherID) REFERENCES Vouchers(VoucherID),
-    FOREIGN KEY (ProductID) REFERENCES Product(ProductID)
+    FOREIGN KEY (ProductID) REFERENCES Products(ProductID)
 );
--- 17. Bảng Payment (phụ thuộc Orders)
 
-CREATE TABLE Payment (
+-- Bảng Payments (changed from Payment)
+CREATE TABLE Payments (
     PaymentID       INT             IDENTITY(1,1)   NOT NULL PRIMARY KEY,
     OrderID         INT                             NOT NULL,
     Amount          DECIMAL(18,2)                   NOT NULL CHECK (Amount >= 0),
-    PaymentMethod   NVARCHAR(50)                     NOT NULL CHECK (PaymentMethod IN ('COD', 'VNPay', 'Momo')),
+    PaymentMethod   NVARCHAR(50)                    NOT NULL CHECK (PaymentMethod IN ('COD', 'VNPay', 'Momo')),
     PaymentStatus   VARCHAR(50)                     NOT NULL DEFAULT 'Pending' CHECK (PaymentStatus IN ('Pending', 'Completed', 'Failed', 'Refunded')),
     PaymentDate     DATETIME                        NOT NULL DEFAULT GETDATE(),
     FOREIGN KEY (OrderID) REFERENCES Orders(OrderID)
 );
 
 -- =======================================================
--- NHÓM 5: Các bảng phụ thuộc cấp 4 (phụ thuộc Product)
+-- NHÓM 4: Các bảng phụ thuộc cấp 3
 -- =======================================================
 
--- 19. Bảng ProductImage (phụ thuộc Product)
-CREATE TABLE ProductImage (
+-- Bảng ProductImages (changed from ProductImage)
+CREATE TABLE ProductImages (
     ImageID         INT             IDENTITY(1,1)   NOT NULL PRIMARY KEY,
     ProductID       INT                             NOT NULL,
     ImageURL        VARCHAR(255)                    NOT NULL,
     IsPrimary       BIT                             NOT NULL DEFAULT 0,
     DisplayOrder    INT                             NOT NULL DEFAULT 0,
     CreatedAt       DATETIME                        NOT NULL DEFAULT GETDATE(),
-    FOREIGN KEY (ProductID) REFERENCES Product(ProductID)
+    FOREIGN KEY (ProductID) REFERENCES Products(ProductID)
 );
 
--- 20. Bảng ProductAttributeValue (phụ thuộc Product và AttributeValue)
+-- Bảng ProductAttributeValues (changed from ProductAttributeValue)
 CREATE TABLE ProductAttributeValue (
     ProductID       INT                             NOT NULL,
     ValueID         INT                             NOT NULL,
     PRIMARY KEY (ProductID, ValueID),
-    FOREIGN KEY (ProductID) REFERENCES Product(ProductID) ON DELETE CASCADE,
+    FOREIGN KEY (ProductID) REFERENCES Products(ProductID) ON DELETE CASCADE,
     FOREIGN KEY (ValueID) REFERENCES AttributeValue(ValueID) ON DELETE CASCADE
 );
 
--- 21. Bảng Wishlist (phụ thuộc Users và Product)
-CREATE TABLE Wishlist (
+-- Bảng Wishlists (changed from Wishlist)
+CREATE TABLE Wishlists (
     WishlistID      INT             IDENTITY(1,1)   NOT NULL PRIMARY KEY,
     UserID          INT                             NOT NULL,
     ProductID       INT                             NOT NULL,
     AddedDate       DATETIME                        NOT NULL DEFAULT GETDATE(),
     FOREIGN KEY (UserID) REFERENCES Users(UserID),
-    FOREIGN KEY (ProductID) REFERENCES Product(ProductID),
-    CONSTRAINT UK_Wishlist UNIQUE (UserID, ProductID)
+    FOREIGN KEY (ProductID) REFERENCES Products(ProductID),
+    CONSTRAINT UK_Wishlists UNIQUE (UserID, ProductID)
 );
-CREATE TABLE WishlistItem (
+
+-- Bảng WishlistItems (changed from WishlistItem)
+CREATE TABLE WishlistItems (
     WishlistItemID  INT             IDENTITY(1,1)   NOT NULL PRIMARY KEY,
     WishlistID      INT                             NOT NULL,
     ProductID       INT                             NOT NULL,
     AddedDate       DATETIME                        NOT NULL DEFAULT GETDATE(),
     Quantity        INT                             NOT NULL DEFAULT 1,
-    FOREIGN KEY (WishlistID) REFERENCES Wishlist(WishlistID),
-    FOREIGN KEY (ProductID) REFERENCES Product(ProductID)
+    FOREIGN KEY (WishlistID) REFERENCES Wishlists(WishlistID),
+    FOREIGN KEY (ProductID) REFERENCES Products(ProductID)
 );
 
--- 22. Bảng CartItem (phụ thuộc Cart và Product)
-CREATE TABLE CartItem (
+-- Bảng CartItems (changed from CartItem)
+CREATE TABLE CartItems (
     CartItemID      INT             IDENTITY(1,1)   NOT NULL PRIMARY KEY,
     CartID          INT                             NOT NULL,
     ProductID       INT                             NOT NULL,
     Quantity        INT                             NOT NULL CHECK (Quantity > 0),
     Subtotal        DECIMAL(18,2)                   NOT NULL CHECK (Subtotal >= 0),
-    FOREIGN KEY (CartID) REFERENCES Cart(CartID),
-    FOREIGN KEY (ProductID) REFERENCES Product(ProductID)
+    FOREIGN KEY (CartID) REFERENCES Carts(CartID),
+    FOREIGN KEY (ProductID) REFERENCES Products(ProductID)
 );
 
--- 23. Bảng OrderItems (phụ thuộc Orders và Product)
-
+-- Bảng OrderItems (unchanged, already plural)
 CREATE TABLE OrderItems (
     OrderItemID     INT             IDENTITY(1,1)   NOT NULL PRIMARY KEY,
     OrderID         INT                             NOT NULL,
     ProductID       INT                             NOT NULL,
     Quantity        INT                             NOT NULL CHECK (Quantity > 0),
     UnitPrice       DECIMAL(18,2)                   NOT NULL CHECK (UnitPrice >= 0),
-    Subtotal        AS (UnitPrice * Quantity) PERSISTED,
+    Subtotal        DECIMAL(18,2)                   NOT NULL CHECK (Subtotal >= 0),
     DiscountAmount  DECIMAL(18,2)                   NOT NULL DEFAULT 0.00 CHECK (DiscountAmount >= 0),
-    FinalSubtotal   AS (UnitPrice * Quantity - DiscountAmount) PERSISTED,
+    FinalSubtotal   DECIMAL(18,2)                   NOT NULL CHECK (FinalSubtotal >= 0),
     FOREIGN KEY (OrderID) REFERENCES Orders(OrderID),
-    FOREIGN KEY (ProductID) REFERENCES Product(ProductID)
+    FOREIGN KEY (ProductID) REFERENCES Products(ProductID)
 );
 
--- 24. Bảng Review (phụ thuộc Users và Product)
-CREATE TABLE Review (
+-- Bảng Reviews (changed from Review)
+CREATE TABLE Reviews (
     ReviewID        INT             IDENTITY(1,1)   NOT NULL PRIMARY KEY,
     UserID          INT                             NOT NULL,
     ProductID       INT                             NOT NULL,
@@ -327,7 +335,7 @@ CREATE TABLE Review (
     Comment         TEXT                            NULL,
     CreatedAt       DATETIME                        NOT NULL DEFAULT GETDATE(),
     FOREIGN KEY (UserID) REFERENCES Users(UserID),
-    FOREIGN KEY (ProductID) REFERENCES Product(ProductID)
+    FOREIGN KEY (ProductID) REFERENCES Products(ProductID)
 );
 
 --------------------------------- THÊM DỮ LIỆU -------------------------------------
@@ -348,7 +356,7 @@ VALUES
     (N'Ghế - Bàn', 'Chairs and desks'),
     (N'Phần mềm, mạng', 'Software and networking'),
     ('Handheld, Console', 'Handheld and console gaming'),
-    (N'Phụ kiện (Hub, sạc, cáp..)', 'Accessories'),
+    (N'Phụ kiện (Hub, sạc, cáp..)', 'Accessory'),
     (N'Dịch vụ và thông tin khác', 'Services and other information');
 
 -- Thêm Dữ Liệu Vào Danh Mục Phụ
@@ -359,7 +367,7 @@ VALUES
     (N'Giá bán', 'Price ranges', 1),
     ('CPU Intel - AMD', 'Processor types', 1),
     (N'Nhu cầu sử dụng', 'Usage needs', 1),
-    (N'Linh phụ kiện Laptop', 'Laptop accessories', 1),
+    (N'Linh phụ kiện Laptop', 'Laptop accessory', 1),
     ('Laptop ASUS', 'ASUS laptops', 1),
     ('Laptop ACER', 'ACER laptops', 1),
     ('Laptop MSI', 'MSI laptops', 1),
@@ -370,14 +378,14 @@ VALUES
     -- Category 'Laptop Gaming' (CategoryID = 2)
     (N'Thương hiệu', 'Gaming laptop brands', 2),
     (N'Giá bán', 'Price ranges', 2),
-    ('ACER | PREDATOR', 'ACER gaming series', 2),
-    ('ASUS | ROG Gaming', 'ASUS gaming series', 2),
-    ('MSI Gaming', 'MSI gaming series', 2),
-    ('LENOVO Gaming', 'Lenovo gaming series', 2),
-    ('Dell Gaming', 'Dell gaming series', 2),
-    ('HP Gaming', 'HP gaming series', 2),
+    ('ACER | PREDATOR', 'ACER gaming sery', 2),
+    ('ASUS | ROG Gaming', 'ASUS gaming sery', 2),
+    ('MSI Gaming', 'MSI gaming sery', 2),
+    ('LENOVO Gaming', 'Lenovo gaming sery', 2),
+    ('Dell Gaming', 'Dell gaming sery', 2),
+    ('HP Gaming', 'HP gaming sery', 2),
     (N'Cấu hình', 'Configurations', 2),
-    (N'Linh - Phụ kiện Laptop', 'Laptop accessories', 2),
+    (N'Linh - Phụ kiện Laptop', 'Laptop accessory', 2),
 
     -- Category 'PC GVN' (CategoryID = 3)
     (N'KHUYẾN MÃI HOT', 'Hot promotions', 3),
@@ -390,7 +398,7 @@ VALUES
     (N'Phần mềm bản quyền', 'Licensed software', 3),
 
     -- Category 'Main, CPU, VGA' (CategoryID = 4)
-    ('VGA RTX 50 SERIES', 'RTX 50 series GPUs', 4),
+    ('VGA RTX 50 SERy', 'RTX 50 sery GPUs', 4),
     ('VGA (Trên 12 GB VRAM)', 'GPUs with over 12GB VRAM', 4),
     ('VGA (Dưới 12 GB VRAM)', 'GPUs with under 12GB VRAM', 4),
     ('VGA - Card màn hình', 'Graphics cards', 4),
@@ -404,7 +412,7 @@ VALUES
     ('Case - Theo giá', 'Cases by price', 5),
     (N'Nguồn - Theo Hãng', 'Power supplies by brand', 5),
     (N'Nguồn - Theo công suất', 'Power supplies by wattage', 5),
-    (N'Phụ kiện PC', 'PC accessories', 5),
+    (N'Phụ kiện PC', 'PC accessory', 5),
     (N'Loại tản nhiệt', 'Cooling types', 5),
 
     -- Category 'Ổ cứng, RAM, Thẻ nhớ' (CategoryID = 6)
@@ -432,7 +440,7 @@ VALUES
     (N'Màn hình cong', 'Curved monitors', 8),
     (N'Kích thước', 'Screen sizes', 8),
     (N'Màn hình đồ họa', 'Graphic design monitors', 8),
-    (N'Phụ kiện màn hình', 'Monitor accessories', 8),
+    (N'Phụ kiện màn hình', 'Monitor accessory', 8),
     (N'Màn hình di động', 'Portable monitors', 8),
     (N'Màn hình Oled', 'OLED monitors', 8),
 
@@ -440,7 +448,7 @@ VALUES
     (N'Thương hiệu', 'Keyboard brands', 9),
     (N'Giá tiền', 'Price ranges', 9),
     (N'Kết nối', 'Connection types', 9),
-    (N'Phụ kiện bàn phím cơ', 'Mechanical keyboard accessories', 9),
+    (N'Phụ kiện bàn phím cơ', 'Mechanical keyboard accessory', 9),
 
     -- Category 'Chuột + Lót chuột' (CategoryID = 10)
     (N'Thương hiệu chuột', 'Mouse brands', 10),
@@ -531,29 +539,29 @@ SubSubcategoryData AS (
         (N'Ổ cứng di động', 'Portable hard drives', N'Linh phụ kiện Laptop'),
         
         -- Laptop ASUS
-        ('ASUS OLED Series', 'ASUS OLED laptops', 'Laptop ASUS'),
-        ('Vivobook Series', 'ASUS Vivobook laptops', 'Laptop ASUS'),
-        ('Zenbook Series', 'ASUS Zenbook laptops', 'Laptop ASUS'),
+        ('ASUS OLED Sery', 'ASUS OLED laptops', 'Laptop ASUS'),
+        ('Vivobook Sery', 'ASUS Vivobook laptops', 'Laptop ASUS'),
+        ('Zenbook Sery', 'ASUS Zenbook laptops', 'Laptop ASUS'),
         
         -- Laptop ACER
-        ('Aspire Series', 'ACER Aspire laptops', 'Laptop ACER'),
-        ('Swift Series', 'ACER Swift laptops', 'Laptop ACER'),
+        ('Aspire Sery', 'ACER Aspire laptops', 'Laptop ACER'),
+        ('Swift Sery', 'ACER Swift laptops', 'Laptop ACER'),
         
         -- Laptop MSI
-        ('Modern Series', 'MSI Modern laptops', 'Laptop MSI'),
-        ('Prestige Series', 'MSI Prestige laptops', 'Laptop MSI'),
+        ('Modern Sery', 'MSI Modern laptops', 'Laptop MSI'),
+        ('Prestige Sery', 'MSI Prestige laptops', 'Laptop MSI'),
         
         -- Laptop Lenovo
-        ('Thinkbook Series', 'Lenovo Thinkbook laptops', 'Laptop Lenovo'),
-        ('Ideapad Series', 'Lenovo Ideapad laptops', 'Laptop Lenovo'),
-        ('Thinkpad Series', 'Lenovo Thinkpad laptops', 'Laptop Lenovo'),
-        ('Yoga Series', 'Lenovo Yoga laptops', 'Laptop Lenovo'),
+        ('Thinkbook Sery', 'Lenovo Thinkbook laptops', 'Laptop Lenovo'),
+        ('Ideapad Sery', 'Lenovo Ideapad laptops', 'Laptop Lenovo'),
+        ('Thinkpad Sery', 'Lenovo Thinkpad laptops', 'Laptop Lenovo'),
+        ('Yoga Sery', 'Lenovo Yoga laptops', 'Laptop Lenovo'),
         
         -- Laptop Dell
-        ('Inspirion Series', 'Dell Inspirion laptops', 'Laptop Dell'),
-        ('Vostro Series', 'Dell Vostro laptops', 'Laptop Dell'),
-        ('Latitude Series', 'Dell Latitude laptops', 'Laptop Dell'),
-        ('XPS Series', 'Dell XPS laptops', 'Laptop Dell'),
+        ('Inspirion Sery', 'Dell Inspirion laptops', 'Laptop Dell'),
+        ('Vostro Sery', 'Dell Vostro laptops', 'Laptop Dell'),
+        ('Latitude Sery', 'Dell Latitude laptops', 'Laptop Dell'),
+        ('XPS Sery', 'Dell XPS laptops', 'Laptop Dell'),
         
         -- Laptop AI
         ('Laptop AI', 'AI laptops', 'Laptop AI')
@@ -595,45 +603,45 @@ SubSubcategoryData AS (
         (N'Từ 20 đến 25 triệu', 'Gaming laptops from 20 to 25 million', N'Giá bán'),
         (N'Từ 25 đến 30 triệu', 'Gaming laptops from 25 to 30 million', N'Giá bán'),
         (N'Trên 30 triệu', 'Gaming laptops over 30 million', N'Giá bán'),
-        ('Gaming RTX 50 Series', 'Gaming laptops with RTX 50 Series', N'Giá bán'),
+        ('Gaming RTX 50 Sery', 'Gaming laptops with RTX 50 Sery', N'Giá bán'),
         
-        -- ACER | PREDATOR Series
-        ('Nitro Series', 'ACER Nitro gaming laptops', 'ACER | PREDATOR'),
-        ('Aspire Series', 'ACER Aspire gaming laptops', 'ACER | PREDATOR'),
-        ('Predator Series', 'ACER Predator gaming laptops', 'ACER | PREDATOR'),
-        ('ACER RTX 50 Series', 'ACER gaming laptops with RTX 50 Series', 'ACER | PREDATOR'),
+        -- ACER | PREDATOR Sery
+        ('Nitro Sery', 'ACER Nitro gaming laptops', 'ACER | PREDATOR'),
+        ('Aspire Sery', 'ACER Aspire gaming laptops', 'ACER | PREDATOR'),
+        ('Predator Sery', 'ACER Predator gaming laptops', 'ACER | PREDATOR'),
+        ('ACER RTX 50 Sery', 'ACER gaming laptops with RTX 50 Sery', 'ACER | PREDATOR'),
         
-        -- ASUS | ROG Gaming Series
-        ('ROG Series', 'ASUS ROG gaming laptops', 'ASUS | ROG Gaming'),
-        ('TUF Series', 'ASUS TUF gaming laptops', 'ASUS | ROG Gaming'),
-        ('Zephyrus Series', 'ASUS Zephyrus gaming laptops', 'ASUS | ROG Gaming'),
-        ('ASUS RTX 50 Series', 'ASUS gaming laptops with RTX 50 Series', 'ASUS | ROG Gaming'),
+        -- ASUS | ROG Gaming Sery
+        ('ROG Sery', 'ASUS ROG gaming laptops', 'ASUS | ROG Gaming'),
+        ('TUF Sery', 'ASUS TUF gaming laptops', 'ASUS | ROG Gaming'),
+        ('Zephyrus Sery', 'ASUS Zephyrus gaming laptops', 'ASUS | ROG Gaming'),
+        ('ASUS RTX 50 Sery', 'ASUS gaming laptops with RTX 50 Sery', 'ASUS | ROG Gaming'),
         
-        -- MSI Gaming Series
-        ('Titan GT Series', 'MSI Titan GT gaming laptops', 'MSI Gaming'),
-        ('Stealth GS Series', 'MSI Stealth GS gaming laptops', 'MSI Gaming'),
-        ('Raider GE Series', 'MSI Raider GE gaming laptops', 'MSI Gaming'),
-        ('Vector GP Series', 'MSI Vector GP gaming laptops', 'MSI Gaming'),
-        ('Crosshair / Pulse GL Series', 'MSI Crosshair / Pulse GL gaming laptops', 'MSI Gaming'),
-        ('Sword / Katana GF66 Series', 'MSI Sword / Katana GF66 gaming laptops', 'MSI Gaming'),
-        ('Cyborg / Thin GF Series', 'MSI Cyborg / Thin GF gaming laptops', 'MSI Gaming'),
-        ('MSI RTX 50 Series', 'MSI gaming laptops with RTX 50 Series', 'MSI Gaming'),
+        -- MSI Gaming Sery
+        ('Titan GT Sery', 'MSI Titan GT gaming laptops', 'MSI Gaming'),
+        ('Stealth GS Sery', 'MSI Stealth GS gaming laptops', 'MSI Gaming'),
+        ('Raider GE Sery', 'MSI Raider GE gaming laptops', 'MSI Gaming'),
+        ('Vector GP Sery', 'MSI Vector GP gaming laptops', 'MSI Gaming'),
+        ('Crosshair / Pulse GL Sery', 'MSI Crosshair / Pulse GL gaming laptops', 'MSI Gaming'),
+        ('Sword / Katana GF66 Sery', 'MSI Sword / Katana GF66 gaming laptops', 'MSI Gaming'),
+        ('Cyborg / Thin GF Sery', 'MSI Cyborg / Thin GF gaming laptops', 'MSI Gaming'),
+        ('MSI RTX 50 Sery', 'MSI gaming laptops with RTX 50 Sery', 'MSI Gaming'),
         
-        -- LENOVO Gaming Series
+        -- LENOVO Gaming Sery
         ('Legion Gaming', 'LENOVO Legion gaming laptops', 'LENOVO Gaming'),
-        ('LOQ series', 'LENOVO LOQ gaming laptops', 'LENOVO Gaming'),
-        ('RTX 50 Series', 'LENOVO gaming laptops with RTX 50 Series', 'LENOVO Gaming'),
+        ('LOQ sery', 'LENOVO LOQ gaming laptops', 'LENOVO Gaming'),
+        ('RTX 50 Sery', 'LENOVO gaming laptops with RTX 50 Sery', 'LENOVO Gaming'),
         
-        -- Dell Gaming Series
-        ('Dell Gaming G Series', 'Dell Gaming G Series laptops', 'Dell Gaming'),
-        ('Alienware Series', 'Dell Alienware gaming laptops', 'Dell Gaming'),
+        -- Dell Gaming Sery
+        ('Dell Gaming G Sery', 'Dell Gaming G Sery laptops', 'Dell Gaming'),
+        ('Alienware Sery', 'Dell Alienware gaming laptops', 'Dell Gaming'),
         
-        -- HP Gaming Series
+        -- HP Gaming Sery
         ('HP Victus', 'HP Victus gaming laptops', 'HP Gaming'),
         ('Hp Omen', 'HP Omen gaming laptops', 'HP Gaming'),
         
         -- Cấu hình
-        ('RTX 50 Series', 'Gaming laptops with RTX 50 Series', N'Cấu hình'),
+        ('RTX 50 Sery', 'Gaming laptops with RTX 50 Sery', N'Cấu hình'),
         ('CPU Core Ultra', 'Gaming laptops with CPU Core Ultra', N'Cấu hình'),
         ('CPU AMD', 'Gaming laptops with CPU AMD', N'Cấu hình'),
         
@@ -717,11 +725,11 @@ WITH SubcategoryLookup AS (
 ),
 SubSubcategoryData AS (
     SELECT * FROM (VALUES
-        ('RTX 5090', 'RTX 5090 GPUs', 'VGA RTX 50 SERIES'),
-        ('RTX 5080', 'RTX 5080 GPUs', 'VGA RTX 50 SERIES'),
-        ('RTX 5070Ti', 'RTX 5070Ti GPUs', 'VGA RTX 50 SERIES'),
-        ('RTX 5070', 'RTX 5070 GPUs', 'VGA RTX 50 SERIES'),
-        ('RTX 5060Ti', 'RTX 5060Ti GPUs', 'VGA RTX 50 SERIES'),
+        ('RTX 5090', 'RTX 5090 GPUs', 'VGA RTX 50 SERy'),
+        ('RTX 5080', 'RTX 5080 GPUs', 'VGA RTX 50 SERy'),
+        ('RTX 5070Ti', 'RTX 5070Ti GPUs', 'VGA RTX 50 SERy'),
+        ('RTX 5070', 'RTX 5070 GPUs', 'VGA RTX 50 SERy'),
+        ('RTX 5060Ti', 'RTX 5060Ti GPUs', 'VGA RTX 50 SERy'),
         ('RTX 4070 SUPER (12GB)', 'RTX 4070 SUPER (12GB) GPUs', N'VGA (Trên 12 GB VRAM)'),
         ('RTX 4070Ti SUPER (16GB)', 'RTX 4070Ti SUPER (16GB) GPUs', N'VGA (Trên 12 GB VRAM)'),
         ('RTX 4080 SUPER (16GB)', 'RTX 4080 SUPER (16GB) GPUs', N'VGA (Trên 12 GB VRAM)'),
@@ -747,7 +755,7 @@ SubSubcategoryData AS (
         ('AMD B550', 'AMD B550 motherboards', N'Bo mạch chủ AMD'),
         ('AMD A320', 'AMD A320 motherboards', N'Bo mạch chủ AMD'),
         ('AMD TRX40', 'AMD TRX40 motherboards', N'Bo mạch chủ AMD'),
-        (N'CPU Intel Core Ultra Series 2 (Mới)', 'CPU Intel Core Ultra Series 2', N'CPU - Bộ vi xử lý Intel'),
+        (N'CPU Intel Core Ultra Sery 2 (Mới)', 'CPU Intel Core Ultra Sery 2', N'CPU - Bộ vi xử lý Intel'),
         ('CPU Intel 9', 'CPU Intel 9', N'CPU - Bộ vi xử lý Intel'),
         ('CPU Intel 7', 'CPU Intel 7', N'CPU - Bộ vi xử lý Intel'),
         ('CPU Intel 5', 'CPU Intel 5', N'CPU - Bộ vi xử lý Intel'),
@@ -1045,7 +1053,7 @@ SubSubcategoryData AS (
         (N'Logitech Văn phòng', 'Logitech office mice', 'Logitech'),
         ('GEARVN', 'GEARVN mousepads', N'Thương hiệu lót chuột'),
         ('ASUS', 'ASUS mousepads', N'Thương hiệu lót chuột'),
-        ('Steelseries', 'Steelseries mousepads', N'Thương hiệu lót chuột'),
+        ('Steelsery', 'Steelsery mousepads', N'Thương hiệu lót chuột'),
         ('Dare-U', 'Dare-U mousepads', N'Thương hiệu lót chuột'),
         ('Razer', 'Razer mousepads', N'Thương hiệu lót chuột'),
         (N'Mềm', 'Soft mousepads', N'Các loại lót chuột'),
@@ -1126,7 +1134,7 @@ SubSubcategoryData AS (
         (N'Bàn Gaming E-Dra', 'E-Dra gaming desks', N'Bàn Gaming'),
         (N'Bàn Gaming Warrior', 'Warrior gaming desks', N'Bàn Gaming'),
         (N'Bàn CTH Warrior', 'Warrior ergonomic desks', N'Bàn công thái học'),
-        (N'Phụ kiện bàn ghế', 'Desk and chair accessories', N'Bàn công thái học'),
+        (N'Phụ kiện bàn ghế', 'Desk and chair accessory', N'Bàn công thái học'),
         (N'Dưới 5 triệu', 'Chairs and desks under 5 million', N'Giá tiền'),
         (N'Từ 5 đến 10 triệu', 'Chairs and desks from 5 to 10 million', N'Giá tiền'),
         (N'Trên 10 triệu', 'Chairs and desks over 10 million', N'Giá tiền')
@@ -1287,14 +1295,14 @@ DECLARE @ManHinhID INT = (SELECT AttributeID FROM ProductAttribute WHERE Attribu
 DECLARE @HeDieuHanhID INT = (SELECT AttributeID FROM ProductAttribute WHERE AttributeName = N'Hệ Điều Hành');
 
 -- Thêm sản phẩm
-INSERT INTO Product (Name, Description, Price, Stock, SubSubcategoryID, Brand, Status)
+INSERT INTO Products (Name, Description, Price, Stock, SubSubcategoryID, Brand, Status)
 VALUES (N'Laptop gaming Acer Nitro Lite 16 NL16 71G 71UJ', 
         N'Intel Core i7-13620H, NVIDIA RTX 4050, 16GB DDR5, 512GB SSD, 16" FHD 165Hz', 
         24990000, 10, 1, N'Acer', 'Active');
 SET @ProductID = SCOPE_IDENTITY();
 
 -- Thêm hình ảnh
-INSERT INTO ProductImage (ProductID, ImageURL, IsPrimary, DisplayOrder) VALUES 
+INSERT INTO ProductImages (ProductID, ImageURL, IsPrimary, DisplayOrder) VALUES 
 (@ProductID, 'https://product.hstatic.net/200000722513/product/acer-gaming-nitro-lite-16-nl16-7_b9c923301cac40ec96fdf625748b97ff_grande.png', 1, 1),
 (@ProductID, 'https://product.hstatic.net/200000722513/product/acer-gaming-nitro-lite-16-nl16-7__1__ae9b903e25a2460486e98f74cf872415_1024x1024.png', 0, 2);
 
@@ -1313,25 +1321,62 @@ SELECT @ProductID, ValueID FROM AttributeValue
 WHERE ValueName IN ('Intel Core i7-13620H', 'NVIDIA GeForce RTX 4050', '16GB DDR5', '512GB SSD PCIe Gen4', '16 inch FHD 165Hz', 'Windows 11 Home');
 
 -- Laptop Gaming bán chạy
-INSERT INTO Product (Name, Description, Price, Stock, SubSubcategoryID, Brand)
+INSERT INTO Products (Name, Description, Price, Stock, SubSubcategoryID, Brand)
 VALUES (N'Laptop Gaming Demo', N'Laptop gaming demo cấu hình mạnh', 19990000, 10, 1, N'ASUS');
 
 -- Laptop Văn Phòng bán chạy
-INSERT INTO Product (Name, Description, Price, Stock, SubSubcategoryID, Brand)
+INSERT INTO Products (Name, Description, Price, Stock, SubSubcategoryID, Brand)
 VALUES (N'Laptop Văn Phòng Demo', N'Laptop văn phòng demo mỏng nhẹ', 13990000, 10, 4, N'Lenovo');
 
 -- PC Gaming bán chạy
-INSERT INTO Product (Name, Description, Price, Stock, SubSubcategoryID, Brand)
+INSERT INTO Products (Name, Description, Price, Stock, SubSubcategoryID, Brand)
 VALUES (N'PC Gaming Demo', N'PC gaming demo cấu hình cao', 29990000, 5, 6, N'Custom');
 
 -- Chuột bán chạy
-INSERT INTO Product (Name, Description, Price, Stock, SubSubcategoryID, Brand)
+INSERT INTO Products (Name, Description, Price, Stock, SubSubcategoryID, Brand)
 VALUES (N'Chuột Gaming Demo', N'Chuột gaming demo siêu nhẹ', 599000, 20, 7, N'Logitech');
 
 -- Màn hình bán chạy
-INSERT INTO Product (Name, Description, Price, Stock, SubSubcategoryID, Brand)
+INSERT INTO Products (Name, Description, Price, Stock, SubSubcategoryID, Brand)
 VALUES (N'Màn Hình Demo', N'Màn hình demo 27 inch 2K', 4990000, 8, 8, N'LG');
 
 -- Bàn phím bán chạy
-INSERT INTO Product (Name, Description, Price, Stock, SubSubcategoryID, Brand)
+INSERT INTO Products (Name, Description, Price, Stock, SubSubcategoryID, Brand)
 VALUES (N'Bàn Phím Demo', N'Bàn phím cơ demo RGB', 990000, 15, 9, N'Keychron');
+
+-- Create sample orders for user ID 1
+INSERT INTO Orders (UserID, TotalPrice, DiscountAmount, Status, CreatedAt)
+VALUES 
+(1, 24990000, 0, 'Delivered', DATEADD(day, -30, GETDATE())),
+(1, 19990000, 1000000, 'Processing', DATEADD(day, -15, GETDATE())),
+(1, 13990000, 0, 'Pending', DATEADD(day, -5, GETDATE()));
+
+-- Create order items for the first order (Products 1-2)
+INSERT INTO OrderItems (OrderID, ProductID, Quantity, UnitPrice, DiscountAmount)
+VALUES 
+(1, 1, 1, 24990000, 0),
+(1, 2, 1, 19990000, 0);
+
+-- Create order items for the second order (Products 3-4)
+INSERT INTO OrderItems (OrderID, ProductID, Quantity, UnitPrice, DiscountAmount)
+VALUES 
+(2, 3, 1, 29990000, 1000000),
+(2, 4, 1, 599000, 0);
+
+-- Create order items for the third order (Product 5)
+INSERT INTO OrderItems (OrderID, ProductID, Quantity, UnitPrice, DiscountAmount)
+VALUES 
+(3, 5, 1, 4990000, 0);
+
+-- Create payments for the orders
+INSERT INTO Payments (OrderID, Amount, PaymentMethod, PaymentStatus, PaymentDate)
+VALUES 
+(1, 24990000, 'VNPay', 'Completed', DATEADD(day, -30, GETDATE())),
+(2, 19990000, 'Momo', 'Completed', DATEADD(day, -15, GETDATE())),
+(3, 13990000, 'COD', 'Pending', DATEADD(day, -5, GETDATE()));
+
+-- Create sample addresses for user ID 1
+INSERT INTO UserAddresses (UserID, RecipientName, AddressLine, City, District, Ward, Phone, IsPrimary, CreatedAt)
+VALUES 
+(1, N'Nguyễn Văn A', N'123 Đường ABC', N'Hồ Chí Minh', N'Quận 1', N'Phường Bến Nghé', '0123456789', 1, GETDATE()),
+(1, N'Nguyễn Văn B', N'456 Đường XYZ', N'Hà Nội', N'Cầu Giấy', N'Phường Dịch Vọng', '0987654321', 0, GETDATE());

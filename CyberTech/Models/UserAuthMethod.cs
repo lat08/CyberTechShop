@@ -20,6 +20,7 @@ namespace CyberTech.Models
         [StringLength(256)]
         public string AuthKey { get; set; }
 
+
         [Required]
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 

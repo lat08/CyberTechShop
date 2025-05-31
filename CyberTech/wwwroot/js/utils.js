@@ -111,38 +111,99 @@ const utils = {
         return enumMaps[enumType][value] || 'Không xác định';
     },
 
-    showToast(message, type = 'info') {
-        const container = document.getElementById('toastContainer') || Object.assign(document.createElement('div'), {
-            id: 'toastContainer',
-            className: 'toast-container position-fixed bottom-0 end-0 p-3'
-        });
-        document.body.appendChild(container);
+    showToast: function(message, type = 'info') {
+        const toastContainer = document.getElementById('toast-container') || (() => {
+            const container = document.createElement('div');
+            container.id = 'toast-container';
+            container.style.position = 'fixed';
+            container.style.top = '20px';
+            container.style.right = '20px';
+            container.style.zIndex = '9999';
+            document.body.appendChild(container);
+            return container;
+        })();
 
-        const toastId = `toast-${Date.now()}`;
-        const toastEl = Object.assign(document.createElement('div'), {
-            id: toastId,
-            className: `toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'primary'} border-0`,
-            role: 'alert',
-            innerHTML: `
-                <div class="d-flex">
-                    <div class="toast-body">${message}</div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type} border-0`;
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+
+        // Thêm icon tương ứng với loại toast
+        let icon = '';
+        switch(type) {
+            case 'success':
+                icon = '<i class="fas fa-check-circle me-2"></i>';
+                break;
+            case 'error':
+                icon = '<i class="fas fa-exclamation-circle me-2"></i>';
+                break;
+            case 'warning':
+                icon = '<i class="fas fa-exclamation-triangle me-2"></i>';
+                break;
+            case 'info':
+                icon = '<i class="fas fa-info-circle me-2"></i>';
+                break;
+        }
+
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    ${icon}${message}
                 </div>
-            `
-        });
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        `;
 
-        container.appendChild(toastEl);
-        const toast = new bootstrap.Toast(toastEl, { autohide: true, delay: 3000 });
-        toast.show();
-        toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+        toastContainer.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast, {
+            autohide: true,
+            delay: 3000
+        });
+        bsToast.show();
+
+        toast.addEventListener('hidden.bs.toast', () => {
+            toast.remove();
+        });
     },
 
-    formatMoney(amount, locale = 'vi-VN', currency = 'VND') {
-        if (amount > 9999999999) {
-            console.warn("Amount exceeds maximum allowed value:", amount);
-            amount = 9999999999;
-        }
-        return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(amount);
+    formatCurrency: function(amount) {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND'
+        }).format(amount);
+    },
+
+    formatDate: function(date) {
+        return new Date(date).toLocaleDateString('vi-VN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    },
+
+    validateEmail: function(email) {
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(email);
+    },
+
+    validatePhone: function(phone) {
+        const re = /^[0-9]{10,11}$/;
+        return re.test(phone);
+    },
+
+    debounce: function(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
     },
 
     renderPagination({ currentPage, totalPages }, container, itemsContainer, prevButton, nextButton, pageChangeCallback) {
