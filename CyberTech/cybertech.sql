@@ -204,14 +204,19 @@ CREATE TABLE Carts (
 
 -- Bảng Orders (unchanged, already plural)
 CREATE TABLE Orders (
-    OrderID         INT             IDENTITY(1,1)   NOT NULL PRIMARY KEY,
-    UserID          INT                             NOT NULL,
-    TotalPrice      DECIMAL(18,2)                   NOT NULL DEFAULT 0.00 CHECK (TotalPrice >= 0),
-    DiscountAmount  DECIMAL(18,2)                   NOT NULL DEFAULT 0.00 CHECK (DiscountAmount >= 0),
-    FinalPrice      DECIMAL(18,2)                   NOT NULL DEFAULT 0.00 CHECK (FinalPrice >= 0),  
-    Status          VARCHAR(50)                     NOT NULL DEFAULT 'Pending' CHECK (Status IN ('Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Returned')),
-    CreatedAt       DATETIME                        NOT NULL DEFAULT GETDATE(),
-    FOREIGN KEY (UserID) REFERENCES Users(UserID)
+    OrderID                 INT             IDENTITY(1,1)   NOT NULL PRIMARY KEY,
+    UserID                  INT                             NOT NULL,
+    TotalPrice             DECIMAL(18,2)                   NOT NULL DEFAULT 0.00 CHECK (TotalPrice >= 0),
+    ProductDiscountAmount  DECIMAL(18,2)                   NOT NULL DEFAULT 0.00 CHECK (ProductDiscountAmount >= 0),
+    RankDiscountAmount     DECIMAL(18,2)                   NOT NULL DEFAULT 0.00 CHECK (RankDiscountAmount >= 0),
+    VoucherDiscountAmount  DECIMAL(18,2)                   NOT NULL DEFAULT 0.00 CHECK (VoucherDiscountAmount >= 0),
+    TotalDiscountAmount    DECIMAL(18,2)                   NOT NULL DEFAULT 0.00 CHECK (TotalDiscountAmount >= 0),
+    FinalPrice             DECIMAL(18,2)                   NOT NULL DEFAULT 0.00 CHECK (FinalPrice >= 0),  
+    Status                 VARCHAR(50)                     NOT NULL DEFAULT 'Pending' CHECK (Status IN ('Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Returned')),
+    CreatedAt              DATETIME                        NOT NULL DEFAULT GETDATE(),
+    UserAddressID          INT,
+    FOREIGN KEY (UserID) REFERENCES Users(UserID),
+    FOREIGN KEY (UserAddressID) REFERENCES UserAddresses(AddressID)
 );
 
 -- =======================================================

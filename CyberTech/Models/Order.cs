@@ -17,9 +17,17 @@ namespace CyberTech.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalPrice { get; set; } = 0;
 
-        [Required]
         [Column(TypeName = "decimal(18,2)")]
-        public decimal DiscountAmount { get; set; } = 0;
+        public decimal RankDiscountAmount { get; set; } = 0;
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal VoucherDiscountAmount { get; set; } = 0;
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal ProductDiscountAmount { get; set; } = 0;
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal TotalDiscountAmount { get; set; } = 0;
 
         [Column(TypeName = "decimal(18,2)")]
         public decimal FinalPrice { get; set; }

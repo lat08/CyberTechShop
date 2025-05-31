@@ -15,6 +15,6 @@ namespace CyberTech.Services
         Task<List<CartItem>> GetCartItemsAsync(int userId);
         Task<(bool Success, decimal DiscountAmount, string Message)> ApplyVoucherAsync(int userId, string voucherCode);
         Task<bool> RemoveVoucherAsync(int userId);
-        Task<(bool Success, string Message)> CheckoutAsync(int userId, int addressId, string paymentMethod);
+        Task<(bool Success, string Message, int? OrderId)> CheckoutAsync(int userId, int addressId, string paymentMethod, int? voucherId = null);
     }
 }

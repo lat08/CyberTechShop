@@ -19,25 +19,107 @@ namespace CyberTech.Controllers
         private readonly ApplicationDbContext _context;
         private readonly IUserService _userService;
         private readonly ILogger<CartController> _logger;
+        private readonly ICartService _cartService;
 
-        public CartController(ApplicationDbContext context, IUserService userService, ILogger<CartController> logger)
+        public CartController(ApplicationDbContext context, IUserService userService, ILogger<CartController> logger, ICartService cartService)
         {
             _context = context;
             _userService = userService;
             _logger = logger;
+            _cartService = cartService;
         }
 
         private decimal CalculateCartTotals(Cart cart, Voucher voucher, out decimal discountAmount)
         {
-            decimal subtotal = cart.CartItems.Sum(ci => ci.Subtotal);
-            discountAmount = 0;
+            // Calculate total price using original prices
+            decimal totalPrice = cart.CartItems.Sum(ci => ci.Product.Price * ci.Quantity);
 
-            if (voucher != null && IsVoucherValid(voucher, cart))
+            // Calculate product discount (from sales)
+            decimal productDiscountAmount = 0;
+            foreach (var item in cart.CartItems)
             {
-                discountAmount = CalculateVoucherDiscount(voucher, cart);
+                var product = item.Product;
+                var originalPrice = product.Price * item.Quantity;
+                var effectivePrice = product.GetEffectivePrice() * item.Quantity;
+                productDiscountAmount += originalPrice - effectivePrice;
             }
 
-            return subtotal - discountAmount;
+            // Calculate amount after product discount
+            decimal amountAfterProductDiscount = totalPrice - productDiscountAmount;
+
+            // Get user's rank discount
+            var user = _context.Users
+                .Include(u => u.Rank)
+                .FirstOrDefault(u => u.UserID == cart.UserID);
+
+            // Calculate rank discount on amount after product discount
+            decimal rankDiscountPercent = user?.Rank?.DiscountPercent ?? 0;
+            decimal rankDiscountAmount = amountAfterProductDiscount * (rankDiscountPercent / 100);
+
+            // Calculate voucher discount
+            decimal voucherDiscountAmount = 0;
+            if (voucher != null && IsVoucherValid(voucher, cart))
+            {
+                // Apply voucher discount on the amount after product and rank discounts
+                decimal amountAfterRankDiscount = amountAfterProductDiscount - rankDiscountAmount;
+
+                if (voucher.AppliesTo == "Order")
+                {
+                    // Apply to entire order
+                    if (voucher.DiscountType == "PERCENT")
+                    {
+                        voucherDiscountAmount = amountAfterRankDiscount * (voucher.DiscountValue / 100);
+                    }
+                    else if (voucher.DiscountType == "FIXED")
+                    {
+                        voucherDiscountAmount = Math.Min(voucher.DiscountValue, amountAfterRankDiscount);
+                    }
+                }
+                else if (voucher.AppliesTo == "Product")
+                {
+                    // Apply to specific products only
+                    var applicableProductIds = voucher.VoucherProducts.Select(vp => vp.ProductID).ToList();
+                    var eligibleCartItems = cart.CartItems.Where(ci => applicableProductIds.Contains(ci.ProductID)).ToList();
+
+                    if (eligibleCartItems.Any())
+                    {
+                        // Calculate eligible total after product discount
+                        decimal eligibleTotal = 0;
+                        foreach (var item in eligibleCartItems)
+                        {
+                            decimal originalItemPrice = item.Product.Price * item.Quantity;
+                            decimal itemProductDiscount = originalItemPrice - (item.Product.GetEffectivePrice() * item.Quantity);
+                            decimal itemAfterProductDiscount = originalItemPrice - itemProductDiscount;
+                            decimal itemRankDiscount = itemAfterProductDiscount * (rankDiscountPercent / 100);
+                            decimal itemAfterAllDiscounts = itemAfterProductDiscount - itemRankDiscount;
+                            eligibleTotal += itemAfterAllDiscounts;
+                        }
+
+                        if (voucher.DiscountType == "PERCENT")
+                        {
+                            voucherDiscountAmount = eligibleTotal * (voucher.DiscountValue / 100);
+                        }
+                        else if (voucher.DiscountType == "FIXED")
+                        {
+                            voucherDiscountAmount = Math.Min(voucher.DiscountValue, eligibleTotal);
+                        }
+                    }
+                }
+
+                // Ensure voucher discount doesn't exceed the remaining amount
+                voucherDiscountAmount = Math.Min(voucherDiscountAmount, amountAfterRankDiscount);
+            }
+
+            // Total discount is sum of all discounts
+            discountAmount = productDiscountAmount + rankDiscountAmount + voucherDiscountAmount;
+
+            // Final price is total price minus all discounts
+            decimal finalPrice = totalPrice - discountAmount;
+
+            // Update cart's TotalPrice to original price (not discounted)
+            cart.TotalPrice = totalPrice;
+
+            return finalPrice;
         }
 
         [Authorize]
@@ -80,15 +162,48 @@ namespace CyberTech.Controllers
                         .FirstOrDefaultAsync(v => v.VoucherID == appliedVoucherId.Value);
                 }
 
-                decimal discountAmount;
-                cart.TotalPrice = CalculateCartTotals(cart, appliedVoucher, out discountAmount);
+                // Calculate all discounts and final price
+                decimal totalDiscountAmount;
+                decimal finalPrice = CalculateCartTotals(cart, appliedVoucher, out totalDiscountAmount);
+
+                // Calculate individual discount amounts
+                decimal productDiscountAmount = 0;
+                foreach (var item in cart.CartItems)
+                {
+                    var product = item.Product;
+                    var originalPrice = product.Price * item.Quantity;
+                    var effectivePrice = product.GetEffectivePrice() * item.Quantity;
+                    productDiscountAmount += originalPrice - effectivePrice;
+                }
+
+                decimal amountAfterProductDiscount = cart.TotalPrice - productDiscountAmount;
+                decimal rankDiscountPercent = user.Rank?.DiscountPercent ?? 0;
+                decimal rankDiscountAmount = amountAfterProductDiscount * (rankDiscountPercent / 100);
+                decimal voucherDiscountAmount = totalDiscountAmount - productDiscountAmount - rankDiscountAmount;
+
+                await _context.SaveChangesAsync();
 
                 var model = new CartViewModel
                 {
                     Cart = cart,
                     CartItems = cart.CartItems.ToList(),
                     UserAddresses = userAddresses,
-                    AppliedVoucher = appliedVoucher
+                    AppliedVoucher = appliedVoucher,
+                    RankDiscountPercent = rankDiscountPercent,
+                    RankDiscountAmount = rankDiscountAmount,
+                    RankName = user.Rank?.RankName ?? "Thành viên",
+                    Subtotal = cart.TotalPrice,  // Original price total
+                    ProductDiscountAmount = productDiscountAmount,
+                    VoucherDiscountAmount = voucherDiscountAmount,
+                    TotalDiscount = totalDiscountAmount,
+                    FinalTotal = finalPrice
+                };
+
+                // Add rank info to ViewBag for the view
+                ViewBag.UserRank = new
+                {
+                    Name = user.Rank?.RankName ?? "Thành viên",
+                    DiscountPercent = rankDiscountPercent
                 };
 
                 return View(model);
@@ -173,7 +288,8 @@ namespace CyberTech.Controllers
         // Helper method to calculate the effective price based on sale options
         private decimal CalculateEffectivePrice(Product product)
         {
-            return product.GetEffectivePrice();
+            var effectivePrice = product.GetEffectivePrice();
+            return effectivePrice;
         }
 
         [Authorize]
@@ -270,8 +386,6 @@ namespace CyberTech.Controllers
         {
             try
             {
-                Console.WriteLine($"\n=== DEBUG: Updating quantity for cart item {cartItemId} to {quantity} ===");
-
                 var emailClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email);
                 if (emailClaim == null)
                 {
@@ -311,7 +425,7 @@ namespace CyberTech.Controllers
                 }
 
                 cartItem.Quantity = quantity;
-                cartItem.Subtotal = quantity * cartItem.Product.GetEffectivePrice();
+                cartItem.Subtotal = cartItem.Product.Price * quantity;  // Use original price
 
                 var appliedVoucherId = HttpContext.Session.GetInt32("AppliedVoucherId");
                 Voucher appliedVoucher = null;
@@ -322,14 +436,26 @@ namespace CyberTech.Controllers
                         .FirstOrDefaultAsync(v => v.VoucherID == appliedVoucherId.Value);
                 }
 
-                decimal discountAmount;
-                cart.TotalPrice = CalculateCartTotals(cart, appliedVoucher, out discountAmount);
+                // Calculate all discounts and final price
+                decimal totalDiscountAmount;
+                decimal finalPrice = CalculateCartTotals(cart, appliedVoucher, out totalDiscountAmount);
+
+                // Calculate individual discount amounts
+                decimal productDiscountAmount = 0;
+                foreach (var item in cart.CartItems)
+                {
+                    var product = item.Product;
+                    var originalPrice = product.Price * item.Quantity;
+                    var effectivePrice = product.GetEffectivePrice() * item.Quantity;
+                    productDiscountAmount += originalPrice - effectivePrice;
+                }
+
+                decimal amountAfterProductDiscount = cart.TotalPrice - productDiscountAmount;
+                decimal rankDiscountPercent = user.Rank?.DiscountPercent ?? 0;
+                decimal rankDiscountAmount = amountAfterProductDiscount * (rankDiscountPercent / 100);
+                decimal voucherDiscountAmount = totalDiscountAmount - productDiscountAmount - rankDiscountAmount;
 
                 await _context.SaveChangesAsync();
-
-                Console.WriteLine($"Updated cart item subtotal: {cartItem.Subtotal}");
-                Console.WriteLine($"Cart total after update: {cart.TotalPrice}");
-                Console.WriteLine($"Discount amount: {discountAmount}");
 
                 return Json(new
                 {
@@ -338,9 +464,12 @@ namespace CyberTech.Controllers
                     subtotal = cartItem.Subtotal,
                     cart = new
                     {
-                        subtotal = cart.CartItems.Sum(ci => ci.Subtotal),
-                        discountAmount = discountAmount,
-                        totalPrice = cart.TotalPrice,
+                        totalPrice = cart.TotalPrice,  // Original price total
+                        productDiscountAmount = productDiscountAmount,
+                        rankDiscountAmount = rankDiscountAmount,
+                        voucherDiscountAmount = voucherDiscountAmount,
+                        totalDiscountAmount = totalDiscountAmount,
+                        finalPrice = finalPrice,
                         cartItemsCount = cart.CartItems.Count
                     },
                     discountType = appliedVoucher?.DiscountType ?? "FIXED",
@@ -349,8 +478,7 @@ namespace CyberTech.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in UpdateQuantity: {ex.Message}");
-                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+                _logger.LogError(ex, "Error updating quantity for cart item {CartItemId}", cartItemId);
                 return Json(new { success = false, message = "Có lỗi xảy ra khi cập nhật số lượng" });
             }
         }
@@ -361,21 +489,17 @@ namespace CyberTech.Controllers
         {
             try
             {
-                Console.WriteLine($"\n=== DEBUG: Applying Voucher {voucherCode} ===");
                 var emailClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email);
                 if (emailClaim == null)
                 {
-                    Console.WriteLine("Error: Email claim not found");
                     return Json(new { success = false, message = "Không tìm thấy thông tin người dùng" });
                 }
 
                 var user = await _userService.GetUserByEmailAsync(emailClaim.Value);
                 if (user == null)
                 {
-                    Console.WriteLine("Error: User not found");
                     return Json(new { success = false, message = "Không tìm thấy người dùng" });
                 }
-                Console.WriteLine($"User found: {user.UserID}");
 
                 var cart = await _context.Carts
                     .Include(c => c.CartItems)
@@ -384,49 +508,44 @@ namespace CyberTech.Controllers
 
                 if (cart == null || !cart.CartItems.Any())
                 {
-                    Console.WriteLine("Error: Cart is empty");
                     return Json(new { success = false, message = "Giỏ hàng trống" });
                 }
-                Console.WriteLine($"Cart found with {cart.CartItems.Count} items");
 
                 var voucher = await _context.Vouchers
                     .Include(v => v.VoucherProducts)
-                    .FirstOrDefaultAsync(v => v.Code == voucherCode && v.IsActive && v.ValidFrom <= DateTime.Now && v.ValidTo >= DateTime.Now);
+                    .FirstOrDefaultAsync(v => v.Code == voucherCode && v.IsActive);
 
                 if (voucher == null)
                 {
-                    Console.WriteLine("Error: Invalid or expired voucher");
-                    return Json(new { success = false, message = "Mã giảm giá không hợp lệ hoặc đã hết hạn" });
-                }
-                Console.WriteLine($"Voucher found: {voucher.Code}, Type: {voucher.DiscountType}, Value: {voucher.DiscountValue}");
-
-                if (voucher.QuantityAvailable.HasValue && voucher.QuantityAvailable <= 0)
-                {
-                    Console.WriteLine("Error: Voucher quantity exhausted");
-                    return Json(new { success = false, message = "Mã giảm giá đã hết số lượng sử dụng" });
+                    return Json(new { success = false, message = "Mã giảm giá không tồn tại hoặc đã hết hạn" });
                 }
 
                 if (!IsVoucherValid(voucher, cart))
                 {
-                    Console.WriteLine("Error: Voucher not applicable to cart items");
                     return Json(new { success = false, message = "Mã giảm giá không áp dụng cho sản phẩm trong giỏ hàng" });
                 }
 
-                decimal subtotal = cart.CartItems.Sum(ci => ci.Subtotal);
-                Console.WriteLine($"Cart subtotal before discount: {subtotal:C}");
+                // Calculate all discounts and final price
+                decimal totalDiscountAmount;
+                decimal finalPrice = CalculateCartTotals(cart, voucher, out totalDiscountAmount);
 
-                // Calculate discount amount based on discount type
-                decimal discountAmount = CalculateVoucherDiscount(voucher, cart);
-                decimal finalTotal = subtotal - discountAmount;
+                // Calculate individual discount amounts
+                decimal productDiscountAmount = 0;
+                foreach (var item in cart.CartItems)
+                {
+                    var product = item.Product;
+                    var originalPrice = product.Price * item.Quantity;
+                    var effectivePrice = product.GetEffectivePrice() * item.Quantity;
+                    productDiscountAmount += originalPrice - effectivePrice;
+                }
 
-                Console.WriteLine($"Calculated discount amount: {discountAmount:C}");
-                Console.WriteLine($"Final total after discount: {finalTotal:C}");
+                decimal amountAfterProductDiscount = cart.TotalPrice - productDiscountAmount;
+                decimal rankDiscountPercent = user.Rank?.DiscountPercent ?? 0;
+                decimal rankDiscountAmount = amountAfterProductDiscount * (rankDiscountPercent / 100);
+                decimal voucherDiscountAmount = totalDiscountAmount - productDiscountAmount - rankDiscountAmount;
 
                 HttpContext.Session.SetInt32("AppliedVoucherId", voucher.VoucherID);
-                cart.TotalPrice = finalTotal;
                 await _context.SaveChangesAsync();
-
-                Console.WriteLine("=== Voucher Application Complete ===\n");
 
                 return Json(new
                 {
@@ -434,9 +553,13 @@ namespace CyberTech.Controllers
                     message = "Đã áp dụng mã giảm giá",
                     cart = new
                     {
-                        totalPrice = finalTotal,
-                        subtotal = subtotal,
-                        discountAmount = discountAmount,
+                        totalPrice = cart.TotalPrice,
+                        subtotal = cart.TotalPrice,
+                        productDiscountAmount = productDiscountAmount,
+                        rankDiscountAmount = rankDiscountAmount,
+                        voucherDiscountAmount = voucherDiscountAmount,
+                        totalDiscountAmount = totalDiscountAmount,
+                        finalPrice = finalPrice,
                         cartItemsCount = cart.CartItems.Count
                     },
                     discountType = voucher.DiscountType,
@@ -446,72 +569,111 @@ namespace CyberTech.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in ApplyVoucher: {ex.Message}");
-                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+                _logger.LogError(ex, "Error applying voucher {VoucherCode}", voucherCode);
                 return Json(new { success = false, message = "Có lỗi xảy ra khi áp dụng mã giảm giá" });
             }
         }
 
         private decimal CalculateVoucherDiscount(Voucher voucher, Cart cart)
         {
-            decimal cartTotal = cart.CartItems.Sum(ci => ci.Subtotal);
-            decimal discountAmount = 0;
-            Console.WriteLine($"\n=== DEBUG: Calculating Voucher Discount ===");
-            Console.WriteLine($"Cart Total: {cartTotal:C}");
-            Console.WriteLine($"Voucher Type: {voucher.AppliesTo}");
-            Console.WriteLine($"Discount Type: {voucher.DiscountType}");
-            Console.WriteLine($"Discount Value: {voucher.DiscountValue}");
+            // Lấy thông tin người dùng để tính rank discount
+            var user = _context.Users
+                .Include(u => u.Rank)
+                .FirstOrDefault(u => u.UserID == cart.UserID);
+
+            decimal rankDiscountPercent = user?.Rank?.DiscountPercent ?? 0;
+
+            // Tính tổng giá gốc
+            decimal originalTotal = cart.CartItems.Sum(ci => ci.Product.Price * ci.Quantity);
+
+            // Tính giảm giá sản phẩm
+            decimal productDiscountAmount = 0;
+            foreach (var item in cart.CartItems)
+            {
+                var product = item.Product;
+                var originalPrice = product.Price * item.Quantity;
+                var effectivePrice = product.GetEffectivePrice() * item.Quantity;
+                productDiscountAmount += originalPrice - effectivePrice;
+            }
+
+            // Tính số tiền sau giảm giá sản phẩm
+            decimal amountAfterProductDiscount = originalTotal - productDiscountAmount;
+
+            // Tính giảm giá rank
+            decimal rankDiscountAmount = amountAfterProductDiscount * (rankDiscountPercent / 100);
+
+            // Tính số tiền sau giảm giá rank
+            decimal amountAfterRankDiscount = amountAfterProductDiscount - rankDiscountAmount;
+
+            _logger.LogInformation("Calculating Voucher Discount for {VoucherCode}. Original Total: {OriginalTotal}, " +
+                "After Product Discount: {AfterProductDiscount}, After Rank Discount: {AfterRankDiscount}",
+                voucher.Code, originalTotal, amountAfterProductDiscount, amountAfterRankDiscount);
+
+            decimal voucherDiscountAmount = 0;
 
             if (voucher.AppliesTo == "Order")
             {
-                Console.WriteLine("\n--- Order Level Discount ---");
+                _logger.LogInformation("Voucher {VoucherCode} applies to entire order", voucher.Code);
+
                 // Apply discount to entire order
                 if (voucher.DiscountType == "PERCENT")
                 {
-                    discountAmount = cartTotal * (voucher.DiscountValue / 100);
-                    Console.WriteLine($"Percentage Discount: {voucher.DiscountValue}%");
-                    Console.WriteLine($"Calculated Discount Amount: {discountAmount:C}");
+                    voucherDiscountAmount = amountAfterRankDiscount * (voucher.DiscountValue / 100);
+                    _logger.LogInformation("Percentage Discount: {DiscountPercent}%, Amount: {DiscountAmount}",
+                        voucher.DiscountValue, voucherDiscountAmount);
                 }
                 else if (voucher.DiscountType == "FIXED")
                 {
-                    discountAmount = Math.Min(voucher.DiscountValue, cartTotal);
-                    Console.WriteLine($"Fixed Discount Amount: {voucher.DiscountValue:C}");
-                    Console.WriteLine($"Applied Discount (Min of discount and cart total): {discountAmount:C}");
+                    voucherDiscountAmount = Math.Min(voucher.DiscountValue, amountAfterRankDiscount);
+                    _logger.LogInformation("Fixed Discount: {FixedAmount}, Applied: {AppliedAmount}",
+                        voucher.DiscountValue, voucherDiscountAmount);
                 }
             }
             else if (voucher.AppliesTo == "Product")
             {
-                Console.WriteLine("\n--- Product Level Discount ---");
+                _logger.LogInformation("Voucher {VoucherCode} applies to specific products", voucher.Code);
+
                 // Apply discount to specific products only
                 var applicableProductIds = voucher.VoucherProducts.Select(vp => vp.ProductID).ToList();
-                Console.WriteLine($"Applicable Product IDs: {string.Join(", ", applicableProductIds)}");
+                _logger.LogInformation("Applicable Product IDs: {ProductIds}", string.Join(", ", applicableProductIds));
 
                 var eligibleCartItems = cart.CartItems.Where(ci => applicableProductIds.Contains(ci.ProductID)).ToList();
-                Console.WriteLine($"Number of eligible items in cart: {eligibleCartItems.Count}");
+                _logger.LogInformation("Eligible items in cart: {EligibleCount}", eligibleCartItems.Count);
 
                 if (eligibleCartItems.Any())
                 {
-                    decimal eligibleTotal = eligibleCartItems.Sum(ci => ci.Subtotal);
-                    Console.WriteLine($"Total eligible items subtotal: {eligibleTotal:C}");
+                    // Calculate eligible total after product and rank discounts
+                    decimal eligibleTotal = 0;
+                    foreach (var item in eligibleCartItems)
+                    {
+                        var product = item.Product;
+                        var originalItemPrice = product.Price * item.Quantity;
+                        var itemProductDiscount = originalItemPrice - (product.GetEffectivePrice() * item.Quantity);
+                        var itemAfterProductDiscount = originalItemPrice - itemProductDiscount;
+                        var itemRankDiscount = itemAfterProductDiscount * (rankDiscountPercent / 100);
+                        var itemAfterAllDiscounts = itemAfterProductDiscount - itemRankDiscount;
+                        eligibleTotal += itemAfterAllDiscounts;
+                    }
+
+                    _logger.LogInformation("Eligible total after discounts: {EligibleTotal}", eligibleTotal);
 
                     if (voucher.DiscountType == "PERCENT")
                     {
-                        discountAmount = eligibleTotal * (voucher.DiscountValue / 100);
-                        Console.WriteLine($"Percentage Discount: {voucher.DiscountValue}%");
-                        Console.WriteLine($"Calculated Discount Amount: {discountAmount:C}");
+                        voucherDiscountAmount = eligibleTotal * (voucher.DiscountValue / 100);
+                        _logger.LogInformation("Percentage Discount: {DiscountPercent}%, Amount: {DiscountAmount}",
+                            voucher.DiscountValue, voucherDiscountAmount);
                     }
                     else if (voucher.DiscountType == "FIXED")
                     {
-                        discountAmount = Math.Min(voucher.DiscountValue, eligibleTotal);
-                        Console.WriteLine($"Fixed Discount Amount: {voucher.DiscountValue:C}");
-                        Console.WriteLine($"Applied Discount (Min of discount and eligible total): {discountAmount:C}");
+                        voucherDiscountAmount = Math.Min(voucher.DiscountValue, eligibleTotal);
+                        _logger.LogInformation("Fixed Discount: {FixedAmount}, Applied: {AppliedAmount}",
+                            voucher.DiscountValue, voucherDiscountAmount);
                     }
                 }
             }
 
-            Console.WriteLine($"\nFinal Discount Amount: {discountAmount:C}");
-            Console.WriteLine("=====================================\n");
-            return discountAmount;
+            _logger.LogInformation("Final Voucher Discount Amount: {DiscountAmount}", voucherDiscountAmount);
+            return voucherDiscountAmount;
         }
 
         [Authorize]
@@ -534,6 +696,7 @@ namespace CyberTech.Controllers
 
                 var cart = await _context.Carts
                     .Include(c => c.CartItems)
+                        .ThenInclude(ci => ci.Product)
                     .FirstOrDefaultAsync(c => c.UserID == user.UserID);
 
                 if (cart == null)
@@ -542,8 +705,25 @@ namespace CyberTech.Controllers
                 }
 
                 HttpContext.Session.Remove("AppliedVoucherId");
-                decimal subtotal = cart.CartItems.Sum(ci => ci.Subtotal);
-                cart.TotalPrice = subtotal;
+
+                // Calculate all discounts and final price without voucher
+                decimal totalDiscountAmount;
+                decimal finalPrice = CalculateCartTotals(cart, null, out totalDiscountAmount);
+
+                // Calculate individual discount amounts
+                decimal productDiscountAmount = 0;
+                foreach (var item in cart.CartItems)
+                {
+                    var product = item.Product;
+                    var originalPrice = product.Price * item.Quantity;
+                    var effectivePrice = product.GetEffectivePrice() * item.Quantity;
+                    productDiscountAmount += originalPrice - effectivePrice;
+                }
+
+                decimal amountAfterProductDiscount = cart.TotalPrice - productDiscountAmount;
+                decimal rankDiscountPercent = user.Rank?.DiscountPercent ?? 0;
+                decimal rankDiscountAmount = amountAfterProductDiscount * (rankDiscountPercent / 100);
+
                 await _context.SaveChangesAsync();
 
                 return Json(new
@@ -552,9 +732,13 @@ namespace CyberTech.Controllers
                     message = "Đã xóa mã giảm giá",
                     cart = new
                     {
-                        totalPrice = subtotal,
-                        subtotal = subtotal,
-                        discountAmount = 0,
+                        totalPrice = cart.TotalPrice,
+                        subtotal = cart.TotalPrice,
+                        productDiscountAmount = productDiscountAmount,
+                        rankDiscountAmount = rankDiscountAmount,
+                        voucherDiscountAmount = 0,
+                        totalDiscountAmount = totalDiscountAmount,
+                        finalPrice = finalPrice,
                         cartItemsCount = cart.CartItems.Count
                     }
                 });
@@ -568,28 +752,34 @@ namespace CyberTech.Controllers
 
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> Checkout(int addressId)
+        public async Task<IActionResult> Checkout(int addressId, string paymentMethod)
         {
             try
             {
-                var emailClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email);
-                if (emailClaim == null)
+                var email = User.FindFirst(ClaimTypes.Email)?.Value;
+                if (string.IsNullOrEmpty(email))
+                {
+                    return Json(new { success = false, message = "Vui lòng đăng nhập để tiếp tục" });
+                }
+
+                var user = await _context.Users
+                    .Include(u => u.Rank)
+                    .FirstOrDefaultAsync(u => u.Email == email);
+
+                if (user == null)
                 {
                     return Json(new { success = false, message = "Không tìm thấy thông tin người dùng" });
                 }
 
-                var user = await _userService.GetUserByEmailAsync(emailClaim.Value);
-                if (user == null)
-                {
-                    return Json(new { success = false, message = "Không tìm thấy người dùng" });
-                }
-
-                var address = await _userService.GetAddressByIdAsync(addressId, user.UserID);
+                // Validate address
+                var address = await _context.UserAddresses
+                    .FirstOrDefaultAsync(a => a.AddressID == addressId && a.UserID == user.UserID);
                 if (address == null)
                 {
-                    return Json(new { success = false, message = "Địa chỉ không hợp lệ" });
+                    return Json(new { success = false, message = "Địa chỉ giao hàng không hợp lệ" });
                 }
 
+                // Get cart with items
                 var cart = await _context.Carts
                     .Include(c => c.CartItems)
                         .ThenInclude(ci => ci.Product)
@@ -600,151 +790,83 @@ namespace CyberTech.Controllers
                     return Json(new { success = false, message = "Giỏ hàng trống" });
                 }
 
-                var appliedVoucherId = HttpContext.Session.GetInt32("AppliedVoucherId");
+                // Get applied voucher if exists
+                int? appliedVoucherId = HttpContext.Session.GetInt32("AppliedVoucherId");
                 Voucher appliedVoucher = null;
-                decimal discountAmount = 0;
-                decimal subtotal = cart.CartItems.Sum(ci => ci.Subtotal);
-                decimal finalPrice = subtotal;
-
                 if (appliedVoucherId.HasValue)
                 {
-                    appliedVoucher = await _context.Vouchers.FindAsync(appliedVoucherId.Value);
-                    if (appliedVoucher != null && IsVoucherValid(appliedVoucher, cart))
+                    appliedVoucher = await _context.Vouchers
+                        .Include(v => v.VoucherProducts)
+                        .FirstOrDefaultAsync(v => v.VoucherID == appliedVoucherId.Value);
+
+                    if (appliedVoucher != null)
                     {
-                        discountAmount = CalculateVoucherDiscount(appliedVoucher, cart);
-                        finalPrice = subtotal - discountAmount;
+                        _logger.LogInformation("Found applied voucher for checkout: {VoucherCode}", appliedVoucher.Code);
                     }
                 }
 
-                // Create order
-                var order = new Order
+                // Calculate all discounts and final price
+                decimal totalDiscountAmount;
+                decimal finalPrice = CalculateCartTotals(cart, appliedVoucher, out totalDiscountAmount);
+
+                // Calculate individual discount amounts
+                decimal productDiscountAmount = 0;
+                foreach (var item in cart.CartItems)
                 {
-                    UserID = user.UserID,
-                    TotalPrice = subtotal,
-                    DiscountAmount = discountAmount,
-                    FinalPrice = finalPrice,
-                    Status = "Pending",
-                    CreatedAt = DateTime.Now,
-                    UserAddressID = addressId
-                };
+                    var product = item.Product;
+                    var originalPrice = product.Price * item.Quantity;
+                    var effectivePrice = product.GetEffectivePrice() * item.Quantity;
+                    productDiscountAmount += originalPrice - effectivePrice;
+                }
 
-                // Add order items
-                foreach (var cartItem in cart.CartItems)
+                decimal amountAfterProductDiscount = cart.TotalPrice - productDiscountAmount;
+                decimal rankDiscountPercent = user.Rank?.DiscountPercent ?? 0;
+                decimal rankDiscountAmount = amountAfterProductDiscount * (rankDiscountPercent / 100);
+                decimal voucherDiscountAmount = totalDiscountAmount - productDiscountAmount - rankDiscountAmount;
+
+                // Create order with all discount information
+                var (checkoutSuccess, checkoutMessage, orderId) = await _cartService.CheckoutAsync(
+                    user.UserID,
+                    addressId,
+                    paymentMethod,
+                    appliedVoucherId);  // Pass the voucher ID
+
+                if (!checkoutSuccess)
                 {
-                    Console.WriteLine($"Processing cart item {cartItem.CartItemID} with subtotal {cartItem.Subtotal}");
-                    decimal itemDiscountAmount = 0;
-                    decimal itemFinalSubtotal = cartItem.Subtotal;
+                    return Json(new { success = false, message = checkoutMessage });
+                }
 
-                    // Apply product-specific voucher discount if applicable
-                    if (appliedVoucher != null && appliedVoucher.AppliesTo == "Product")
-                    {
-                        Console.WriteLine($"Voucher {appliedVoucher.Code} applies to Product. DiscountType: {appliedVoucher.DiscountType}");
-                        var applicableProductIds = appliedVoucher.VoucherProducts?.Select(vp => vp.ProductID).ToList() ?? new List<int>();
+                // Clear voucher from session
+                HttpContext.Session.Remove("AppliedVoucherId");
 
-                        if (applicableProductIds.Contains(cartItem.ProductID))
-                        {
-                            Console.WriteLine($"Cart item {cartItem.CartItemID} is eligible for product-specific voucher.");
-                            if (appliedVoucher.DiscountType == "PERCENT")
-                            {
-                                itemDiscountAmount = cartItem.Subtotal * (appliedVoucher.DiscountValue / 100);
-                                itemFinalSubtotal = cartItem.Subtotal - itemDiscountAmount;
-                            }
-                            else if (appliedVoucher.DiscountType == "FIXED")
-                            {
-                                // For fixed discounts on multiple products, distribute proportionally
-                                decimal eligibleItemsTotal = cart.CartItems
-                                    .Where(ci => applicableProductIds.Contains(ci.ProductID))
-                                    .Sum(ci => ci.Subtotal);
-
-                                if (eligibleItemsTotal > 0)
-                                {
-                                    decimal proportion = cartItem.Subtotal / eligibleItemsTotal;
-                                    itemDiscountAmount = Math.Min(appliedVoucher.DiscountValue * proportion, cartItem.Subtotal);
-                                    itemFinalSubtotal = cartItem.Subtotal - itemDiscountAmount;
-                                }
-                            }
-                            Console.WriteLine($"Product-specific discount for item {cartItem.CartItemID}: DiscountAmount = {itemDiscountAmount}, FinalSubtotal = {itemFinalSubtotal}");
-                        }
-                    }
-                    // For order-level discounts, distribute proportionally
-                    else if (appliedVoucher != null && appliedVoucher.AppliesTo == "Order" && subtotal > 0)
+                // Handle payment method
+                if (paymentMethod == "VNPay")
+                {
+                    return Json(new
                     {
-                        Console.WriteLine($"Voucher {appliedVoucher.Code} applies to Order. DiscountType: {appliedVoucher.DiscountType}");
-                        decimal proportion = cartItem.Subtotal / subtotal;
-                        itemDiscountAmount = discountAmount * proportion;
-                        itemFinalSubtotal = cartItem.Subtotal - itemDiscountAmount;
-                        Console.WriteLine($"Order-level discount for item {cartItem.CartItemID}: Proportion = {proportion}, DiscountAmount = {itemDiscountAmount}, FinalSubtotal = {itemFinalSubtotal}");
-                    }
-                    else if (appliedVoucher == null)
-                    {
-                        Console.WriteLine($"No voucher applied for item {cartItem.CartItemID}.");
-                    }
-
-                    order.OrderItems.Add(new OrderItem
-                    {
-                        ProductID = cartItem.ProductID,
-                        Quantity = cartItem.Quantity,
-                        UnitPrice = cartItem.Product.GetEffectivePrice(),
-                        Subtotal = cartItem.Subtotal,
-                        DiscountAmount = itemDiscountAmount,
-                        FinalSubtotal = itemFinalSubtotal
+                        success = true,
+                        orderId,
+                        paymentMethod,
+                        message = "Đặt hàng thành công. Vui lòng tiến hành thanh toán."
                     });
                 }
-
-                _context.Orders.Add(order);
-                _context.CartItems.RemoveRange(cart.CartItems);
-                cart.TotalPrice = 0;
-
-                // Update user stats
-                user.OrderCount += 1;
-                user.TotalSpent += order.FinalPrice;
-
-                // Update voucher quantity
-                if (appliedVoucher != null && appliedVoucher.QuantityAvailable.HasValue)
+                else if (paymentMethod == "COD")
                 {
-                    appliedVoucher.QuantityAvailable--;
-                }
-
-                // Save changes to get the OrderID
-                await _context.SaveChangesAsync();
-
-                bool paymentSuccess = new Random().Next(0, 2) == 1;
-                if (paymentSuccess)
-                {
-                    var payment = new Payment
+                    return Json(new
                     {
-                        OrderID = order.OrderID,
-                        PaymentMethod = "Momo",
-                        PaymentStatus = "Completed",
-                        Amount = order.FinalPrice,
-                        PaymentDate = DateTime.Now
-                    };
-                    _context.Payments.Add(payment);
-                    order.Status = "Processing";
+                        success = true,
+                        message = "Đặt hàng thành công. Cảm ơn bạn đã mua hàng!"
+                    });
                 }
                 else
                 {
-                    var payment = new Payment
-                    {
-                        OrderID = order.OrderID,
-                        PaymentMethod = "Momo",
-                        PaymentStatus = "Failed",
-                        Amount = order.FinalPrice,
-                        PaymentDate = DateTime.Now
-                    };
-                    _context.Payments.Add(payment);
-                    order.Status = "Cancelled";
+                    return Json(new { success = false, message = "Phương thức thanh toán không hợp lệ" });
                 }
-
-                HttpContext.Session.Remove("AppliedVoucherId");
-                await _context.SaveChangesAsync();
-
-                return Json(new { success = paymentSuccess, message = paymentSuccess ? "Thanh toán thành công" : "Thanh toán thất bại" });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during checkout for user {Email}", User.Identity.Name);
-                return Json(new { success = false, message = "Có lỗi xảy ra khi thanh toán" });
+                _logger.LogError(ex, "Error during checkout");
+                return Json(new { success = false, message = "Có lỗi xảy ra trong quá trình đặt hàng" });
             }
         }
 
@@ -753,28 +875,37 @@ namespace CyberTech.Controllers
             // Check if voucher is active and within valid date range
             if (!voucher.IsActive || voucher.ValidFrom > DateTime.Now || voucher.ValidTo < DateTime.Now)
             {
+                _logger.LogWarning("Voucher {VoucherCode} is not active or outside date range", voucher.Code);
                 return false;
             }
 
             // Check if voucher has available quantity
             if (voucher.QuantityAvailable.HasValue && voucher.QuantityAvailable <= 0)
             {
+                _logger.LogWarning("Voucher {VoucherCode} has no available quantity", voucher.Code);
                 return false;
             }
 
             // Check if voucher applies to the entire order
             if (voucher.AppliesTo == "Order")
             {
+                _logger.LogInformation("Voucher {VoucherCode} applies to entire order", voucher.Code);
                 return true;
             }
 
             // Check if voucher applies to specific products in the cart
-            if (voucher.AppliesTo == "Product" && voucher.VoucherProducts != null)
+            if (voucher.AppliesTo == "Product" && voucher.VoucherProducts != null && voucher.VoucherProducts.Any())
             {
                 var applicableProductIds = voucher.VoucherProducts.Select(vp => vp.ProductID).ToList();
-                return cart.CartItems.Any(ci => applicableProductIds.Contains(ci.ProductID));
+                var hasMatchingProducts = cart.CartItems.Any(ci => applicableProductIds.Contains(ci.ProductID));
+
+                _logger.LogInformation("Voucher {VoucherCode} applies to specific products. Has matching products: {HasMatching}",
+                    voucher.Code, hasMatchingProducts);
+
+                return hasMatchingProducts;
             }
 
+            _logger.LogWarning("Voucher {VoucherCode} is not valid for this cart", voucher.Code);
             return false;
         }
     }

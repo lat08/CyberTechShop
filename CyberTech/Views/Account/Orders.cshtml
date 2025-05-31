@@ -350,8 +350,20 @@
                                                 <td class="text-end" id="subtotal"></td>
                                             </tr>
                                             <tr>
-                                                <td>Giảm giá:</td>
-                                                <td class="text-end" id="discount"></td>
+                                                <td>Giảm giá sản phẩm:</td>
+                                                <td class="text-end" id="productDiscount"></td>
+                                            </tr>
+                                            <tr>
+                                                <td>Giảm giá thành viên:</td>
+                                                <td class="text-end" id="rankDiscount"></td>
+                                            </tr>
+                                            <tr>
+                                                <td>Giảm giá voucher:</td>
+                                                <td class="text-end" id="voucherDiscount"></td>
+                                            </tr>
+                                            <tr>
+                                                <td>Tổng giảm giá:</td>
+                                                <td class="text-end" id="totalDiscount"></td>
                                             </tr>
                                             <tr class="fw-bold">
                                                 <td>Tổng thanh toán:</td>
@@ -433,6 +445,9 @@
             justify-content: space-between;
             align-items: flex-start;
             padding: 0 20px;
+        }
+        .paymentStatusFilter{
+            line-height: 1.9rem;
         }
 
         .timeline::before {
@@ -668,6 +683,26 @@
 
 @section Scripts {
 <script>
+    var orderStatusMap = {
+            'Pending': 'Chờ xử lý',
+            'Processing': 'Đang xử lý', 
+            'Shipped': 'Đang giao hàng',
+            'Delivered': 'Đã giao hàng',
+            'Cancelled': 'Đã hủy',
+            'Returned': 'Đã trả hàng'
+        };
+
+        var paymentStatusMap = {
+            'Pending': 'Chờ thanh toán',
+            'Completed': 'Đã thanh toán',
+            'Failed': 'Thanh toán thất bại',
+            'Refunded': 'Đã hoàn tiền'
+        };
+
+        // Helper function to get status text
+        function getStatusText(status, statusMap) {
+            return statusMap[status] || status || 'N/A';
+        }
     $(function() {
         // Search functionality
         $('#searchOrderForm').on('submit', function(e) {
@@ -701,14 +736,21 @@
                 $('#orderDate').text(new Date(data.createdAt).toLocaleString());
                 
                 // Update status with badge
+                
                 var statusClass = 'status-' + data.status.toLowerCase();
-                $('#orderStatus').html(`<span class="status-badge ${statusClass}">${data.status}</span>`);
+                var statusText = getStatusText(data.status, orderStatusMap);
+                $('#orderStatus').html(`<span class="status-badge ${statusClass}">${statusText}</span>`);
                 
                 $('#paymentMethod').text(data.paymentMethod || 'Chưa thanh toán');
-                $('#paymentStatus').text(data.paymentStatus || 'Chưa thanh toán');
+
+                var paymentStatusText = getStatusText(data.paymentStatus, paymentStatusMap);
+                $('#paymentStatus').text(paymentStatusText);
                 $('#paymentDate').text(data.paymentDate ? new Date(data.paymentDate).toLocaleString() : 'N/A');
                 $('#subtotal').text(data.totalPrice.toLocaleString() + ' đ');
-                $('#discount').text(data.discountAmount.toLocaleString() + ' đ');
+                $('#productDiscount').text(data.productDiscountAmount.toLocaleString() + ' đ');
+                $('#rankDiscount').text(data.rankDiscountAmount.toLocaleString() + ' đ');
+                $('#voucherDiscount').text(data.voucherDiscountAmount.toLocaleString() + ' đ');
+                $('#totalDiscount').text(data.totalDiscountAmount.toLocaleString() + ' đ');
                 $('#total').text(data.finalPrice.toLocaleString() + ' đ');
 
                 // Update timeline

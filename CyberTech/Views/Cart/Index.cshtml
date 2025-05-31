@@ -3,44 +3,13 @@
     ViewData["Title"] = "Giỏ hàng";
     Layout = "~/Views/Shared/_Layout.cshtml";
 
-    // Calculate cart totals here to ensure consistency
-    decimal subtotal = Model.CartItems?.Sum(item => item.Subtotal) ?? 0;
-    decimal discountAmount = 0;
-    decimal finalTotal = subtotal;
-
-    if (Model.AppliedVoucher != null)
-    {
-        if (Model.AppliedVoucher.AppliesTo == "Order")
-        {
-            if (Model.AppliedVoucher.DiscountType == "PERCENT")
-            {
-                discountAmount = subtotal * (Model.AppliedVoucher.DiscountValue / 100);
-            }
-            else // FIXED
-            {
-                discountAmount = Math.Min(Model.AppliedVoucher.DiscountValue, subtotal);
-            }
-        }
-        else if (Model.AppliedVoucher.AppliesTo == "Product")
-        {
-            var applicableProductIds = Model.AppliedVoucher.VoucherProducts?.Select(vp => vp.ProductID).ToList() ?? new List<int>();
-            var eligibleItems = Model.CartItems?.Where(ci => applicableProductIds.Contains(ci.ProductID)).ToList();
-            
-            if (eligibleItems?.Any() == true)
-            {
-                decimal eligibleTotal = eligibleItems.Sum(ci => ci.Subtotal);
-                if (Model.AppliedVoucher.DiscountType == "PERCENT")
-                {
-                    discountAmount = eligibleTotal * (Model.AppliedVoucher.DiscountValue / 100);
-                }
-                else // FIXED
-                {
-                    discountAmount = Math.Min(Model.AppliedVoucher.DiscountValue, eligibleTotal);
-                }
-            }
-        }
-        finalTotal = subtotal - discountAmount;
-    }
+    // Sử dụng các giá trị từ Model thay vì tính toán lại
+    decimal subtotal = Model.Subtotal;
+    decimal productDiscountAmount = Model.ProductDiscountAmount;
+    decimal rankDiscountAmount = Model.RankDiscountAmount;
+    decimal voucherDiscountAmount = Model.VoucherDiscountAmount;
+    decimal totalDiscountAmount = Model.TotalDiscount;
+    decimal finalTotal = Model.FinalTotal;
 }
 
 <div class="container-fluid">
@@ -86,7 +55,9 @@
                         @foreach (var item in Model.CartItems)
                         {
                             var imageUrl = item.Product?.ProductImages?.FirstOrDefault(pi => pi.IsPrimary)?.ImageURL ?? "/images/no-image.png";
-                            var currentPrice = item.Product?.SalePrice ?? item.Product?.Price ?? 0;
+                            var originalPrice = item.Product?.Price ?? 0;
+                            var effectivePrice = item.Product?.GetEffectivePrice() ?? originalPrice;
+                            var isOnSale = item.Product?.IsOnSale ?? false;
                             
                             <div class="cart-item border-bottom p-3" data-cart-item-id="@item.CartItemID">
                                 <div class="row align-items-center">
@@ -99,24 +70,23 @@
                                     <div class="col-md-4 col-9">
                                         <h6 class="mb-1">@(item.Product?.Name ?? "Sản phẩm")</h6>
                                         <div class="price-info">
-                                            @{
-                                                var regularPrice = item.Product?.Price ?? 0;
-                                                var effectivePrice = item.Product?.GetEffectivePrice() ?? regularPrice;
-                                                var isOnSale = item.Product?.IsOnSale ?? false;
-                                            }
-                                            
                                             @if (isOnSale)
                                             {
-                                                <span class="text-decoration-line-through text-muted me-2">@regularPrice.ToString("N0") đ</span>
+                                                <span class="text-decoration-line-through text-muted me-2">@originalPrice.ToString("N0") đ</span>
                                                 <span class="text-danger fw-bold">@effectivePrice.ToString("N0") đ</span>
                                                 @if (item.Product?.SalePercentage.HasValue == true)
                                                 {
                                                     <span class="badge bg-danger ms-1">-@item.Product.SalePercentage.Value%</span>
                                                 }
+                                                else
+                                                {
+                                                    var discountPercent = Math.Round((1 - (effectivePrice / originalPrice)) * 100, 0);
+                                                    <span class="badge bg-danger ms-1">-@discountPercent%</span>
+                                                }
                                             }
                                             else
                                             {
-                                                <span class="fw-bold">@regularPrice.ToString("N0") đ</span>
+                                                <span class="fw-bold">@originalPrice.ToString("N0") đ</span>
                                             }
                                         </div>
                                         <small class="text-muted">
@@ -204,46 +174,76 @@
                             <hr>
                             
                             <!-- Summary Details -->
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>Tạm tính (@(Model.CartItems?.Sum(x => x.Quantity) ?? 0) sản phẩm)</span>
-                                <span class="fw-medium" id="cartSubtotal">@subtotal.ToString("N0") đ</span>
-                            </div>
-                            
-                            <div class="d-flex justify-content-between mb-2 text-success">
-                                <span><i class="fas fa-tag me-1"></i>Giảm giá</span>
-                                <span class="fw-medium" id="cartDiscount">
-                                    @if (Model.AppliedVoucher != null)
-                                    {
-                                        if (Model.AppliedVoucher.DiscountType == "PERCENT")
-                                        {
-                                            <text>-@discountAmount.ToString("N0") đ (@Model.AppliedVoucher.DiscountValue%)</text>
-                                        }
-                                        else
-                                        {
-                                            <text>-@discountAmount.ToString("N0") đ</text>
-                                        }
-                                    }
-                                    else
-                                    {
-                                        <text>-0 đ</text>
-                                    }
-                                </span>
-                            </div>
-                            
-                            <div class="d-flex justify-content-between mb-3 text-success">
-                                <span><i class="fas fa-shipping-fast me-1"></i>Phí vận chuyển</span>
-                                <span>Miễn phí</span>
-                            </div>
-                            
-                            <hr>
-                            
-                            <div class="d-flex justify-content-between mb-4">
-                                <span class="fs-5 fw-bold">Tổng thanh toán</span>
-                                <span class="fs-5 fw-bold text-primary" id="cartTotal">@finalTotal.ToString("N0") đ</span>
+                            <div class="cart-summary">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Tạm tính (@(Model.CartItems?.Count ?? 0) sản phẩm)</span>
+                                    <span id="cartSubtotal">@Model.Subtotal.ToString("N0") đ</span>
+                                </div>
+
+                                @if (Model.ProductDiscountAmount > 0)
+                                {
+                                    <div class="d-flex justify-content-between mb-2 text-success">
+                                        <div>
+                                            <span>Giảm giá sản phẩm</span>
+                                            <span class="badge bg-danger ms-1">Sale</span>
+                                        </div>
+                                        <span id="productDiscount">-@Model.ProductDiscountAmount.ToString("N0") đ</span>
+                                    </div>
+                                }
+
+                                @if (Model.RankDiscountPercent > 0)
+                                {
+                                    <div class="d-flex justify-content-between mb-2 text-success">
+                                        <div>
+                                            <span>Giảm giá thành viên</span>
+                                            @* <span class="badge bg-primary ms-1">@Model.RankName</span> *@
+                                            <span class="badge bg-success ms-1">-@Model.RankDiscountPercent%</span>
+                                        </div>
+                                        <span id="rankDiscount">-@Model.RankDiscountAmount.ToString("N0") đ</span>
+                                    </div>
+                                }
+
+                                @if (Model.VoucherDiscountAmount > 0)
+                                {
+                                    <div class="d-flex justify-content-between mb-2 text-success">
+                                        <div>
+                                            <span>Mã giảm giá</span>
+                                            <span class="badge bg-success ms-1">@Model.AppliedVoucher.Code</span>
+                                        </div>
+                                        <span id="voucherDiscount">
+                                            @if (Model.AppliedVoucher.DiscountType == "PERCENT")
+                                            {
+                                                <text>-@Model.VoucherDiscountAmount.ToString("N0") đ (@Model.AppliedVoucher.DiscountValue%)</text>
+                                            }
+                                            else
+                                            {
+                                                <text>-@Model.VoucherDiscountAmount.ToString("N0") đ</text>
+                                            }
+                                        </span>
+                                    </div>
+                                }
+
+                                @if (Model.TotalDiscount > 0)
+                                {
+                                    <div class="d-flex justify-content-between mb-2 fw-bold">
+                                        <span>Tổng giảm giá</span>
+                                        <span id="totalDiscount" class="text-success">-@Model.TotalDiscount.ToString("N0") đ</span>
+                                    </div>
+                                    <hr>
+                                }
+
+                                <div class="d-flex justify-content-between total-row">
+                                    <span class="fw-bold">Thành tiền</span>
+                                    <span id="cartTotal" class="total-amount">@Model.FinalTotal.ToString("N0") đ</span>
+                                </div>
+
+                                <div class="mt-2 text-end">
+                                    @* <small class="text-muted">Đã bao gồm VAT (nếu có)</small> *@
+                                </div>
                             </div>
                             
                             <!-- Checkout Actions -->
-                            <div class="d-grid gap-2">
+                            <div class="d-grid gap-2 mt-3">
                                 <button type="button" class="btn btn-primary btn-lg" 
                                         id="proceedToCheckout" data-bs-toggle="modal" data-bs-target="#addressModal">
                                     <i class="fas fa-credit-card me-2"></i>Tiến hành thanh toán
@@ -360,6 +360,58 @@
     </div>
 </div>
 
+<!-- Payment Method Selection Modal -->
+<div class="modal fade" id="paymentMethodModal" tabindex="-1" aria-labelledby="paymentMethodModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="paymentMethodModalLabel">
+                    <i class="fas fa-credit-card me-2"></i>Chọn phương thức thanh toán
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="payment-methods">
+                    <div class="form-check payment-method-item mb-3">
+                        <input class="form-check-input" type="radio" name="paymentMethod" id="paymentCOD" value="COD" checked>
+                        <label class="form-check-label w-100" for="paymentCOD">
+                            <div class="d-flex align-items-center">
+                                <div class="payment-icon me-3">
+                                    <i class="fas fa-money-bill-wave text-success"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold">Thanh toán khi nhận hàng (COD)</div>
+                                    <div class="text-muted small">Thanh toán bằng tiền mặt khi nhận hàng</div>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="form-check payment-method-item">
+                        <input class="form-check-input" type="radio" name="paymentMethod" id="paymentVNPay" value="VNPay">
+                        <label class="form-check-label w-100" for="paymentVNPay">
+                            <div class="d-flex align-items-center">
+                                <div class="payment-icon me-3">
+                                    <img src="/images/vnpay-logo.png" alt="VNPay" style="height: 24px;">
+                                </div>
+                                <div>
+                                    <div class="fw-bold">Thanh toán qua VNPay</div>
+                                    <div class="text-muted small">Thanh toán trực tuyến qua cổng thanh toán VNPay</div>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" id="confirmPaymentMethod">
+                    <i class="fas fa-check me-2"></i>Xác nhận
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Styles {
     <style>
         .cart-item.updating {
@@ -435,6 +487,41 @@
                 margin-bottom: 10px;
             }
         }
+
+        .payment-method-item {
+            padding: 1rem;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .payment-method-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .payment-method-item.selected {
+            border-color: #0d6efd;
+            background-color: #f8f9ff;
+        }
+
+        .payment-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .form-check-input:checked {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+
+        .form-check-label {
+            cursor: pointer;
+        }
     </style>
 }
 
@@ -500,6 +587,11 @@
                     quantityTimeout = setTimeout(() => {
                         self.handleQuantityChange($input);
                     }, 800);
+                });
+
+                // Payment method confirmation
+                $(document).on('click', '#confirmPaymentMethod', function() {
+                    CartManager.handlePaymentMethodConfirm();
                 });
             },
 
@@ -640,7 +732,65 @@
                     return;
                 }
 
-                this.processCheckout(selectedAddressId);
+                // Show payment method modal
+                $('#addressModal').modal('hide');
+                $('#paymentMethodModal').modal('show');
+            },
+
+            // Handle payment method confirmation
+            handlePaymentMethodConfirm: function() {
+                const paymentMethod = $('input[name="paymentMethod"]:checked').val();
+                const selectedAddressId = $('input[name="selectedAddress"]:checked').val();
+
+                $('#paymentMethodModal').modal('hide');
+                $('#paymentModal').modal('show');
+
+                $.ajax({
+                    url: '/Cart/Checkout',
+                    type: 'POST',
+                    data: { 
+                        addressId: selectedAddressId,
+                        paymentMethod: paymentMethod
+                    },
+                    success: (response) => {
+                        setTimeout(() => {
+                            $('#paymentModal').modal('hide');
+                            if (response.success) {
+                                if (paymentMethod === 'VNPay') {
+                                    // Make another AJAX call to get the VNPay payment URL
+                                    $.ajax({
+                                        url: '/Payment/ProcessVNPayPayment',
+                                        type: 'POST',
+                                        data: { orderId: response.orderId },
+                                        success: (paymentResponse) => {
+                                            if (paymentResponse.success && paymentResponse.paymentUrl) {
+                                                window.location.href = paymentResponse.paymentUrl;
+                                            } else {
+                                                utils.showToast(paymentResponse.message || 'Không thể tạo URL thanh toán VNPay', 'error');
+                                            }
+                                        },
+                                        error: () => {
+                                            utils.showToast('Có lỗi xảy ra khi xử lý thanh toán VNPay', 'error');
+                                        }
+                                    });
+                                } else {
+                                    utils.showToast('Đặt hàng thành công!', 'success');
+                                    setTimeout(() => {
+                                        window.location.href = '@Url.Action("Orders", "Account")';
+                                    }, 2000);
+                                }
+                            } else {
+                                utils.showToast(response.message || 'Đặt hàng thất bại. Vui lòng thử lại.', 'error');
+                            }
+                        }, 2000);
+                    },
+                    error: () => {
+                        setTimeout(() => {
+                            $('#paymentModal').modal('hide');
+                            utils.showToast('Có lỗi xảy ra trong quá trình đặt hàng', 'error');
+                        }, 2000);
+                    }
+                });
             },
 
             // Update cart item quantity via AJAX
@@ -770,15 +920,29 @@
                 if (response.cart) {
                     const cart = response.cart;
                     $('#cartSubtotal').text(cart.subtotal.toLocaleString() + ' đ');
-                    $('#cartDiscount').text('-' + cart.discountAmount.toLocaleString() + ' đ');
-                    $('#cartTotal').text(cart.totalPrice.toLocaleString() + ' đ');
-                    $('.page-title .badge').text(cart.cartItemsCount + ' sản phẩm');
-                    const totalItems = cart.cartItemsCount || 0;
-                    $('.d-flex.justify-content-between.mb-2:first').find('span:first').text('Tạm tính (' + totalItems + ' sản phẩm)');
-
-                    if (response.discountType === 'PERCENT' && response.discountPercent) {
-                        $('#cartDiscount').html(`-${cart.discountAmount.toLocaleString()} đ (${response.discountPercent}%)`);
+                    
+                    // Update rank discount if exists
+                    if (cart.rankDiscountAmount > 0) {
+                        $('#rankDiscount').text('-' + cart.rankDiscountAmount.toLocaleString() + ' đ');
                     }
+
+                    // Update voucher discount if exists
+                    if (cart.voucherDiscountAmount > 0) {
+                        const voucherText = response.discountType === 'PERCENT' 
+                            ? `-${cart.voucherDiscountAmount.toLocaleString()} đ (${response.discountPercent}%)`
+                            : `-${cart.voucherDiscountAmount.toLocaleString()} đ`;
+                        $('#voucherDiscount').html(voucherText);
+                    }
+
+                    // Update total discount
+                    $('#totalDiscount').text('-' + cart.totalDiscountAmount.toLocaleString() + ' đ');
+                    
+                    // Update final total
+                    $('#cartTotal').text(cart.totalPrice.toLocaleString() + ' đ');
+                    
+                    // Update item count
+                    $('.page-title .badge').text(cart.cartItemsCount + ' sản phẩm');
+                    $('.d-flex.justify-content-between.mb-2:first').find('span:first').text('Tạm tính (' + cart.cartItemsCount + ' sản phẩm)');
                 }
             },
 

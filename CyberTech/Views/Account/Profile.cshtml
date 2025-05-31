@@ -22,7 +22,7 @@
                                 <span class="rank-discount">Giảm giá @Model.Rank.DiscountPercent%</span>
                             }
                         </div>
-                        @if (ViewBag.NextRank != null)
+                        @if (!ViewBag.IsMaxRank && ViewBag.NextRank != null)
                         {
                             <div class="next-rank">
                                 <span>Rank tiếp theo: @ViewBag.NextRank.RankName</span>
@@ -32,8 +32,19 @@
                                 }
                             </div>
                         }
+                        else if (ViewBag.IsMaxRank)
+                        {
+                            <div class="max-rank-info">
+                                <span class="max-rank-badge">
+                                    <i class="fas fa-crown"></i> @ViewBag.MaxRankMessage
+                                </span>
+                                <div class="total-spent-info">
+                                    Tổng chi tiêu: @Model.TotalSpent.ToString("N0")đ
+                                </div>
+                            </div>
+                        }
                     </div>
-                    @if (ViewBag.NextRank != null)
+                    @if (!ViewBag.IsMaxRank && ViewBag.NextRank != null)
                     {
                         var progress = (Model.TotalSpent / ViewBag.NextRank.MinTotalSpent) * 100;
                         <div class="progress">
@@ -391,6 +402,36 @@
             .gender-options {
                 justify-content: center;
             }
+        }
+
+        /* Add new styles for max rank */
+        .max-rank-info {
+            text-align: center;
+            padding: 15px;
+            background: linear-gradient(135deg, #ffd700 0%, #ffcc00 100%);
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .max-rank-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 18px;
+            color: #8B4513;
+            font-weight: 600;
+        }
+
+        .max-rank-badge i {
+            color: #FFD700;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .total-spent-info {
+            margin-top: 10px;
+            font-size: 16px;
+            color: #8B4513;
+            font-weight: 500;
         }
     </style>
 }

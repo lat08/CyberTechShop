@@ -502,6 +502,7 @@ namespace CyberTech.Services
             try
             {
                 return await _context.Users
+                    .Include(u => u.Rank)
                     .Where(u => u.Email == email)
                     .Select(u => new User
                     {
@@ -516,6 +517,7 @@ namespace CyberTech.Services
                         TotalSpent = u.TotalSpent,
                         OrderCount = u.OrderCount,
                         RankId = u.RankId,
+                        Rank = u.Rank,
                         EmailVerified = true,
                         UserStatus = u.UserStatus,
                         CreatedAt = u.CreatedAt,

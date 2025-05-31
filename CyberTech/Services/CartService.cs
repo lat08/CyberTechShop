@@ -91,7 +91,6 @@ namespace CyberTech.Services
                 }
 
                 var cartItem = await GetCartItemAsync(cart.CartID, productId);
-                var price = product.SalePrice ?? product.Price;
 
                 if (cartItem == null)
                 {
@@ -100,7 +99,7 @@ namespace CyberTech.Services
                         CartID = cart.CartID,
                         ProductID = productId,
                         Quantity = quantity,
-                        Subtotal = price * quantity
+                        Subtotal = product.Price * quantity
                     };
 
                     _context.CartItems.Add(cartItem);
@@ -115,10 +114,10 @@ namespace CyberTech.Services
                     }
 
                     cartItem.Quantity += quantity;
-                    cartItem.Subtotal = price * cartItem.Quantity;
+                    cartItem.Subtotal = product.Price * cartItem.Quantity;
                 }
 
-                // Update cart total
+                // Update cart total price (original prices)
                 cart.TotalPrice = await CalculateCartTotalAsync(cart.CartID);
 
                 await _context.SaveChangesAsync();
@@ -162,11 +161,10 @@ namespace CyberTech.Services
                     return false;
                 }
 
-                var price = product.SalePrice ?? product.Price;
                 cartItem.Quantity = quantity;
-                cartItem.Subtotal = price * quantity;
+                cartItem.Subtotal = product.Price * quantity;
 
-                // Update cart total
+                // Update cart total price (original prices)
                 cart.TotalPrice = await CalculateCartTotalAsync(cart.CartID);
 
                 await _context.SaveChangesAsync();
@@ -191,7 +189,7 @@ namespace CyberTech.Services
 
                 _context.CartItems.Remove(cartItem);
 
-                // Update cart total
+                // Update cart total price (original prices)
                 cart.TotalPrice = await CalculateCartTotalAsync(cart.CartID);
 
                 await _context.SaveChangesAsync();
@@ -316,24 +314,54 @@ namespace CyberTech.Services
                     return (false, 0, "Giỏ hàng trống");
                 }
 
-                decimal discountAmount = 0;
+                // Get user's rank for discount calculation
+                var user = await _context.Users
+                    .Include(u => u.Rank)
+                    .FirstOrDefaultAsync(u => u.UserID == userId);
+
+                decimal rankDiscountPercent = user?.Rank?.DiscountPercent ?? 0;
+
+                // Calculate original price total
+                decimal originalTotal = cart.CartItems.Sum(ci => ci.Product.Price * ci.Quantity);
+
+                // Calculate product discounts (from sales)
+                decimal productDiscountAmount = 0;
+                foreach (var item in cart.CartItems)
+                {
+                    var product = item.Product;
+                    var originalPrice = product.Price * item.Quantity;
+                    var effectivePrice = product.GetEffectivePrice() * item.Quantity;
+                    productDiscountAmount += originalPrice - effectivePrice;
+                }
+
+                // Calculate amount after product discount
+                decimal amountAfterProductDiscount = originalTotal - productDiscountAmount;
+
+                // Calculate rank discount
+                decimal rankDiscountAmount = amountAfterProductDiscount * (rankDiscountPercent / 100);
+
+                // Calculate amount after rank discount
+                decimal amountAfterRankDiscount = amountAfterProductDiscount - rankDiscountAmount;
+
+                // Now calculate voucher discount
+                decimal voucherDiscountAmount = 0;
 
                 // Apply voucher based on type
                 if (voucher.AppliesTo == "Order")
                 {
-                    // Apply to entire order
+                    // Apply to entire order after product and rank discounts
                     if (voucher.DiscountType == "PERCENT")
                     {
-                        discountAmount = cart.TotalPrice * (voucher.DiscountValue / 100);
+                        voucherDiscountAmount = amountAfterRankDiscount * (voucher.DiscountValue / 100);
                     }
                     else if (voucher.DiscountType == "FIXED")
                     {
-                        discountAmount = Math.Min(voucher.DiscountValue, cart.TotalPrice);
+                        voucherDiscountAmount = Math.Min(voucher.DiscountValue, amountAfterRankDiscount);
                     }
                 }
                 else if (voucher.AppliesTo == "Product")
                 {
-                    // Apply to specific products
+                    // Apply to specific products only
                     var voucherProductIds = voucher.VoucherProducts.Select(vp => vp.ProductID).ToList();
                     var eligibleCartItems = cart.CartItems.Where(ci => voucherProductIds.Contains(ci.ProductID)).ToList();
 
@@ -342,17 +370,32 @@ namespace CyberTech.Services
                         return (false, 0, "Mã giảm giá không áp dụng cho sản phẩm nào trong giỏ hàng");
                     }
 
-                    decimal eligibleTotal = eligibleCartItems.Sum(ci => ci.Subtotal);
+                    // Calculate eligible total after product and rank discounts
+                    decimal eligibleTotal = 0;
+                    foreach (var item in eligibleCartItems)
+                    {
+                        var product = item.Product;
+                        var originalItemPrice = product.Price * item.Quantity;
+                        var effectivePrice = product.GetEffectivePrice() * item.Quantity;
+                        var itemProductDiscount = originalItemPrice - effectivePrice;
+                        var itemAfterProductDiscount = originalItemPrice - itemProductDiscount;
+                        var itemRankDiscount = itemAfterProductDiscount * (rankDiscountPercent / 100);
+                        var itemAfterAllDiscounts = itemAfterProductDiscount - itemRankDiscount;
+                        eligibleTotal += itemAfterAllDiscounts;
+                    }
 
                     if (voucher.DiscountType == "PERCENT")
                     {
-                        discountAmount = eligibleTotal * (voucher.DiscountValue / 100);
+                        voucherDiscountAmount = eligibleTotal * (voucher.DiscountValue / 100);
                     }
                     else if (voucher.DiscountType == "FIXED")
                     {
-                        discountAmount = Math.Min(voucher.DiscountValue, eligibleTotal);
+                        voucherDiscountAmount = Math.Min(voucher.DiscountValue, eligibleTotal);
                     }
                 }
+
+                // Ensure voucher discount doesn't exceed the remaining amount
+                voucherDiscountAmount = Math.Min(voucherDiscountAmount, amountAfterRankDiscount);
 
                 // Store voucher info in session (will be implemented in controller)
                 if (voucher.QuantityAvailable.HasValue)
@@ -361,7 +404,10 @@ namespace CyberTech.Services
                     await _context.SaveChangesAsync();
                 }
 
-                return (true, discountAmount, "Áp dụng mã giảm giá thành công");
+                _logger.LogInformation("Successfully applied voucher {VoucherCode}. Discount amount: {DiscountAmount}",
+                    voucher.Code, voucherDiscountAmount);
+
+                return (true, voucherDiscountAmount, "Áp dụng mã giảm giá thành công");
             }
             catch (Exception ex)
             {
@@ -376,14 +422,20 @@ namespace CyberTech.Services
             return await Task.FromResult(true);
         }
 
-        public async Task<(bool Success, string Message)> CheckoutAsync(int userId, int addressId, string paymentMethod)
+        public async Task<(bool Success, string Message, int? OrderId)> CheckoutAsync(int userId, int addressId, string paymentMethod, int? voucherId = null)
         {
             try
             {
+                // Validate payment method
+                if (paymentMethod != "COD" && paymentMethod != "VNPay")
+                {
+                    return (false, "Phương thức thanh toán không hợp lệ", null);
+                }
+
                 var cart = await GetCartAsync(userId);
                 if (cart == null || !cart.CartItems.Any())
                 {
-                    return (false, "Giỏ hàng trống");
+                    return (false, "Giỏ hàng trống", null);
                 }
 
                 var address = await _context.UserAddresses
@@ -391,51 +443,141 @@ namespace CyberTech.Services
 
                 if (address == null)
                 {
-                    return (false, "Địa chỉ giao hàng không hợp lệ");
+                    return (false, "Địa chỉ giao hàng không hợp lệ", null);
                 }
+
+                // Get user's rank for discount calculation
+                var user = await _context.Users
+                    .Include(u => u.Rank)
+                    .FirstOrDefaultAsync(u => u.UserID == userId);
 
                 // Start transaction
                 using var transaction = await _context.Database.BeginTransactionAsync();
 
                 try
                 {
-                    // Create order
-                    var order = new Order
-                    {
-                        UserID = userId,
-                        TotalPrice = cart.TotalPrice,
-                        DiscountAmount = 0, // Will be set from session in controller
-                        FinalPrice = cart.TotalPrice, // Will be adjusted in controller
-                        Status = "Pending",
-                        CreatedAt = DateTime.Now
-                    };
+                    // Calculate original price total (without any discounts)
+                    decimal originalTotal = cart.CartItems.Sum(ci => ci.Product.Price * ci.Quantity);
 
-                    _context.Orders.Add(order);
-                    await _context.SaveChangesAsync();
-
-                    // Create order items
+                    // Calculate product discounts (from sales)
+                    decimal productDiscountAmount = 0;
                     foreach (var cartItem in cart.CartItems)
                     {
                         var product = await _context.Products.FindAsync(cartItem.ProductID);
                         if (product == null || product.Stock < cartItem.Quantity)
                         {
                             await transaction.RollbackAsync();
-                            return (false, $"Sản phẩm {product?.Name ?? "không xác định"} không đủ số lượng");
+                            return (false, $"Sản phẩm {product?.Name ?? "không xác định"} không đủ số lượng", null);
+                        }
+
+                        // Calculate product discount if on sale
+                        if (product.SalePrice.HasValue && product.SalePrice < product.Price)
+                        {
+                            productDiscountAmount += (product.Price - product.SalePrice.Value) * cartItem.Quantity;
+                        }
+                        else if (product.SalePercentage.HasValue)
+                        {
+                            decimal discountedPrice = product.Price * (1 - (product.SalePercentage.Value / 100));
+                            productDiscountAmount += (product.Price - discountedPrice) * cartItem.Quantity;
                         }
 
                         // Update product stock
                         product.Stock -= cartItem.Quantity;
+                    }
 
-                        // Create order item
+                    // Calculate amount after product discount
+                    decimal amountAfterProductDiscount = originalTotal - productDiscountAmount;
+
+                    // Calculate rank discount if applicable
+                    decimal rankDiscountAmount = 0;
+                    if (user?.Rank != null && user.Rank.DiscountPercent.HasValue)
+                    {
+                        rankDiscountAmount = amountAfterProductDiscount * (user.Rank.DiscountPercent.Value / 100);
+                    }
+
+                    // Calculate voucher discount if applicable
+                    decimal voucherDiscountAmount = 0;
+                    if (voucherId.HasValue)
+                    {
+                        var voucher = await _context.Vouchers
+                            .Include(v => v.VoucherProducts)
+                            .FirstOrDefaultAsync(v => v.VoucherID == voucherId.Value && v.IsActive);
+
+                        if (voucher != null)
+                        {
+                            // Lấy mã voucher
+                            string voucherCode = voucher.Code;
+
+                            // Áp dụng voucher
+                            var (success, discountAmount, _) = await ApplyVoucherAsync(userId, voucherCode);
+                            if (success)
+                            {
+                                voucherDiscountAmount = discountAmount;
+                                _logger.LogInformation("Applied voucher {VoucherCode} with discount amount {DiscountAmount} for order",
+                                    voucherCode, voucherDiscountAmount);
+                            }
+                            else
+                            {
+                                _logger.LogWarning("Failed to apply voucher {VoucherCode} for order", voucherCode);
+                            }
+                        }
+                    }
+
+                    // Calculate total discount and final price
+                    decimal totalDiscountAmount = productDiscountAmount + rankDiscountAmount + voucherDiscountAmount;
+                    decimal finalPrice = originalTotal - totalDiscountAmount;
+
+                    // Create order with all discount details
+                    var order = new Order
+                    {
+                        UserID = userId,
+                        TotalPrice = originalTotal,  // Original price without any discounts
+                        ProductDiscountAmount = productDiscountAmount,
+                        RankDiscountAmount = rankDiscountAmount,
+                        VoucherDiscountAmount = voucherDiscountAmount,
+                        TotalDiscountAmount = totalDiscountAmount,
+                        FinalPrice = finalPrice,
+                        Status = "Pending",
+                        CreatedAt = DateTime.Now,
+                        UserAddressID = addressId
+                    };
+
+                    _context.Orders.Add(order);
+                    await _context.SaveChangesAsync();
+
+                    // Create order items with original and effective prices
+                    foreach (var cartItem in cart.CartItems)
+                    {
+                        var product = await _context.Products.FindAsync(cartItem.ProductID);
+                        if (product == null || product.Stock < cartItem.Quantity)
+                        {
+                            await transaction.RollbackAsync();
+                            return (false, $"Sản phẩm {product?.Name ?? "không xác định"} không đủ số lượng", null);
+                        }
+
+                        // Calculate item's effective price after product discount
+                        decimal effectiveUnitPrice = product.GetEffectivePrice();
+                        decimal originalSubtotal = product.Price * cartItem.Quantity;
+                        decimal effectiveSubtotal = effectiveUnitPrice * cartItem.Quantity;
+                        decimal productDiscount = originalSubtotal - effectiveSubtotal;
+
+                        // Calculate item discount based on rank
+                        decimal itemRankDiscount = 0;
+                        if (user?.Rank?.DiscountPercent.HasValue == true)
+                        {
+                            itemRankDiscount = effectiveSubtotal * (user.Rank.DiscountPercent.Value / 100);
+                        }
+
+                        // Create order item with all price details
                         var orderItem = new OrderItem
                         {
                             OrderID = order.OrderID,
                             ProductID = cartItem.ProductID,
                             Quantity = cartItem.Quantity,
-                            UnitPrice = product.SalePrice ?? product.Price,
-                            Subtotal = cartItem.Subtotal,
-                            DiscountAmount = 0, // Will be set if applicable
-                            FinalSubtotal = cartItem.Subtotal // Will be adjusted if applicable
+                            UnitPrice = product.Price,  // Original price
+                            Subtotal = originalSubtotal,  // Original subtotal
+                            DiscountAmount = productDiscount + itemRankDiscount,  // Total discount
+                            FinalSubtotal = effectiveSubtotal - itemRankDiscount  // Final price after all discounts
                         };
 
                         _context.OrderItems.Add(orderItem);
@@ -446,16 +588,15 @@ namespace CyberTech.Services
                     {
                         OrderID = order.OrderID,
                         PaymentMethod = paymentMethod,
-                        PaymentStatus = paymentMethod == "COD" ? "Pending" : "Completed",
+                        PaymentStatus = paymentMethod == "COD" ? "Pending" : "Pending",
                         Amount = order.FinalPrice,
-                        PaymentDate = paymentMethod == "COD" ? (DateTime?)null : DateTime.Now
+                        PaymentDate = DateTime.Now
                     };
 
                     _context.Payments.Add(payment);
 
                     // Update user stats
-                    var user = await _context.Users.FindAsync(userId);
-                    if (user != null)
+                    if (user != null && paymentMethod == "COD")
                     {
                         user.OrderCount++;
                         user.TotalSpent += order.FinalPrice;
@@ -478,27 +619,105 @@ namespace CyberTech.Services
                     await _context.SaveChangesAsync();
                     await transaction.CommitAsync();
 
-                    return (true, "Đặt hàng thành công");
+                    return (true, "Đặt hàng thành công", order.OrderID);
                 }
                 catch (Exception ex)
                 {
                     await transaction.RollbackAsync();
                     _logger.LogError(ex, "Error during checkout for user {UserId}", userId);
-                    return (false, "Có lỗi xảy ra trong quá trình đặt hàng");
+                    return (false, "Có lỗi xảy ra trong quá trình đặt hàng", null);
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during checkout for user {UserId}", userId);
-                return (false, "Có lỗi xảy ra trong quá trình đặt hàng");
+                return (false, "Có lỗi xảy ra trong quá trình đặt hàng", null);
+            }
+        }
+
+        // Add method to update payment status
+        public async Task<(bool Success, string Message)> UpdatePaymentStatusAsync(int orderId, string paymentStatus)
+        {
+            try
+            {
+                var order = await _context.Orders
+                    .Include(o => o.Payments)
+                    .FirstOrDefaultAsync(o => o.OrderID == orderId);
+
+                if (order == null)
+                {
+                    return (false, "Không tìm thấy đơn hàng");
+                }
+
+                var payment = order.Payments.FirstOrDefault();
+                if (payment == null)
+                {
+                    return (false, "Không tìm thấy thông tin thanh toán");
+                }
+
+                // Validate payment status
+                if (!new[] { "Pending", "Completed", "Failed", "Refunded" }.Contains(paymentStatus))
+                {
+                    return (false, "Trạng thái thanh toán không hợp lệ");
+                }
+
+                using var transaction = await _context.Database.BeginTransactionAsync();
+                try
+                {
+                    // Update payment status
+                    payment.PaymentStatus = paymentStatus;
+                    payment.PaymentDate = DateTime.Now;
+
+                    // Update order status based on payment status
+                    switch (paymentStatus)
+                    {
+                        case "Completed":
+                            order.Status = "Processing";
+                            break;
+                        case "Failed":
+                            order.Status = "Cancelled";
+                            break;
+                        case "Refunded":
+                            order.Status = "Cancelled";
+                            break;
+                        default:
+                            order.Status = "Pending";
+                            break;
+                    }
+
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    return (true, "Cập nhật trạng thái thanh toán thành công");
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    _logger.LogError(ex, "Error updating payment status for order {OrderId}", orderId);
+                    return (false, "Có lỗi xảy ra khi cập nhật trạng thái thanh toán");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating payment status for order {OrderId}", orderId);
+                return (false, "Có lỗi xảy ra khi cập nhật trạng thái thanh toán");
             }
         }
 
         private async Task<decimal> CalculateCartTotalAsync(int cartId)
         {
-            return await _context.CartItems
+            var cartItems = await _context.CartItems
+                .Include(ci => ci.Product)
                 .Where(ci => ci.CartID == cartId)
-                .SumAsync(ci => ci.Subtotal);
+                .ToListAsync();
+
+            decimal total = 0;
+            foreach (var item in cartItems)
+            {
+                // Use original price instead of effective price
+                total += item.Product.Price * item.Quantity;
+            }
+            return total;
         }
     }
 }

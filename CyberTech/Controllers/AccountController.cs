@@ -484,11 +484,31 @@ namespace CyberTech.Controllers
         private async Task SetCommonViewBagProperties(User user)
         {
             ViewBag.UserProfileImage = user.ProfileImageURL ?? "/images/default-avatar.png";
-            ViewBag.UserRank = user.Rank?.RankName ?? "Thành viên";
-            ViewBag.NextRank = await _context.Ranks
-                .Where(r => r.MinTotalSpent > user.TotalSpent)
+
+            // Get current rank
+            var currentRank = user.Rank?.RankName ?? "Thành viên";
+            ViewBag.UserRank = currentRank;
+
+            // Get max rank ID (5)
+            const int maxRankId = 5;
+
+            // Check if user has reached max rank
+            if (user.RankId == maxRankId)
+            {
+                ViewBag.NextRank = null;
+                ViewBag.IsMaxRank = true;
+                ViewBag.MaxRankMessage = "Chúc mừng! Bạn đã đạt cấp độ cao nhất";
+                return;
+            }
+
+            // Get next rank based on total spent
+            var nextRank = await _context.Ranks
+                .Where(r => r.MinTotalSpent > user.TotalSpent && r.RankId <= maxRankId)
                 .OrderBy(r => r.MinTotalSpent)
                 .FirstOrDefaultAsync();
+
+            ViewBag.NextRank = nextRank;
+            ViewBag.IsMaxRank = false;
         }
 
         [HttpGet]
@@ -732,7 +752,10 @@ namespace CyberTech.Controllers
                     createdAt = order.CreatedAt,
                     status = order.Status,
                     totalPrice = order.TotalPrice,
-                    discountAmount = order.DiscountAmount,
+                    productDiscountAmount = order.ProductDiscountAmount,
+                    rankDiscountAmount = order.RankDiscountAmount,
+                    voucherDiscountAmount = order.VoucherDiscountAmount,
+                    totalDiscountAmount = order.TotalDiscountAmount,
                     finalPrice = order.FinalPrice,
                     paymentMethod = payment?.PaymentMethod,
                     paymentStatus = payment?.PaymentStatus,
@@ -788,6 +811,8 @@ namespace CyberTech.Controllers
 
                 var order = await _context.Orders
                     .Include(o => o.Payments)
+                    .Include(o => o.OrderItems)
+                        .ThenInclude(oi => oi.Product)
                     .FirstOrDefaultAsync(o => o.OrderID == id && o.UserID == user.UserID);
 
                 if (order == null) return Json(new { success = false, message = "Không tìm thấy đơn hàng" });
@@ -811,9 +836,61 @@ namespace CyberTech.Controllers
                     });
                 }
 
-                order.Status = "Cancelled";
-                await _context.SaveChangesAsync();
-                return Json(new { success = true, message = "Hủy đơn hàng thành công" });
+                using var transaction = await _context.Database.BeginTransactionAsync();
+                try
+                {
+                    // Update order status
+                    order.Status = "Cancelled";
+
+                    // If payment was pending, mark it as failed
+                    var pendingPayment = order.Payments?.FirstOrDefault(p => p.PaymentStatus == "Pending");
+                    if (pendingPayment != null)
+                    {
+                        pendingPayment.PaymentStatus = "Failed";
+                        pendingPayment.PaymentDate = DateTime.Now;
+                    }
+
+                    // Restore product quantities
+                    foreach (var orderItem in order.OrderItems)
+                    {
+                        var product = orderItem.Product;
+                        if (product != null)
+                        {
+                            product.Stock += orderItem.Quantity;
+                        }
+                    }
+
+                    // Adjust user's TotalSpent and OrderCount if necessary
+                    if (order.Status == "Processing" && user.TotalSpent >= order.FinalPrice)
+                    {
+                        user.TotalSpent -= order.FinalPrice;
+                        user.OrderCount = Math.Max(0, user.OrderCount - 1);
+
+                        // Recalculate user's rank based on new TotalSpent
+                        var newRank = await _context.Ranks
+                            .Where(r => r.MinTotalSpent <= user.TotalSpent)
+                            .OrderByDescending(r => r.MinTotalSpent)
+                            .FirstOrDefaultAsync();
+
+                        if (newRank != null && user.RankId != newRank.RankId)
+                        {
+                            user.RankId = newRank.RankId;
+                            _logger.LogInformation("User {UserId} rank updated to {RankId} after order cancellation", user.UserID, newRank.RankId);
+                        }
+                    }
+
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    _logger.LogInformation("Successfully cancelled order {OrderId} and restored product quantities", order.OrderID);
+                    return Json(new { success = true, message = "Hủy đơn hàng thành công" });
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    _logger.LogError(ex, "Error cancelling order {OrderId}", id);
+                    return Json(new { success = false, message = "Có lỗi xảy ra khi hủy đơn hàng" });
+                }
             }
             catch (Exception ex)
             {
