@@ -451,7 +451,6 @@ main {
     box-sizing: border-box;
     margin: 0 auto 30px auto;
     display: flex;
-    gap: 15px;
 }
 
 .product-slider .product-card {

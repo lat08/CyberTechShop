@@ -1,60 +1,18 @@
-﻿@model CyberTech.Models.ProductViewModel
-@using CyberTech.Helpers
+@model CyberTech.Models.ProductViewModel
 
 <style>
-    .icon-container {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 16px;
-        height: 16px;
-        margin-right: 8px;
-        text-align: center;
-    }
-    
-    .icon-container i {
-        font-size: 12px;
-        color: #2c2c2c;
-        line-height: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        text-rendering: auto;
-        -webkit-font-smoothing: antialiased;
-    }
-    
-    /* Đảm bảo FontAwesome icons luôn hiển thị */
-    .icon-container i::before {
-        display: inline-block;
-        text-rendering: auto;
-        -webkit-font-smoothing: antialiased;
-    }
-    
-    .proloop-technical--line {
-        display: flex;
-        align-items: center;
-        margin-bottom: 4px;
-        font-size: 11px;
-    }
-    
-    .proloop-technical--line span {
-        flex: 1;
-        color: #333;
-    }
-    
-    /* Styling cho phần attributes */
-    .proloop-technical {
-        background-color: #f5f5f5;
-        padding: 8px;
-        border-radius: 4px;
-        margin: 8px 0;
-        border: 1px solid #e0e0e0;
-        min-height: 120px; /* Đảm bảo chiều cao tối thiểu */
-    }
-    
     /* ========================================
-       ĐỒNG BỘ KÍCH THƯỚC PRODUCT CARD
+       ĐỒNG BỘ KÍCH THƯỚC PRODUCT CARD SIMPLE - OPTIMIZED
     ======================================== */
+    
+    /* Override global styles - Quan trọng để không bị đè */
+    .product-slider .proloop,
+    .slider-track .proloop {
+        flex: 0 0 220px !important;
+        max-width: 220px !important;
+        height: auto !important;
+        min-height: auto !important;
+    }
     
     /* Container chính của card */
     .proloop-block {
@@ -84,7 +42,7 @@
     .aspect-ratio {
         position: relative;
         width: 100%;
-        height: 180px; /* Chiều cao cố định cho tất cả hình ảnh */
+        height: 100px; /* Giảm từ 120px xuống 100px */
         overflow: hidden;
         display: flex;
         align-items: center;
@@ -108,20 +66,21 @@
     /* Phần detail với chiều cao linh hoạt */
     .proloop-detail {
         flex: 1;
-        padding: 12px;
+        padding: 6px; /* Giảm từ 8px xuống 6px */
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
+        justify-content: flex-start; /* Thay đổi từ space-between thành flex-start */
+        gap: 3px; /* Giảm từ 4px xuống 3px */
     }
     
     /* Tên sản phẩm với chiều cao cố định */
     .proloop-name {
-        font-size: 14px;
+        font-size: 12px; /* Giảm từ 13px xuống 12px */
         font-weight: 500;
-        line-height: 1.4;
-        margin: 0 0 8px 0;
+        line-height: 1.1; /* Giảm từ 1.2 xuống 1.1 */
+        margin: 0 0 3px 0; /* Giảm margin từ 4px xuống 3px */
         color: #333;
-        height: 40px; /* Chiều cao cố định cho 2 dòng */
+        height: 24px; /* Giảm từ 28px xuống 24px */
         overflow: hidden;
         display: -webkit-box;
         -webkit-line-clamp: 2;
@@ -131,43 +90,42 @@
     
     /* Price container với margin cố định */
     .price-container {
-        margin: 8px 0;
-        min-height: 50px; /* Đảm bảo không gian cho giá */
+        margin: 3px 0; /* Giảm từ 4px xuống 3px */
+        min-height: 30px; /* Giảm từ 36px xuống 30px */
         display: flex;
         flex-direction: column;
         justify-content: flex-end;
     }
     
     .original-price-line {
-        margin-bottom: 4px;
+        margin-bottom: 1px; /* Giảm từ 2px xuống 1px */
     }
     
     .sale-price-line {
         display: flex;
         align-items: center;
-        gap: 8px;
-        margin-left: 5px;
+        gap: 6px; /* Giảm từ 8px xuống 6px */
     }
     
     /* Sale price - màu đỏ */
     .proloop-price--highlight.sale-price {
         color: #dc3545;
         font-weight: 700;
-        font-size: 16px;
+        font-size: 14px; /* Giảm từ 15px xuống 14px */
     }
     
     /* Regular price - màu đen */
     .proloop-price--highlight.regular-price {
         color: #333;
         font-weight: 700;
-        font-size: 16px;
+        font-size: 14px; /* Giảm từ 15px xuống 14px */
     }
     
     /* Original price - gạch ngang, màu đen */
     .proloop-price--compare.original-price {
         color: #333;
         text-decoration: line-through;
-        font-size: 14px;
+        font-size: 12px; /* Giảm từ 13px xuống 12px */
         font-weight: 400;
     }
     
@@ -175,24 +133,24 @@
     .discount-badge {
         background-color: #dc3545;
         color: white;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-size: 11px;
+        padding: 1px 4px; /* Giảm từ 2px 6px xuống 1px 4px */
+        border-radius: 3px; /* Giảm từ 4px xuống 3px */
+        font-size: 10px; /* Giảm từ 11px xuống 10px */
         font-weight: 600;
         white-space: nowrap;
     }
     
     /* Rating với chiều cao cố định */
     .proloop-rating {
-        margin-top: auto;
-        padding-top: 8px;
-        font-size: 12px;
+        margin-top: 2px; /* Giảm từ 4px xuống 2px */
+        padding-top: 3px; /* Giảm từ 4px xuống 3px */
+        font-size: 10px; /* Giảm từ 11px xuống 10px */
         color: #666;
         border-top: 1px solid #f0f0f0;
-        height: 30px; /* Chiều cao cố định */
+        height: auto; /* Thay đổi từ 20px thành auto */
         display: flex;
         align-items: center;
-        gap: 5px;
+        gap: 3px; /* Giảm từ 4px xuống 3px */
     }
     
     .proloop-rating .number {
@@ -203,16 +161,24 @@
     /* Responsive design */
     @@media (max-width: 768px) {
         .aspect-ratio {
-            height: 150px; /* Nhỏ hơn trên mobile */
+            height: 80px; /* Giảm từ 100px xuống 80px trên mobile */
         }
         
         .proloop-name {
-            height: 36px; /* Nhỏ hơn trên mobile */
-            font-size: 13px;
+            height: 20px; /* Giảm từ 24px xuống 20px trên mobile */
+            font-size: 11px; /* Giảm từ 12px xuống 11px */
         }
         
-        .proloop-technical {
-            min-height: 100px;
+        .proloop-detail {
+            padding: 4px; /* Giảm từ 6px xuống 4px trên mobile */
+        }
+        
+        .price-container {
+            min-height: 24px; /* Giảm từ 30px xuống 24px trên mobile */
+        }
+        
+        .proloop-rating {
+            font-size: 9px; /* Giảm từ 10px xuống 9px trên mobile */
         }
     }
     
@@ -221,10 +187,18 @@
         height: 100%;
     }
     
-    /* Grid layout cho các card */
+    /* Grid layout cho các card - Override để không bị xung đột */
     .slick-slide {
         height: auto !important;
-        min-height: 450px; /* Chiều cao tối thiểu cho mỗi card */
+        min-height: auto !important; /* Loại bỏ min-height cố định */
+    }
+    
+    /* Override các CSS conflict từ styles.css và slider.js */
+    .product-slider .slider-track .proloop,
+    .flash-sale .slider-track .proloop {
+        flex: 0 0 220px !important;
+        max-width: 220px !important;
+        margin: 0 5px !important;
     }
 </style>
 
@@ -239,18 +213,9 @@
             <h3 class="proloop-name">
                 @Model.Name
             </h3>
-            <div class="proloop-technical">
-                @foreach (var attr in Model.Attributes)
-                {
-                    var iconClass = IconHelper.GetFontAwesomeClass(attr.Key);
-                    <div class="proloop-technical--line" data-tag="@attr.Key.ToLower()">
-                        <div class="icon-container">
-                            <i class="@iconClass" title="@attr.Key (@iconClass)" aria-hidden="true"></i>
-                        </div>
-                        <span>@attr.Value</span>
-                    </div>
-                }
-            </div>
+            
+            <!-- Loại bỏ phần proloop-technical (attributes) -->
+            
             <div class="proloop-price">
                 @if (Model.HasDiscount)
                 {
@@ -290,4 +255,4 @@
             </div>
         </div>
     </div>
-</div>
+</div> 
