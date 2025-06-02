@@ -93,8 +93,10 @@ namespace CyberTech.Controllers
 
             // Lấy sản phẩm Laptop Gaming bán chạy
             var laptopGamingBestSellers = _context.Products
-                .Include(p => p.SubSubcategory).ThenInclude(ss => ss.Subcategory)
+                .Include(p => p.SubSubcategory).ThenInclude(ss => ss.Subcategory).ThenInclude(s => s.Category)
                 .Include(p => p.ProductImages)
+                .Include(p => p.ProductAttributeValues).ThenInclude(pav => pav.AttributeValue).ThenInclude(av => av.ProductAttribute)
+                .Include(p => p.Reviews)
                 .Where(p => p.SubSubcategory.Subcategory.CategoryID == 2)
                 .OrderByDescending(p => p.ProductID)
                 .Take(10)
@@ -102,8 +104,10 @@ namespace CyberTech.Controllers
 
             // Lấy sản phẩm Laptop Văn Phòng bán chạy
             var laptopOfficeBestSellers = _context.Products
-                .Include(p => p.SubSubcategory).ThenInclude(ss => ss.Subcategory)
+                .Include(p => p.SubSubcategory).ThenInclude(ss => ss.Subcategory).ThenInclude(s => s.Category)
                 .Include(p => p.ProductImages)
+                .Include(p => p.ProductAttributeValues).ThenInclude(pav => pav.AttributeValue).ThenInclude(av => av.ProductAttribute)
+                .Include(p => p.Reviews)
                 .Where(p => p.SubSubcategory.Subcategory.CategoryID == 1)
                 .OrderByDescending(p => p.ProductID)
                 .Take(10)
@@ -111,8 +115,10 @@ namespace CyberTech.Controllers
 
             // Lấy sản phẩm PC Gaming bán chạy
             var pcGamingBestSellers = _context.Products
-                .Include(p => p.SubSubcategory).ThenInclude(ss => ss.Subcategory)
+                .Include(p => p.SubSubcategory).ThenInclude(ss => ss.Subcategory).ThenInclude(s => s.Category)
                 .Include(p => p.ProductImages)
+                .Include(p => p.ProductAttributeValues).ThenInclude(pav => pav.AttributeValue).ThenInclude(av => av.ProductAttribute)
+                .Include(p => p.Reviews)
                 .Where(p => p.SubSubcategory.Subcategory.CategoryID == 3)
                 .OrderByDescending(p => p.ProductID)
                 .Take(10)
@@ -120,8 +126,10 @@ namespace CyberTech.Controllers
 
             // Lấy sản phẩm Chuột bán chạy
             var mouseBestSellers = _context.Products
-                .Include(p => p.SubSubcategory).ThenInclude(ss => ss.Subcategory)
+                .Include(p => p.SubSubcategory).ThenInclude(ss => ss.Subcategory).ThenInclude(s => s.Category)
                 .Include(p => p.ProductImages)
+                .Include(p => p.ProductAttributeValues).ThenInclude(pav => pav.AttributeValue).ThenInclude(av => av.ProductAttribute)
+                .Include(p => p.Reviews)
                 .Where(p => p.SubSubcategory.Subcategory.CategoryID == 10)
                 .OrderByDescending(p => p.ProductID)
                 .Take(10)
@@ -129,8 +137,10 @@ namespace CyberTech.Controllers
 
             // Lấy sản phẩm Màn hình bán chạy
             var monitorBestSellers = _context.Products
-                .Include(p => p.SubSubcategory).ThenInclude(ss => ss.Subcategory)
+                .Include(p => p.SubSubcategory).ThenInclude(ss => ss.Subcategory).ThenInclude(s => s.Category)
                 .Include(p => p.ProductImages)
+                .Include(p => p.ProductAttributeValues).ThenInclude(pav => pav.AttributeValue).ThenInclude(av => av.ProductAttribute)
+                .Include(p => p.Reviews)
                 .Where(p => p.SubSubcategory.Subcategory.CategoryID == 8)
                 .OrderByDescending(p => p.ProductID)
                 .Take(10)
@@ -138,8 +148,10 @@ namespace CyberTech.Controllers
 
             // Lấy sản phẩm Bàn phím bán chạy
             var keyboardBestSellers = _context.Products
-                .Include(p => p.SubSubcategory).ThenInclude(ss => ss.Subcategory)
+                .Include(p => p.SubSubcategory).ThenInclude(ss => ss.Subcategory).ThenInclude(s => s.Category)
                 .Include(p => p.ProductImages)
+                .Include(p => p.ProductAttributeValues).ThenInclude(pav => pav.AttributeValue).ThenInclude(av => av.ProductAttribute)
+                .Include(p => p.Reviews)
                 .Where(p => p.SubSubcategory.Subcategory.CategoryID == 9)
                 .OrderByDescending(p => p.ProductID)
                 .Take(10)

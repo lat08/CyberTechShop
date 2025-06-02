@@ -397,10 +397,18 @@ namespace CyberTech.Controllers
                 return NotFound();
             }
 
-            // Lấy sản phẩm liên quan
+            // Lấy sản phẩm liên quan với đầy đủ thông tin
             var relatedProducts = await _context.Products
-                .Where(p => p.SubSubcategoryID == product.SubSubcategoryID && p.ProductID != id)
-                .Take(4)
+                .Include(p => p.ProductImages)
+                .Include(p => p.ProductAttributeValues)
+                    .ThenInclude(pav => pav.AttributeValue)
+                        .ThenInclude(av => av.ProductAttribute)
+                .Include(p => p.Reviews)
+                .Include(p => p.SubSubcategory)
+                    .ThenInclude(ss => ss.Subcategory)
+                        .ThenInclude(s => s.Category)
+                .Where(p => p.SubSubcategoryID == product.SubSubcategoryID && p.ProductID != id && p.Status == "Active")
+                .Take(8)
                 .ToListAsync();
 
             var viewModel = new ProductDetailViewModel

@@ -1,419 +1,419 @@
 {
   "Files": [
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\obj\\Debug\\net8.0\\scopedcss\\projectbundle\\CyberTechShop.bundle.scp.css",
+      "Id": "D:\\CyberTechShop\\CyberTech\\obj\\Debug\\net8.0\\scopedcss\\projectbundle\\CyberTechShop.bundle.scp.css",
       "PackagePath": "staticwebassets\\CyberTechShop.bundle.scp.css"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\css\\Admin\\login.css",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\css\\Admin\\login.css",
       "PackagePath": "staticwebassets\\css\\Admin\\login.css"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\css\\Admin\\product-management.css",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\css\\Admin\\product-management.css",
       "PackagePath": "staticwebassets\\css\\Admin\\product-management.css"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\css\\Admin\\styles.css",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\css\\Admin\\styles.css",
       "PackagePath": "staticwebassets\\css\\Admin\\styles.css"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\css\\Admin\\theme.css",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\css\\Admin\\theme.css",
       "PackagePath": "staticwebassets\\css\\Admin\\theme.css"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\css\\HomePage_Layout\\responsive.css",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\css\\HomePage_Layout\\responsive.css",
       "PackagePath": "staticwebassets\\css\\HomePage_Layout\\responsive.css"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\css\\HomePage_Layout\\site.css",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\css\\HomePage_Layout\\site.css",
       "PackagePath": "staticwebassets\\css\\HomePage_Layout\\site.css"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\css\\HomePage_Layout\\styles.css",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\css\\HomePage_Layout\\styles.css",
       "PackagePath": "staticwebassets\\css\\HomePage_Layout\\styles.css"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\css\\ProductDetail\\styles.css",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\css\\ProductDetail\\styles.css",
       "PackagePath": "staticwebassets\\css\\ProductDetail\\styles.css"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\css\\account-dashboard.css",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\css\\account-dashboard.css",
       "PackagePath": "staticwebassets\\css\\account-dashboard.css"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\css\\account-pages.css",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\css\\account-pages.css",
       "PackagePath": "staticwebassets\\css\\account-pages.css"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\css\\account.css",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\css\\account.css",
       "PackagePath": "staticwebassets\\css\\account.css"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\css\\cart.css",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\css\\cart.css",
       "PackagePath": "staticwebassets\\css\\cart.css"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\css\\login.css",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\css\\login.css",
       "PackagePath": "staticwebassets\\css\\login.css"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\css\\order.css",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\css\\order.css",
       "PackagePath": "staticwebassets\\css\\order.css"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\css\\product-list.css",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\css\\product-list.css",
       "PackagePath": "staticwebassets\\css\\product-list.css"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\css\\responsive.css",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\css\\responsive.css",
       "PackagePath": "staticwebassets\\css\\responsive.css"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\css\\site.css",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\css\\site.css",
       "PackagePath": "staticwebassets\\css\\site.css"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\css\\styles.css",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\css\\styles.css",
       "PackagePath": "staticwebassets\\css\\styles.css"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\favicon.ico",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\favicon.ico",
       "PackagePath": "staticwebassets\\favicon.ico"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\images\\cybot_logo.png",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\images\\cybot_logo.png",
       "PackagePath": "staticwebassets\\images\\cybot_logo.png"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\images\\no-image.png",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\images\\no-image.png",
       "PackagePath": "staticwebassets\\images\\no-image.png"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\images\\shape-4.png",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\images\\shape-4.png",
       "PackagePath": "staticwebassets\\images\\shape-4.png"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\images\\shape-4_90.png",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\images\\shape-4_90.png",
       "PackagePath": "staticwebassets\\images\\shape-4_90.png"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\images\\team.jpg",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\images\\team.jpg",
       "PackagePath": "staticwebassets\\images\\team.jpg"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\js\\Admin\\login.js",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\js\\Admin\\login.js",
       "PackagePath": "staticwebassets\\js\\Admin\\login.js"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\js\\HomePage\\main.js",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\js\\HomePage\\main.js",
       "PackagePath": "staticwebassets\\js\\HomePage\\main.js"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\js\\HomePage\\product.js",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\js\\HomePage\\product.js",
       "PackagePath": "staticwebassets\\js\\HomePage\\product.js"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\js\\ProductDetail\\script.js",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\js\\ProductDetail\\script.js",
       "PackagePath": "staticwebassets\\js\\ProductDetail\\script.js"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\js\\ProductManage\\script.js",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\js\\ProductManage\\script.js",
       "PackagePath": "staticwebassets\\js\\ProductManage\\script.js"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\js\\cart.js",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\js\\cart.js",
       "PackagePath": "staticwebassets\\js\\cart.js"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\js\\countdown.js",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\js\\countdown.js",
       "PackagePath": "staticwebassets\\js\\countdown.js"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\js\\filter.js",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\js\\filter.js",
       "PackagePath": "staticwebassets\\js\\filter.js"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\js\\forgot-password.js",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\js\\forgot-password.js",
       "PackagePath": "staticwebassets\\js\\forgot-password.js"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\js\\login.js",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\js\\login.js",
       "PackagePath": "staticwebassets\\js\\login.js"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\js\\main.js",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\js\\main.js",
       "PackagePath": "staticwebassets\\js\\main.js"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\js\\register.js",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\js\\register.js",
       "PackagePath": "staticwebassets\\js\\register.js"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\js\\reset-password.js",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\js\\reset-password.js",
       "PackagePath": "staticwebassets\\js\\reset-password.js"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\js\\site - Copy.js",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\js\\site - Copy.js",
       "PackagePath": "staticwebassets\\js\\site - Copy.js"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\js\\site.js",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\js\\site.js",
       "PackagePath": "staticwebassets\\js\\site.js"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\js\\slider.js",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\js\\slider.js",
       "PackagePath": "staticwebassets\\js\\slider.js"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\js\\template-module.js",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\js\\template-module.js",
       "PackagePath": "staticwebassets\\js\\template-module.js"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\js\\utils.js",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\js\\utils.js",
       "PackagePath": "staticwebassets\\js\\utils.js"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\LICENSE",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\LICENSE",
       "PackagePath": "staticwebassets\\lib\\bootstrap"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.css",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.css",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-grid.css"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.css.map",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.css.map",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-grid.css.map"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.min.css",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.min.css",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-grid.min.css"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.min.css.map",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.min.css.map",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-grid.min.css.map"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.rtl.css",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.rtl.css",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-grid.rtl.css"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.rtl.css.map",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.rtl.css.map",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-grid.rtl.css.map"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.rtl.min.css",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.rtl.min.css",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-grid.rtl.min.css"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.rtl.min.css.map",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-grid.rtl.min.css.map",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-grid.rtl.min.css.map"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.css",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.css",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.css"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.css.map",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.css.map",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.css.map"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.min.css",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.min.css",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.min.css"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.min.css.map",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.min.css.map",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.min.css.map"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.rtl.css",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.rtl.css",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.rtl.css"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.rtl.css.map",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.rtl.css.map",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.rtl.css.map"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.rtl.min.css",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.rtl.min.css",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.rtl.min.css"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.rtl.min.css.map",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.rtl.min.css.map",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-reboot.rtl.min.css.map"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.css",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.css",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.css"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.css.map",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.css.map",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.css.map"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.min.css",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.min.css",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.min.css"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.min.css.map",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.min.css.map",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.min.css.map"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.rtl.css",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.rtl.css",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.rtl.css"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.rtl.css.map",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.rtl.css.map",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.rtl.css.map"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.rtl.min.css",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.rtl.min.css",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.rtl.min.css"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.rtl.min.css.map",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.rtl.min.css.map",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.rtl.min.css.map"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.css",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.css",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap.css"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.css.map",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.css.map",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap.css.map"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.min.css",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.min.css",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap.min.css"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.min.css.map",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.min.css.map",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap.min.css.map"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.rtl.css",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.rtl.css",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap.rtl.css"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.rtl.css.map",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.rtl.css.map",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap.rtl.css.map"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.rtl.min.css",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.rtl.min.css",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap.rtl.min.css"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.rtl.min.css.map",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.rtl.min.css.map",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\css\\bootstrap.rtl.min.css.map"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.bundle.js",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.bundle.js",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.bundle.js"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.bundle.js.map",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.bundle.js.map",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.bundle.js.map"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.bundle.min.js",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.bundle.min.js",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.bundle.min.js"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.bundle.min.js.map",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.bundle.min.js.map",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.bundle.min.js.map"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.esm.js",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.esm.js",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.esm.js"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.esm.js.map",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.esm.js.map",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.esm.js.map"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.esm.min.js",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.esm.min.js",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.esm.min.js"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.esm.min.js.map",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.esm.min.js.map",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.esm.min.js.map"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.js",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.js",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.js"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.js.map",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.js.map",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.js.map"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.min.js",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.min.js",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.min.js"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.min.js.map",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\bootstrap\\dist\\js\\bootstrap.min.js.map",
       "PackagePath": "staticwebassets\\lib\\bootstrap\\dist\\js\\bootstrap.min.js.map"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\jquery-validation-unobtrusive\\LICENSE.txt",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\jquery-validation-unobtrusive\\LICENSE.txt",
       "PackagePath": "staticwebassets\\lib\\jquery-validation-unobtrusive\\LICENSE.txt"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\jquery-validation-unobtrusive\\jquery.validate.unobtrusive.js",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\jquery-validation-unobtrusive\\jquery.validate.unobtrusive.js",
       "PackagePath": "staticwebassets\\lib\\jquery-validation-unobtrusive\\jquery.validate.unobtrusive.js"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\jquery-validation-unobtrusive\\jquery.validate.unobtrusive.min.js",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\jquery-validation-unobtrusive\\jquery.validate.unobtrusive.min.js",
       "PackagePath": "staticwebassets\\lib\\jquery-validation-unobtrusive\\jquery.validate.unobtrusive.min.js"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\jquery-validation\\LICENSE.md",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\jquery-validation\\LICENSE.md",
       "PackagePath": "staticwebassets\\lib\\jquery-validation\\LICENSE.md"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\jquery-validation\\dist\\additional-methods.js",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\jquery-validation\\dist\\additional-methods.js",
       "PackagePath": "staticwebassets\\lib\\jquery-validation\\dist\\additional-methods.js"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\jquery-validation\\dist\\additional-methods.min.js",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\jquery-validation\\dist\\additional-methods.min.js",
       "PackagePath": "staticwebassets\\lib\\jquery-validation\\dist\\additional-methods.min.js"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\jquery-validation\\dist\\jquery.validate.js",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\jquery-validation\\dist\\jquery.validate.js",
       "PackagePath": "staticwebassets\\lib\\jquery-validation\\dist\\jquery.validate.js"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\jquery-validation\\dist\\jquery.validate.min.js",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\jquery-validation\\dist\\jquery.validate.min.js",
       "PackagePath": "staticwebassets\\lib\\jquery-validation\\dist\\jquery.validate.min.js"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\jquery\\LICENSE.txt",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\jquery\\LICENSE.txt",
       "PackagePath": "staticwebassets\\lib\\jquery\\LICENSE.txt"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\jquery\\dist\\jquery.js",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\jquery\\dist\\jquery.js",
       "PackagePath": "staticwebassets\\lib\\jquery\\dist\\jquery.js"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\jquery\\dist\\jquery.min.js",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\jquery\\dist\\jquery.min.js",
       "PackagePath": "staticwebassets\\lib\\jquery\\dist\\jquery.min.js"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\lib\\jquery\\dist\\jquery.min.map",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\lib\\jquery\\dist\\jquery.min.map",
       "PackagePath": "staticwebassets\\lib\\jquery\\dist\\jquery.min.map"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\uploads\\products\\809a2d13-e00e-479c-88e2-928eff6e6934.jpg",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\uploads\\products\\809a2d13-e00e-479c-88e2-928eff6e6934.jpg",
       "PackagePath": "staticwebassets\\uploads\\products\\809a2d13-e00e-479c-88e2-928eff6e6934.jpg"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\uploads\\products\\836b08fb-f7a6-4e8f-8abe-9e908a082b04.png",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\uploads\\products\\836b08fb-f7a6-4e8f-8abe-9e908a082b04.png",
       "PackagePath": "staticwebassets\\uploads\\products\\836b08fb-f7a6-4e8f-8abe-9e908a082b04.png"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\uploads\\products\\c630613d-dcbf-4d15-ab17-e80b4ff70c5b.jpg",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\uploads\\products\\c630613d-dcbf-4d15-ab17-e80b4ff70c5b.jpg",
       "PackagePath": "staticwebassets\\uploads\\products\\c630613d-dcbf-4d15-ab17-e80b4ff70c5b.jpg"
     },
     {
-      "Id": "E:\\OOAD\\CyberTechShop\\cybertech\\wwwroot\\uploads\\products\\d14d4bc7-64ae-498d-a66e-e78cb7b77eb9.png",
+      "Id": "D:\\CyberTechShop\\CyberTech\\wwwroot\\uploads\\products\\d14d4bc7-64ae-498d-a66e-e78cb7b77eb9.png",
       "PackagePath": "staticwebassets\\uploads\\products\\d14d4bc7-64ae-498d-a66e-e78cb7b77eb9.png"
     },
     {

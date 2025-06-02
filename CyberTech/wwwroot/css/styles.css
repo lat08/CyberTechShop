@@ -60,9 +60,10 @@ img {
 }
 
 .logo img {
-    height: 45px;
+    height: 80px;
     width: auto;
     display: block;
+    margin: 0;
 }
 
 .search-bar {

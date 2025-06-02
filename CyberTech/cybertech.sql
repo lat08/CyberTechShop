@@ -2,48 +2,6 @@ CREATE DATABASE shoptmdt3
 USE shoptmdt3
 GO
 
--- Lệnh Xóa 24 Table có trong sql
--- Nhóm 1: Các bảng phụ thuộc nhiều cấp (xóa trước)
-DROP TABLE IF EXISTS Reviews;
-DROP TABLE IF EXISTS OrderItems;
-DROP TABLE IF EXISTS CartItems;
-DROP TABLE IF EXISTS WishlistItems;
-DROP TABLE IF EXISTS ProductAttributeValues;
-DROP TABLE IF EXISTS ProductImages;
-DROP TABLE IF EXISTS VoucherProducts;
-
--- Nhóm 2: Các bảng phụ thuộc cấp trung gian
-DROP TABLE IF EXISTS Wishlists;
-DROP TABLE IF EXISTS Payments;
-DROP TABLE IF EXISTS Shippings;
-
--- Nhóm 3: Các bảng phụ thuộc trực tiếp vào Product
-DROP TABLE IF EXISTS Products;
-
--- Nhóm 4: Các bảng phụ thuộc vào Users và Orders
-DROP TABLE IF EXISTS Orders;
-DROP TABLE IF EXISTS Carts;
-DROP TABLE IF EXISTS UserAddresses;
-DROP TABLE IF EXISTS PasswordResetTokens;
-DROP TABLE IF EXISTS UserAuthMethods;
-
--- Nhóm 5: Các bảng phụ thuộc vào Category
-DROP TABLE IF EXISTS SubSubcategory;
-DROP TABLE IF EXISTS Subcategory;
-DROP TABLE IF EXISTS CategoryAttributes;
-
--- Nhóm 6: Các bảng phụ thuộc vào ProductAttribute
-DROP TABLE IF EXISTS AttributeValues;
-
--- Nhóm 7: Các bảng độc lập (xóa cuối)
-DROP TABLE IF EXISTS Users;
-DROP TABLE IF EXISTS Category;
-DROP TABLE IF EXISTS ProductAttributes;
-DROP TABLE IF EXISTS Vouchers;
-DROP TABLE IF EXISTS Ranks;
-DROP TABLE IF EXISTS Staffs;
-
-
 -- =======================================================
 -- NHÓM 1: Các bảng độc lập (không có foreign key)
 -- =======================================================
@@ -1285,103 +1243,40 @@ INSERT INTO CategoryAttributes (CategoryID, AttributeName) VALUES
 (2, 'LED RGB'), -- Chuột
 (2, N'Kết nối');
 
--- Tạo thuộc tính
-INSERT INTO ProductAttribute (AttributeName, AttributeType) VALUES 
-(N'CPU', 'Text'), (N'Card Đồ Họa', 'Text'), (N'RAM', 'Text'), 
-(N'Ổ Cứng', 'Text'), (N'Màn Hình', 'Text'), (N'Hệ Điều Hành', 'Text');
 
--- Khai báo biến
-DECLARE @ProductID INT;
-DECLARE @CPUID INT = (SELECT AttributeID FROM ProductAttribute WHERE AttributeName = N'CPU');
-DECLARE @CardDoHoaID INT = (SELECT AttributeID FROM ProductAttribute WHERE AttributeName = N'Card Đồ Họa');
-DECLARE @RAMID INT = (SELECT AttributeID FROM ProductAttribute WHERE AttributeName = N'RAM');
-DECLARE @OCungID INT = (SELECT AttributeID FROM ProductAttribute WHERE AttributeName = N'Ổ Cứng');
-DECLARE @ManHinhID INT = (SELECT AttributeID FROM ProductAttribute WHERE AttributeName = N'Màn Hình');
-DECLARE @HeDieuHanhID INT = (SELECT AttributeID FROM ProductAttribute WHERE AttributeName = N'Hệ Điều Hành');
+-- -- Create sample orders for user ID 1
+-- INSERT INTO Orders (UserID, TotalPrice, TotalDiscountAmount, Status, CreatedAt)
+-- VALUES 
+-- (1, 24990000, 0, 'Delivered', DATEADD(day, -30, GETDATE())),
+-- (1, 19990000, 1000000, 'Processing', DATEADD(day, -15, GETDATE())),
+-- (1, 13990000, 0, 'Pending', DATEADD(day, -5, GETDATE()));
 
--- Thêm sản phẩm
-INSERT INTO Products (Name, Description, Price, Stock, SubSubcategoryID, Brand, Status)
-VALUES (N'Laptop gaming Acer Nitro Lite 16 NL16 71G 71UJ', 
-        N'Intel Core i7-13620H, NVIDIA RTX 4050, 16GB DDR5, 512GB SSD, 16" FHD 165Hz', 
-        24990000, 10, 1, N'Acer', 'Active');
-SET @ProductID = SCOPE_IDENTITY();
+-- -- Create order items for the first order (Products 1-2)
+-- INSERT INTO OrderItems (OrderID, ProductID, Quantity, UnitPrice, DiscountAmount)
+-- VALUES 
+-- (1, 1, 1, 24990000, 0),
+-- (1, 2, 1, 19990000, 0);
 
--- Thêm hình ảnh
-INSERT INTO ProductImages (ProductID, ImageURL, IsPrimary, DisplayOrder) VALUES 
-(@ProductID, 'https://product.hstatic.net/200000722513/product/acer-gaming-nitro-lite-16-nl16-7_b9c923301cac40ec96fdf625748b97ff_grande.png', 1, 1),
-(@ProductID, 'https://product.hstatic.net/200000722513/product/acer-gaming-nitro-lite-16-nl16-7__1__ae9b903e25a2460486e98f74cf872415_1024x1024.png', 0, 2);
+-- -- Create order items for the second order (Products 3-4)
+-- INSERT INTO OrderItems (OrderID, ProductID, Quantity, UnitPrice, DiscountAmount)
+-- VALUES 
+-- (2, 3, 1, 29990000, 1000000),
+-- (2, 4, 1, 599000, 0);
 
--- Thêm giá trị thuộc tính
-INSERT INTO AttributeValue (AttributeID, ValueName) VALUES 
-(@CPUID, 'Intel Core i7-13620H'),
-(@CardDoHoaID, 'NVIDIA GeForce RTX 4050'),
-(@RAMID, '16GB DDR5'),
-(@OCungID, '512GB SSD PCIe Gen4'),
-(@ManHinhID, '16 inch FHD 165Hz'),
-(@HeDieuHanhID, 'Windows 11 Home');
+-- -- Create order items for the third order (Product 5)
+-- INSERT INTO OrderItems (OrderID, ProductID, Quantity, UnitPrice, DiscountAmount)
+-- VALUES 
+-- (3, 5, 1, 4990000, 0);
 
--- Liên kết sản phẩm với thuộc tính
-INSERT INTO ProductAttributeValue (ProductID, ValueID) 
-SELECT @ProductID, ValueID FROM AttributeValue 
-WHERE ValueName IN ('Intel Core i7-13620H', 'NVIDIA GeForce RTX 4050', '16GB DDR5', '512GB SSD PCIe Gen4', '16 inch FHD 165Hz', 'Windows 11 Home');
+-- -- Create payments for the orders
+-- INSERT INTO Payments (OrderID, Amount, PaymentMethod, PaymentStatus, PaymentDate)
+-- VALUES 
+-- (1, 24990000, 'VNPay', 'Completed', DATEADD(day, -30, GETDATE())),
+-- (2, 19990000, 'Momo', 'Completed', DATEADD(day, -15, GETDATE())),
+-- (3, 13990000, 'COD', 'Pending', DATEADD(day, -5, GETDATE()));
 
--- Laptop Gaming bán chạy
-INSERT INTO Products (Name, Description, Price, Stock, SubSubcategoryID, Brand)
-VALUES (N'Laptop Gaming Demo', N'Laptop gaming demo cấu hình mạnh', 19990000, 10, 1, N'ASUS');
-
--- Laptop Văn Phòng bán chạy
-INSERT INTO Products (Name, Description, Price, Stock, SubSubcategoryID, Brand)
-VALUES (N'Laptop Văn Phòng Demo', N'Laptop văn phòng demo mỏng nhẹ', 13990000, 10, 4, N'Lenovo');
-
--- PC Gaming bán chạy
-INSERT INTO Products (Name, Description, Price, Stock, SubSubcategoryID, Brand)
-VALUES (N'PC Gaming Demo', N'PC gaming demo cấu hình cao', 29990000, 5, 6, N'Custom');
-
--- Chuột bán chạy
-INSERT INTO Products (Name, Description, Price, Stock, SubSubcategoryID, Brand)
-VALUES (N'Chuột Gaming Demo', N'Chuột gaming demo siêu nhẹ', 599000, 20, 7, N'Logitech');
-
--- Màn hình bán chạy
-INSERT INTO Products (Name, Description, Price, Stock, SubSubcategoryID, Brand)
-VALUES (N'Màn Hình Demo', N'Màn hình demo 27 inch 2K', 4990000, 8, 8, N'LG');
-
--- Bàn phím bán chạy
-INSERT INTO Products (Name, Description, Price, Stock, SubSubcategoryID, Brand)
-VALUES (N'Bàn Phím Demo', N'Bàn phím cơ demo RGB', 990000, 15, 9, N'Keychron');
-
--- Create sample orders for user ID 1
-INSERT INTO Orders (UserID, TotalPrice, DiscountAmount, Status, CreatedAt)
-VALUES 
-(1, 24990000, 0, 'Delivered', DATEADD(day, -30, GETDATE())),
-(1, 19990000, 1000000, 'Processing', DATEADD(day, -15, GETDATE())),
-(1, 13990000, 0, 'Pending', DATEADD(day, -5, GETDATE()));
-
--- Create order items for the first order (Products 1-2)
-INSERT INTO OrderItems (OrderID, ProductID, Quantity, UnitPrice, DiscountAmount)
-VALUES 
-(1, 1, 1, 24990000, 0),
-(1, 2, 1, 19990000, 0);
-
--- Create order items for the second order (Products 3-4)
-INSERT INTO OrderItems (OrderID, ProductID, Quantity, UnitPrice, DiscountAmount)
-VALUES 
-(2, 3, 1, 29990000, 1000000),
-(2, 4, 1, 599000, 0);
-
--- Create order items for the third order (Product 5)
-INSERT INTO OrderItems (OrderID, ProductID, Quantity, UnitPrice, DiscountAmount)
-VALUES 
-(3, 5, 1, 4990000, 0);
-
--- Create payments for the orders
-INSERT INTO Payments (OrderID, Amount, PaymentMethod, PaymentStatus, PaymentDate)
-VALUES 
-(1, 24990000, 'VNPay', 'Completed', DATEADD(day, -30, GETDATE())),
-(2, 19990000, 'Momo', 'Completed', DATEADD(day, -15, GETDATE())),
-(3, 13990000, 'COD', 'Pending', DATEADD(day, -5, GETDATE()));
-
--- Create sample addresses for user ID 1
-INSERT INTO UserAddresses (UserID, RecipientName, AddressLine, City, District, Ward, Phone, IsPrimary, CreatedAt)
-VALUES 
-(1, N'Nguyễn Văn A', N'123 Đường ABC', N'Hồ Chí Minh', N'Quận 1', N'Phường Bến Nghé', '0123456789', 1, GETDATE()),
-(1, N'Nguyễn Văn B', N'456 Đường XYZ', N'Hà Nội', N'Cầu Giấy', N'Phường Dịch Vọng', '0987654321', 0, GETDATE());
+-- -- Create sample addresses for user ID 1
+-- INSERT INTO UserAddresses (UserID, RecipientName, AddressLine, City, District, Ward, Phone, IsPrimary, CreatedAt)
+-- VALUES 
+-- (1, N'Nguyễn Văn A', N'123 Đường ABC', N'Hồ Chí Minh', N'Quận 1', N'Phường Bến Nghé', '0123456789', 1, GETDATE()),
+-- (1, N'Nguyễn Văn B', N'456 Đường XYZ', N'Hà Nội', N'Cầu Giấy', N'Phường Dịch Vọng', '0987654321', 0, GETDATE());

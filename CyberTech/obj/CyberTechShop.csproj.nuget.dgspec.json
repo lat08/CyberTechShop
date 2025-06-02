@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "E:\\OOAD\\CyberTechShop\\cybertech\\CyberTechShop.csproj": {}
+    "D:\\CyberTechShop\\CyberTech\\CyberTechShop.csproj": {}
   },
   "projects": {
-    "E:\\OOAD\\CyberTechShop\\cybertech\\CyberTechShop.csproj": {
+    "D:\\CyberTechShop\\CyberTech\\CyberTechShop.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "E:\\OOAD\\CyberTechShop\\cybertech\\CyberTechShop.csproj",
+        "projectUniqueName": "D:\\CyberTechShop\\CyberTech\\CyberTechShop.csproj",
         "projectName": "CyberTechShop",
-        "projectPath": "E:\\OOAD\\CyberTechShop\\cybertech\\CyberTechShop.csproj",
-        "packagesPath": "C:\\Users\\deanl\\.nuget\\packages\\",
-        "outputPath": "E:\\OOAD\\CyberTechShop\\cybertech\\obj\\",
+        "projectPath": "D:\\CyberTechShop\\CyberTech\\CyberTechShop.csproj",
+        "packagesPath": "C:\\Users\\Helios Neo 16\\.nuget\\packages\\",
+        "outputPath": "D:\\CyberTechShop\\CyberTech\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\deanl\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\Helios Neo 16\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
@@ -102,7 +102,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.403/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.400/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
