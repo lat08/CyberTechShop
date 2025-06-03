@@ -34,6 +34,8 @@ namespace CyberTech.Data
         public DbSet<OrderItem> OrderItems { get; set; }
         public DbSet<Payment> Payments { get; set; }
         public DbSet<Review> Reviews { get; set; }
+        public DbSet<UserVoucher> UserVouchers { get; set; }
+        public DbSet<VoucherToken> VoucherTokens { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -61,6 +63,8 @@ namespace CyberTech.Data
             modelBuilder.Entity<Payment>().ToTable("Payments");
             modelBuilder.Entity<Review>().ToTable("Reviews");
             modelBuilder.Entity<WishlistItem>().ToTable("WishlistItems");
+            modelBuilder.Entity<UserVoucher>().ToTable("UserVouchers");
+            modelBuilder.Entity<VoucherToken>().ToTable("VoucherTokens");
 
             modelBuilder.Entity<VoucherProducts>()
                 .HasKey(vp => new { vp.VoucherID, vp.ProductID });

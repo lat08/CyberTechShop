@@ -1055,13 +1055,225 @@ namespace CyberTech.Services
 
         public async Task<bool> IsInWishlist(string userId, int productId)
         {
+            if (string.IsNullOrEmpty(userId)) return false;
+
             var wishlist = await _context.Wishlists
-                .FirstOrDefaultAsync(w => w.UserID.ToString() == userId);
+                .FirstOrDefaultAsync(w => w.UserID == int.Parse(userId));
 
             if (wishlist == null) return false;
 
             return await _context.WishlistItems
-                .AnyAsync(w => w.WishlistID == wishlist.WishlistID && w.ProductID == productId);
+                .AnyAsync(wi => wi.WishlistID == wishlist.WishlistID && wi.ProductID == productId);
+        }
+
+        public async Task<List<UserVoucher>> GetUserVouchersAsync(int userId)
+        {
+            try
+            {
+                return await _context.UserVouchers
+                    .Include(uv => uv.Voucher)
+                    .Where(uv => uv.UserID == userId && !uv.IsUsed && uv.Voucher.IsActive && uv.Voucher.ValidTo > DateTime.Now)
+                    .OrderBy(uv => uv.Voucher.ValidTo)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting vouchers for user {UserId}", userId);
+                return new List<UserVoucher>();
+            }
+        }
+
+        public async Task<bool> AssignVoucherToUserAsync(int userId, int voucherId)
+        {
+            try
+            {
+                // Check if user exists
+                var user = await _context.Users.FindAsync(userId);
+                if (user == null)
+                {
+                    _logger.LogWarning("User {UserId} not found when assigning voucher", userId);
+                    return false;
+                }
+
+                // Check if voucher exists and is valid
+                var voucher = await _context.Vouchers
+                    .FirstOrDefaultAsync(v => v.VoucherID == voucherId && v.IsActive && v.ValidTo > DateTime.Now);
+                if (voucher == null)
+                {
+                    _logger.LogWarning("Voucher {VoucherId} not found or not valid", voucherId);
+                    return false;
+                }
+
+                // Check if voucher has available quantity
+                if (voucher.QuantityAvailable.HasValue && voucher.QuantityAvailable <= 0)
+                {
+                    _logger.LogWarning("Voucher {VoucherId} has no available quantity", voucherId);
+                    return false;
+                }
+
+                // Create new user voucher - allowing multiple vouchers if previous ones are used
+                var userVoucher = new UserVoucher
+                {
+                    UserID = userId,
+                    VoucherID = voucherId,
+                    AssignedDate = DateTime.Now,
+                    IsUsed = false
+                };
+
+                // Decrease voucher quantity if applicable
+                if (voucher.QuantityAvailable.HasValue)
+                {
+                    voucher.QuantityAvailable--;
+                }
+
+                await _context.UserVouchers.AddAsync(userVoucher);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Voucher {VoucherId} assigned to user {UserId}", voucherId, userId);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error assigning voucher {VoucherId} to user {UserId}", voucherId, userId);
+                return false;
+            }
+        }
+
+        public async Task<bool> MarkVoucherAsUsedAsync(int userVoucherId, int orderId)
+        {
+            try
+            {
+                var userVoucher = await _context.UserVouchers.FindAsync(userVoucherId);
+                if (userVoucher == null)
+                {
+                    _logger.LogWarning("UserVoucher {UserVoucherId} not found", userVoucherId);
+                    return false;
+                }
+
+                if (userVoucher.IsUsed)
+                {
+                    _logger.LogWarning("UserVoucher {UserVoucherId} is already used", userVoucherId);
+                    return false;
+                }
+
+                userVoucher.IsUsed = true;
+                userVoucher.UsedDate = DateTime.Now;
+                userVoucher.OrderID = orderId;
+
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("UserVoucher {UserVoucherId} marked as used for order {OrderId}", userVoucherId, orderId);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error marking UserVoucher {UserVoucherId} as used", userVoucherId);
+                return false;
+            }
+        }
+
+        public async Task<UserVoucher> GetUserVoucherByIdAsync(int userVoucherId)
+        {
+            try
+            {
+                return await _context.UserVouchers
+                    .Include(uv => uv.Voucher)
+                    .FirstOrDefaultAsync(uv => uv.UserVoucherID == userVoucherId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting UserVoucher {UserVoucherId}", userVoucherId);
+                return null;
+            }
+        }
+
+        public async Task<bool> IsVoucherValidForUserAsync(int userId, int voucherId)
+        {
+            try
+            {
+                var userVoucher = await _context.UserVouchers
+                    .Include(uv => uv.Voucher)
+                    .FirstOrDefaultAsync(uv => uv.UserID == userId &&
+                                              uv.VoucherID == voucherId &&
+                                              !uv.IsUsed &&
+                                              uv.Voucher.IsActive &&
+                                              uv.Voucher.ValidTo > DateTime.Now);
+
+                return userVoucher != null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking if voucher {VoucherId} is valid for user {UserId}", voucherId, userId);
+                return false;
+            }
+        }
+
+        public async Task<bool> SendVoucherNotificationAsync(int userId, int voucherId, string notificationMessage)
+        {
+            try
+            {
+                // Get the user
+                var user = await _context.Users.FindAsync(userId);
+                if (user == null)
+                {
+                    _logger.LogWarning("User {UserId} not found when sending voucher notification", userId);
+                    return false;
+                }
+
+                // Get the voucher
+                var voucher = await _context.Vouchers.FindAsync(voucherId);
+                if (voucher == null)
+                {
+                    _logger.LogWarning("Voucher {VoucherId} not found when sending notification", voucherId);
+                    return false;
+                }
+
+                // Check if user already has this voucher
+                var existingUserVoucher = await _context.UserVouchers
+                    .FirstOrDefaultAsync(uv => uv.UserID == userId && uv.VoucherID == voucherId);
+
+                if (existingUserVoucher != null)
+                {
+                    _logger.LogWarning("User {UserId} already has voucher {VoucherId}", userId, voucherId);
+                    return false;
+                }
+
+                // Create claim URL for the voucher
+                var baseUrl = "http://localhost:5246"; // Should be configured in appsettings
+                var claimUrl = $"{baseUrl}/Account/ClaimVoucher?code={voucher.Code}&userId={userId}";
+
+                // Prepare email content
+                string emailSubject = $"Mã giảm giá mới từ CyberTech: {voucher.Code}";
+                string emailContent = $@"
+                <h2>Xin chào {user.Name},</h2>
+                <p>{notificationMessage}</p>
+                <div style='margin: 20px 0; padding: 15px; border: 1px dashed #ddd; background-color: #f8f9fa; border-radius: 5px;'>
+                    <h3 style='color: #dc3545; margin: 0 0 10px 0;'>Mã giảm giá: {voucher.Code}</h3>
+                    <p><strong>Giảm giá:</strong> {(voucher.DiscountType == "PERCENT" ? $"{voucher.DiscountValue}%" : $"{voucher.DiscountValue:N0}đ")}</p>
+                    <p><strong>Áp dụng cho:</strong> {(voucher.AppliesTo == "Order" ? "Toàn đơn hàng" : "Sản phẩm")}</p>
+                    <p><strong>Có hiệu lực đến:</strong> {voucher.ValidTo:dd/MM/yyyy}</p>
+                    <p>{voucher.Description}</p>
+                </div>
+                <p>Nhấn vào nút bên dưới để thêm mã giảm giá vào tài khoản của bạn:</p>
+                <div style='text-align: center; margin: 25px 0;'>
+                    <a href='{claimUrl}' style='background-color: #0d6efd; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;'>Nhận mã giảm giá</a>
+                </div>
+                <p>Hoặc bạn có thể nhập mã <strong>{voucher.Code}</strong> trực tiếp trong kho voucher của bạn.</p>
+                <p>Lưu ý: Mã giảm giá chỉ có thể sử dụng một lần duy nhất và có hiệu lực đến {voucher.ValidTo:dd/MM/yyyy}.</p>
+                <p>Cảm ơn bạn đã chọn CyberTech!</p>
+                ";
+
+                // Send email
+                await _emailService.SendEmailAsync(user.Email, emailSubject, emailContent);
+
+                _logger.LogInformation("Voucher notification email sent to user {UserId} for voucher {VoucherId}", userId, voucherId);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending voucher notification for voucher {VoucherId} to user {UserId}", voucherId, userId);
+                return false;
+            }
         }
     }
 }

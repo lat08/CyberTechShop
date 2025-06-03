@@ -21,7 +21,11 @@ namespace CyberTech.Controllers
         private readonly ILogger<CartController> _logger;
         private readonly ICartService _cartService;
 
-        public CartController(ApplicationDbContext context, IUserService userService, ILogger<CartController> logger, ICartService cartService)
+        public CartController(
+            ApplicationDbContext context,
+            IUserService userService,
+            ILogger<CartController> logger,
+            ICartService cartService)
         {
             _context = context;
             _userService = userService;
@@ -156,7 +160,7 @@ namespace CyberTech.Controllers
 
         [Authorize]
         [HttpGet]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string voucherCode = null)
         {
             try
             {
@@ -184,6 +188,30 @@ namespace CyberTech.Controllers
                 }
 
                 var userAddresses = await _userService.GetUserAddressesAsync(user.UserID);
+
+                // Check if we need to apply a voucher from the parameter
+                if (!string.IsNullOrEmpty(voucherCode))
+                {
+                    // Find user's voucher by code
+                    var userVoucher = await _context.UserVouchers
+                        .Include(uv => uv.Voucher)
+                        .FirstOrDefaultAsync(uv =>
+                            uv.Voucher.Code == voucherCode &&
+                            uv.UserID == user.UserID &&
+                            !uv.IsUsed &&
+                            uv.Voucher.IsActive &&
+                            uv.Voucher.ValidTo > DateTime.Now);
+
+                    if (userVoucher != null)
+                    {
+                        // Store the voucher ID in session
+                        HttpContext.Session.SetInt32("AppliedVoucherId", userVoucher.VoucherID);
+                        HttpContext.Session.SetInt32("AppliedUserVoucherId", userVoucher.UserVoucherID);
+
+                        // Add success message
+                        TempData["SuccessMessage"] = $"Đã áp dụng mã giảm giá {voucherCode}";
+                    }
+                }
 
                 var appliedVoucherId = HttpContext.Session.GetInt32("AppliedVoucherId");
                 Voucher appliedVoucher = null;
@@ -550,8 +578,8 @@ namespace CyberTech.Controllers
             }
         }
 
-        [Authorize]
         [HttpPost]
+        [Authorize]
         public async Task<IActionResult> ApplyVoucher(string voucherCode)
         {
             try
@@ -578,13 +606,69 @@ namespace CyberTech.Controllers
                     return Json(new { success = false, message = "Giỏ hàng trống" });
                 }
 
+                // First check if the voucher exists at all
                 var voucher = await _context.Vouchers
                     .Include(v => v.VoucherProducts)
-                    .FirstOrDefaultAsync(v => v.Code == voucherCode && v.IsActive);
+                    .FirstOrDefaultAsync(v => v.Code == voucherCode && v.IsActive && v.ValidTo > DateTime.Now);
 
                 if (voucher == null)
                 {
                     return Json(new { success = false, message = "Mã giảm giá không tồn tại hoặc đã hết hạn" });
+                }
+
+                // Check if the voucher has available quantity
+                if (voucher.QuantityAvailable.HasValue && voucher.QuantityAvailable <= 0)
+                {
+                    return Json(new { success = false, message = "Mã giảm giá đã hết lượt sử dụng" });
+                }
+
+                // Find the voucher in user's voucher collection if it's not system-wide
+                // or check if user has already claimed this system-wide voucher
+                UserVoucher userVoucher = null;
+
+                if (voucher.IsSystemWide)
+                {
+                    // For system-wide vouchers, check if the user has already claimed it
+                    userVoucher = await _context.UserVouchers
+                        .FirstOrDefaultAsync(uv => uv.VoucherID == voucher.VoucherID && uv.UserID == user.UserID && !uv.IsUsed);
+
+                    // If user hasn't claimed this system-wide voucher yet, create a new UserVoucher entry
+                    if (userVoucher == null)
+                    {
+                        userVoucher = new UserVoucher
+                        {
+                            UserID = user.UserID,
+                            VoucherID = voucher.VoucherID,
+                            AssignedDate = DateTime.Now,
+                            IsUsed = false
+                        };
+
+                        _context.UserVouchers.Add(userVoucher);
+                        await _context.SaveChangesAsync();
+
+                        // Decrease quantity available if applicable
+                        if (voucher.QuantityAvailable.HasValue)
+                        {
+                            voucher.QuantityAvailable--;
+                            await _context.SaveChangesAsync();
+                        }
+                    }
+                }
+                else
+                {
+                    // For non-system-wide vouchers, user must already have it assigned
+                    userVoucher = await _context.UserVouchers
+                        .FirstOrDefaultAsync(uv =>
+                            uv.Voucher.Code == voucherCode &&
+                            uv.UserID == user.UserID &&
+                            !uv.IsUsed &&
+                            uv.Voucher.IsActive &&
+                            uv.Voucher.ValidTo > DateTime.Now);
+
+                    if (userVoucher == null)
+                    {
+                        return Json(new { success = false, message = "Mã giảm giá không thuộc về bạn hoặc đã được sử dụng" });
+                    }
                 }
 
                 if (!IsVoucherValid(voucher, cart))
@@ -612,6 +696,7 @@ namespace CyberTech.Controllers
                 decimal voucherDiscountAmount = totalDiscountAmount - productDiscountAmount - rankDiscountAmount;
 
                 HttpContext.Session.SetInt32("AppliedVoucherId", voucher.VoucherID);
+                HttpContext.Session.SetInt32("AppliedUserVoucherId", userVoucher.UserVoucherID);
                 await _context.SaveChangesAsync();
 
                 return Json(new
@@ -772,6 +857,7 @@ namespace CyberTech.Controllers
                 }
 
                 HttpContext.Session.Remove("AppliedVoucherId");
+                HttpContext.Session.Remove("AppliedUserVoucherId");
 
                 // Calculate all discounts and final price without voucher
                 decimal totalDiscountAmount;
@@ -859,7 +945,10 @@ namespace CyberTech.Controllers
 
                 // Get applied voucher if exists
                 int? appliedVoucherId = HttpContext.Session.GetInt32("AppliedVoucherId");
+                int? appliedUserVoucherId = HttpContext.Session.GetInt32("AppliedUserVoucherId");
                 Voucher appliedVoucher = null;
+                UserVoucher userVoucher = null;
+
                 if (appliedVoucherId.HasValue)
                 {
                     appliedVoucher = await _context.Vouchers
@@ -869,6 +958,28 @@ namespace CyberTech.Controllers
                     if (appliedVoucher != null)
                     {
                         _logger.LogInformation("Found applied voucher for checkout: {VoucherCode}", appliedVoucher.Code);
+
+                        // Get the associated UserVoucher record
+                        if (appliedUserVoucherId.HasValue)
+                        {
+                            userVoucher = await _context.UserVouchers.FindAsync(appliedUserVoucherId.Value);
+                        }
+                        else
+                        {
+                            // Fallback if we somehow don't have the UserVoucherId in session
+                            userVoucher = await _context.UserVouchers
+                                .FirstOrDefaultAsync(uv =>
+                                    uv.VoucherID == appliedVoucher.VoucherID &&
+                                    uv.UserID == user.UserID &&
+                                    !uv.IsUsed);
+                        }
+
+                        // Verify the voucher is still valid
+                        if (userVoucher == null || userVoucher.IsUsed ||
+                            !appliedVoucher.IsActive || appliedVoucher.ValidTo <= DateTime.Now)
+                        {
+                            return Json(new { success = false, message = "Mã giảm giá không hợp lệ hoặc đã được sử dụng" });
+                        }
                     }
                 }
 
@@ -903,8 +1014,19 @@ namespace CyberTech.Controllers
                     return Json(new { success = false, message = checkoutMessage });
                 }
 
+                // Mark the user voucher as used if applicable
+                if (userVoucher != null && orderId.HasValue)
+                {
+                    userVoucher.IsUsed = true;
+                    userVoucher.UsedDate = DateTime.Now;
+                    userVoucher.OrderID = orderId.Value;
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("Marked user voucher {UserVoucherId} as used for order {OrderId}", userVoucher.UserVoucherID, orderId.Value);
+                }
+
                 // Clear voucher from session
                 HttpContext.Session.Remove("AppliedVoucherId");
+                HttpContext.Session.Remove("AppliedUserVoucherId");
 
                 // Handle payment method
                 if (paymentMethod == "VNPay")
@@ -974,6 +1096,78 @@ namespace CyberTech.Controllers
 
             _logger.LogWarning("Voucher {VoucherCode} is not valid for this cart", voucher.Code);
             return false;
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> CreateTestVoucher(bool isSystemWide, string code, string discountType, decimal discountValue, string appliesTo)
+        {
+            try
+            {
+                // This method is for development/testing only
+                var emailClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email);
+                if (emailClaim == null)
+                {
+                    return Json(new { success = false, message = "User not found" });
+                }
+
+                var user = await _userService.GetUserByEmailAsync(emailClaim.Value);
+                if (user == null)
+                {
+                    return Json(new { success = false, message = "User not found" });
+                }
+
+                // Create the voucher
+                var voucher = new Voucher
+                {
+                    Code = code,
+                    Description = $"Test voucher created at {DateTime.Now:yyyy-MM-dd HH:mm:ss}",
+                    DiscountType = discountType,
+                    DiscountValue = discountValue,
+                    QuantityAvailable = isSystemWide ? 100 : 1, // System-wide vouchers have more quantity
+                    ValidFrom = DateTime.Now,
+                    ValidTo = DateTime.Now.AddDays(7), // Valid for 7 days
+                    IsActive = true,
+                    AppliesTo = appliesTo,
+                    IsSystemWide = isSystemWide
+                };
+
+                _context.Vouchers.Add(voucher);
+                await _context.SaveChangesAsync();
+
+                // If it's a user-specific voucher, assign it to the current user
+                if (!isSystemWide)
+                {
+                    var userVoucher = new UserVoucher
+                    {
+                        UserID = user.UserID,
+                        VoucherID = voucher.VoucherID,
+                        AssignedDate = DateTime.Now,
+                        IsUsed = false
+                    };
+
+                    _context.UserVouchers.Add(userVoucher);
+                    await _context.SaveChangesAsync();
+
+                    return Json(new
+                    {
+                        success = true,
+                        message = $"User-specific voucher '{code}' created and assigned to you. Check your Vouchers page to use it."
+                    });
+                }
+
+                // For system-wide vouchers, just return success
+                return Json(new
+                {
+                    success = true,
+                    message = $"System-wide voucher '{code}' created. You can apply it directly in the cart."
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating test voucher");
+                return Json(new { success = false, message = "Error creating test voucher" });
+            }
         }
     }
 }

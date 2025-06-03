@@ -9,29 +9,35 @@
             switch (controller)
             {
                 case "Dashboard":
-                    <text>CybotEcom - Trang chủ</text>
+                    <text>Happy Kitchen - Trang chủ</text>
                     break;
                 case "ProductManage":
-                    <text>CybotEcom - Quản lý sản phẩm</text>
+                    <text>Happy Kitchen - Quản lý sản phẩm</text>
                     break;
-                // case "Pos":
-                //     <text>CybotEcom - Hệ thống POS</text>
-                //     break;
-                // case "CustomerManage":
-                //     <text>CybotEcom - Quản lý khách hàng</text>
-                //     break;
-                // case "TableManage":
-                //     <text>CybotEcom - Quản lý bàn</text>
-                //     break;
-                // case "QRCodeManage":
-                //     <text>CybotEcom - Quản lý mã QR</text>
-                //     break;
-                // case "OrderManage":
-                //     <text>CybotEcom - Quản lý đơn hàng</text>
-                //     break;
-                // case "UserManage":
-                //     <text>CybotEcom - Cài đặt hệ thống</text>
-                //     break;
+                case "Pos":
+                    <text>Happy Kitchen - Hệ thống POS</text>
+                    break;
+                case "CustomerManage":
+                    <text>Happy Kitchen - Quản lý khách hàng</text>
+                    break;
+                case "TableManage":
+                    <text>Happy Kitchen - Quản lý bàn</text>
+                    break;
+                case "QRCodeManage":
+                    <text>Happy Kitchen - Quản lý mã QR</text>
+                    break;
+                case "OrderManage":
+                    <text>Happy Kitchen - Quản lý đơn hàng</text>
+                    break;
+                case "ReservationManage":
+                    <text>Happy Kitchen - Quản lý đơn đặt bàn</text>
+                    break;
+                case "UserManage":
+                    <text>Happy Kitchen - Cài đặt hệ thống</text>
+                    break;
+                case "RankManage":
+                    <text>Happy Kitchen - Quản lý cấp bậc</text>
+                    break;
                 default:
                     <text>@ViewData["Title"]</text>
                     break;
@@ -40,10 +46,10 @@
     </title>
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-..." crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
     <!-- General styles -->
-    <link rel="stylesheet" href="~/css/Admin/styles.css">
+    <link rel="stylesheet" href="~/admin/css/styles.css">
     @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
@@ -56,7 +62,7 @@
             <div class="logo-container">
                 <img src="~/admin/dashboard.png" class="logo-img">
                 <div class="logo-text">
-                    <h3>Quản lý hệ thống</h3>
+                    <h3>Quản lý nhà hàng</h3>
                 </div>
             </div>
         </div>
@@ -66,12 +72,26 @@
             <ul class="sidebar-menu">
                 <li><a href="/Dashboard" class="@(ViewContext.RouteData.Values["controller"].ToString() == "Dashboard" ? "active" : "")"><i class="fas fa-th-large"></i> <span class="menu-text">Trang chủ</span></a></li>
                 <li><a href="/ProductManage" class="@(ViewContext.RouteData.Values["controller"].ToString() == "ProductManage" ? "active" : "")"><i class="fas fa-utensils"></i> <span class="menu-text">Quản lý sản phẩm</span></a></li>
-               @* <li><a href="/Pos" class="@(ViewContext.RouteData.Values["controller"].ToString() == "Pos" ? "active" : "")"><i class="fas fa-shopping-cart"></i> <span class="menu-text">Hệ thống POS</span></a></li>
+                <li><a href="/Pos" class="@(ViewContext.RouteData.Values["controller"].ToString() == "Pos" ? "active" : "")"><i class="fas fa-shopping-cart"></i> <span class="menu-text">Hệ thống POS</span></a></li>
                 <li><a href="/CustomerManage" class="@(ViewContext.RouteData.Values["controller"].ToString() == "CustomerManage" ? "active" : "")"><i class="fas fa-users"></i> <span class="menu-text">Khách hàng</span></a></li>
                 <li><a href="/TableManage" class="@(ViewContext.RouteData.Values["controller"].ToString() == "TableManage" ? "active" : "")"><i class="fas fa-chair"></i> <span class="menu-text">Quản lý bàn</span></a></li>
                 <li><a href="/OrderManage" class="@(ViewContext.RouteData.Values["controller"].ToString() == "OrderManage" ? "active" : "")"><i class="fas fa-clipboard-list"></i> <span class="menu-text">Quản lý đơn hàng</span></a></li>
+                <li><a href="/ReservationManage" class="@(ViewContext.RouteData.Values["controller"].ToString() == "ReservationManage" ? "active" : "")"><i class="fas fa-concierge-bell"></i> <span class="menu-text">Quản lý đơn đặt bàn</span></a></li>
                 <li><a href="/QRCodeManage" class="@(ViewContext.RouteData.Values["controller"].ToString() == "QRCodeManage" ? "active" : "")"><i class="fas fa-qrcode"></i> <span class="menu-text">Mã QR</span></a></li>
-                <li><a href="/UserManage" class="@(ViewContext.RouteData.Values["controller"].ToString() == "UserManage" ? "active" : "")"><i class="fas fa-user-cog"></i> <span class="menu-text">Cài đặt hệ thống</span></a></li>*@
+                <li><a href="/RankManage" class="@(ViewContext.RouteData.Values["controller"].ToString() == "RankManage" ? "active" : "")"><i class="fas fa-trophy"></i> <span class="menu-text">Cấp bậc</span></a></li>
+                <li><a href="/UserManage" class="@(ViewContext.RouteData.Values["controller"].ToString() == "UserManage" ? "active" : "")"><i class="fas fa-user-cog"></i> <span class="menu-text">Cài đặt hệ thống</span></a></li>
+                <li class="nav-item">
+                    <a class="nav-link" href="@Url.Action("Index", "RankManage")">
+                        <i class="fas fa-star nav-icon"></i>
+                        <span>Quản lý Hạng</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="@Url.Action("Index", "VoucherManage")">
+                        <i class="fas fa-ticket-alt nav-icon"></i>
+                        <span>Quản lý Voucher</span>
+                    </a>
+                </li>
             </ul>
             
         </div>
@@ -99,11 +119,11 @@
     </div>
     <!-- Bootstrap JS and dependencies -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-..." crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- Custom JavaScript -->
-    <script src="~/js/script.js"></script>
-    <script src="~/js/utils.js"></script>
+    <script src="~/admin/js/script.js"></script>
+    <script src="~/admin/js/utils.js"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

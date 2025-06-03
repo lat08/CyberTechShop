@@ -133,5 +133,63 @@ namespace CyberTech.Services
                 throw new InvalidOperationException("Không thể gửi email đặt lại mật khẩu. Vui lòng thử lại sau.", ex);
             }
         }
+
+        public async Task SendEmailAsync(string email, string subject, string htmlContent)
+        {
+            _logger.LogDebug("Preparing to send email to {Email} with subject: {Subject}", email, subject);
+
+            try
+            {
+                using var message = new MailMessage();
+                message.From = new MailAddress(_senderEmail, _senderName);
+                message.To.Add(new MailAddress(email));
+                message.Subject = subject;
+                message.IsBodyHtml = true;
+                message.Body = $@"
+                    <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;'>
+                        <div style='text-align: center; margin-bottom: 20px;'>
+                            <h1 style='color: #007bff; margin: 0;'>Cửa hàng CyberTech</h1>
+                        </div>
+                        <div style='background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin-bottom: 20px;'>
+                            {htmlContent}
+                        </div>
+                        <div style='text-align: center; color: #666; font-size: 12px; border-top: 1px solid #e0e0e0; padding-top: 20px;'>
+                            <p style='margin: 0;'>Email này được gửi tự động, vui lòng không trả lời.</p>
+                            <p style='margin: 5px 0 0 0;'>© {DateTime.Now.Year} CyberTech. All rights reserved.</p>
+                        </div>
+                    </div>";
+
+                using var client = new SmtpClient(_smtpServer, _port)
+                {
+                    EnableSsl = true,
+                    UseDefaultCredentials = false,
+                    Credentials = new NetworkCredential(_senderEmail, _senderPassword),
+                    DeliveryMethod = SmtpDeliveryMethod.Network,
+                    Timeout = 10000
+                };
+
+                try
+                {
+                    _logger.LogDebug("Connecting to SMTP server {Server}:{Port}", _smtpServer, _port);
+                    await client.SendMailAsync(message);
+                    _logger.LogInformation("Email sent successfully to {Email} with subject: {Subject}", email, subject);
+                }
+                catch (SmtpException ex)
+                {
+                    _logger.LogError(ex, "SMTP Error: {Message}, StatusCode: {StatusCode}", ex.Message, ex.StatusCode);
+                    throw new InvalidOperationException($"Lỗi gửi email: {ex.Message}", ex);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error during SMTP operation: {Message}", ex.Message);
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send email to {Email}: {Message}", email, ex.Message);
+                throw new InvalidOperationException("Không thể gửi email. Vui lòng thử lại sau.", ex);
+            }
+        }
     }
 }

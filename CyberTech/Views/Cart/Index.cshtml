@@ -169,6 +169,20 @@
                                         </div>
                                     }
                                 </div>
+                                
+                                @* <!-- Test Voucher Button (For Development Only) -->
+                                @if (User.Identity.IsAuthenticated)
+                                {
+                                    <div class="mt-2 border-top pt-2">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted"><i class="fas fa-tools me-1"></i>Testing Tools</small>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" id="testSendVoucher" 
+                                                    data-bs-toggle="modal" data-bs-target="#testVoucherModal">
+                                                <i class="fas fa-gift me-1"></i>Test Send Voucher
+                                            </button>
+                                        </div>
+                                    </div>
+                                } *@
                             </div>
                             
                             <hr>
@@ -269,7 +283,7 @@
                     </div>
                     <h3 class="mb-3">Giỏ hàng của bạn đang trống</h3>
                     <p class="text-muted mb-4">Hãy khám phá các sản phẩm tuyệt vời của chúng tôi và thêm vào giỏ hàng!</p>
-                    <a href="@Url.Action("Index", "Product")" class="btn btn-primary btn-lg">
+                    <a href="@Url.Action("Index", "Home")" class="btn btn-primary btn-lg">
                         <i class="fas fa-shopping-bag me-2"></i>Bắt đầu mua sắm
                     </a>
                 </div>
@@ -412,6 +426,68 @@
     </div>
 </div>
 
+<!-- Test Voucher Modal -->
+<div class="modal fade" id="testVoucherModal" tabindex="-1" aria-labelledby="testVoucherModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="testVoucherModalLabel">
+                    <i class="fas fa-gift me-2"></i>Test Send Voucher
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Development Tool:</strong> This is for testing purposes only.
+                </div>
+                
+                <form id="testVoucherForm">
+                    <div class="mb-3">
+                        <label for="testVoucherType" class="form-label">Voucher Type</label>
+                        <select class="form-select" id="testVoucherType">
+                            <option value="system">System-wide Voucher</option>
+                            <option value="user">User-specific Voucher</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="testVoucherCode" class="form-label">Voucher Code</label>
+                        <input type="text" class="form-control" id="testVoucherCode" value="TEST@123">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="testDiscountType" class="form-label">Discount Type</label>
+                        <select class="form-select" id="testDiscountType">
+                            <option value="FIXED">Fixed Amount</option>
+                            <option value="PERCENT">Percentage</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="testDiscountValue" class="form-label">Discount Value</label>
+                        <input type="number" class="form-control" id="testDiscountValue" value="50000">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="testAppliesTo" class="form-label">Applies To</label>
+                        <select class="form-select" id="testAppliesTo">
+                            <option value="Order">Entire Order</option>
+                            <option value="Product">Specific Products</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="sendTestVoucher">
+                    <i class="fas fa-paper-plane me-1"></i>Send Voucher
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Styles {
     <style>
         .cart-item.updating {
@@ -526,6 +602,61 @@
 }
 
 @section Scripts {
+    <script>
+        // Test voucher functionality
+        $(document).ready(function() {
+            $('#sendTestVoucher').on('click', function() {
+                const voucherType = $('#testVoucherType').val();
+                const voucherCode = $('#testVoucherCode').val();
+                const discountType = $('#testDiscountType').val();
+                const discountValue = $('#testDiscountValue').val();
+                const appliesTo = $('#testAppliesTo').val();
+                
+                if (!voucherCode || !discountValue) {
+                    utils.showToast('Please fill all required fields', 'warning');
+                    return;
+                }
+                
+                // Show loading state
+                const $btn = $(this);
+                const originalText = $btn.html();
+                $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>Processing...');
+                
+                // Send AJAX request to create test voucher
+                $.ajax({
+                    url: '/Cart/CreateTestVoucher',
+                    type: 'POST',
+                    data: {
+                        isSystemWide: voucherType === 'system',
+                        code: voucherCode,
+                        discountType: discountType,
+                        discountValue: discountValue,
+                        appliesTo: appliesTo
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $('#testVoucherModal').modal('hide');
+                            utils.showToast(response.message, 'success');
+                            
+                            // If it's a system-wide voucher, update the voucher code input
+                            if (voucherType === 'system') {
+                                $('#voucherCode').val(voucherCode);
+                            }
+                        } else {
+                            utils.showToast(response.message || 'Failed to create test voucher', 'error');
+                        }
+                    },
+                    error: function() {
+                        utils.showToast('An error occurred while creating the test voucher', 'error');
+                    },
+                    complete: function() {
+                        $btn.prop('disabled', false).html(originalText);
+                    }
+                });
+            });
+        });
+    </script>
+    
     <script>
         // Cart Management Object
         const CartManager = {

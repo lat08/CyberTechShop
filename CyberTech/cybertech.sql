@@ -94,6 +94,7 @@ CREATE TABLE Vouchers (
     ValidTo         DATETIME                        NOT NULL,
     IsActive        BIT                             NOT NULL DEFAULT 1,
     AppliesTo       VARCHAR(10)                     NOT NULL DEFAULT 'Order' CHECK (AppliesTo IN ('Order', 'Product')),
+    IsSystemWide    BIT                             NOT NULL DEFAULT 0,
     CHECK (ValidTo > ValidFrom)
 );
 
@@ -341,6 +342,31 @@ CREATE TABLE Reviews (
     CreatedAt       DATETIME                        NOT NULL DEFAULT GETDATE(),
     FOREIGN KEY (UserID) REFERENCES Users(UserID),
     FOREIGN KEY (ProductID) REFERENCES Products(ProductID)
+);
+
+-- Bảng UserVouchers
+CREATE TABLE UserVouchers (
+    UserVoucherID   INT             IDENTITY(1,1)   NOT NULL PRIMARY KEY,
+    UserID          INT             NOT NULL,
+    VoucherID       INT             NOT NULL,
+    AssignedDate    DATETIME        NOT NULL,
+    UsedDate        DATETIME        NULL,
+    IsUsed          BIT             NOT NULL DEFAULT 0,
+    OrderID         INT             NULL,
+    FOREIGN KEY (UserID) REFERENCES Users(UserID),
+    FOREIGN KEY (VoucherID) REFERENCES Vouchers(VoucherID),
+    FOREIGN KEY (OrderID) REFERENCES Orders(OrderID)
+);
+CREATE TABLE VoucherTokens (
+    TokenID INT IDENTITY(1,1) PRIMARY KEY,
+    UserID INT NOT NULL,
+    Token NVARCHAR(100) NOT NULL,
+    CreatedAt DATETIME NOT NULL DEFAULT GETDATE(),
+    ExpiresAt DATETIME NOT NULL,
+    IsUsed BIT NOT NULL DEFAULT 0,
+    UsedAt DATETIME NULL,
+    VoucherCode NVARCHAR(50) NULL,
+    CONSTRAINT FK_VoucherTokens_Users FOREIGN KEY (UserID) REFERENCES Users(UserID)
 );
 
 --------------------------------- THÊM DỮ LIỆU -------------------------------------

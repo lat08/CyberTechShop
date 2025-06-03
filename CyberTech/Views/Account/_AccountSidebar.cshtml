@@ -36,6 +36,16 @@
                     <span>Sổ địa chỉ</span>
                 </a>
             </li>
+            <li class="@(currentAction == "Vouchers" ? "active" : "")">
+                <a href="@Url.Action("Vouchers", "Account")">
+                    <i class="fas fa-ticket-alt"></i>
+                    <span>Kho voucher</span>
+                    @if (ViewBag.VoucherCount > 0)
+                    {
+                        <span class="badge bg-danger rounded-pill ms-2">@ViewBag.VoucherCount</span>
+                    }
+                </a>
+            </li>
             <li>
                  <a href="@Url.Action("Logout", "Account")">
                      <i class="fas fa-sign-out-alt"></i>

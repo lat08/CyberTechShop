@@ -41,8 +41,10 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IRecaptchaService, RecaptchaService>();
+builder.Services.AddScoped<IVoucherTokenService, VoucherTokenService>();
 builder.Services.AddScoped<VNPayService>();
-
+builder.Services.AddScoped<IRankService, RankService>();
+builder.Services.AddScoped<IVoucherService, VoucherService>();
 // Configure Logging
 builder.Services.AddLogging(logging =>
 {

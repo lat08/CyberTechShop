@@ -13,11 +13,15 @@ namespace CyberTech.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<CartService> _logger;
+        private readonly IEmailService _emailService;
+        private readonly IVoucherTokenService _voucherTokenService;
 
-        public CartService(ApplicationDbContext context, ILogger<CartService> logger)
+        public CartService(ApplicationDbContext context, ILogger<CartService> logger, IEmailService emailService, IVoucherTokenService voucherTokenService)
         {
             _context = context;
             _logger = logger;
+            _emailService = emailService;
+            _voucherTokenService = voucherTokenService;
         }
 
         public async Task<Cart> GetCartAsync(int userId)
@@ -619,6 +623,21 @@ namespace CyberTech.Services
                     await _context.SaveChangesAsync();
                     await transaction.CommitAsync();
 
+                    // Check if order total is over 50,000 VND to send voucher email
+                    if (finalPrice >= 50000)
+                    {
+                        // For first order, send the USERPROMO50 voucher
+                        if (user.OrderCount == 1)
+                        {
+                            await SendFirstOrderVoucherEmailAsync(user);
+                        }
+                        // For orders over 1,000,000 VND, send a 10% discount voucher
+                        else if (finalPrice >= 1000000)
+                        {
+                            await SendPremiumVoucherEmailAsync(user);
+                        }
+                    }
+
                     return (true, "Đặt hàng thành công", order.OrderID);
                 }
                 catch (Exception ex)
@@ -632,6 +651,197 @@ namespace CyberTech.Services
             {
                 _logger.LogError(ex, "Error during checkout for user {UserId}", userId);
                 return (false, "Có lỗi xảy ra trong quá trình đặt hàng", null);
+            }
+        }
+
+        private async Task SendFirstOrderVoucherEmailAsync(User user)
+        {
+            try
+            {
+                if (user == null || string.IsNullOrEmpty(user.Email))
+                {
+                    _logger.LogWarning("Cannot send voucher email - user or email is null");
+                    return;
+                }
+
+                // Create a special voucher code for first-time orders
+                string voucherCode = "USERPROMO50";
+
+                // Check if the user already has an active voucher with this code
+                var existingVoucher = await _context.Vouchers
+                    .FirstOrDefaultAsync(v => v.Code == voucherCode);
+
+                if (existingVoucher != null)
+                {
+                    // Check if the user already has this voucher and it's not used
+                    var existingUserVoucher = await _context.UserVouchers
+                        .FirstOrDefaultAsync(uv =>
+                            uv.UserID == user.UserID &&
+                            uv.VoucherID == existingVoucher.VoucherID &&
+                            !uv.IsUsed &&
+                            uv.Voucher.ValidTo > DateTime.Now);
+
+                    if (existingUserVoucher != null)
+                    {
+                        _logger.LogInformation("User {UserId} already has an active {VoucherCode} voucher. Skipping email.",
+                            user.UserID, voucherCode);
+                        return;
+                    }
+                }
+
+                // Check if the user already has a pending token for this voucher code
+                var existingToken = await _context.VoucherTokens
+                    .FirstOrDefaultAsync(vt =>
+                        vt.UserID == user.UserID &&
+                        vt.VoucherCode == voucherCode &&
+                        !vt.IsUsed &&
+                        vt.ExpiresAt > DateTime.Now);
+
+                if (existingToken != null)
+                {
+                    _logger.LogInformation("User {UserId} already has a pending token for {VoucherCode}. Skipping email.",
+                        user.UserID, voucherCode);
+                    return;
+                }
+
+                // Generate a token for the user
+                string token = await _voucherTokenService.GenerateVoucherTokenAsync(user.UserID, voucherCode, TimeSpan.FromDays(7));
+
+                // Create the voucher claim URL with correct base URL
+                string voucherClaimUrl = $"http://localhost:5246/voucher/claim?token={token}";
+
+                // Create the email content
+                string emailSubject = "Chào mừng bạn đến với CyberTech - Voucher giảm giá cho đơn hàng đầu tiên!";
+                string emailContent = $@"
+                    <h2 style='color: #333; margin-top: 0;'>Chào mừng bạn đến với CyberTech!</h2>
+                    <p style='color: #666; line-height: 1.6;'>
+                        Xin chào {user.Name},<br><br>
+                        Cảm ơn bạn đã tin tưởng và đặt hàng đầu tiên tại CyberTech. Để tri ân sự ủng hộ của bạn, chúng tôi xin gửi tặng bạn một voucher giảm giá đặc biệt.
+                    </p>
+                    <div style='background-color: #f0f0f0; border: 2px dashed #007bff; padding: 15px; text-align: center; margin: 20px 0;'>
+                        <h3 style='color: #007bff; margin-top: 0;'>VOUCHER GIẢM GIÁ</h3>
+                        <p style='font-size: 18px; font-weight: bold;'>USERPROMO50</p>
+                        <p>Giảm 50.000đ cho đơn hàng tiếp theo của bạn</p>
+                    </div>
+                    <div style='text-align: center; margin: 30px 0;'>
+                        <a href='{voucherClaimUrl}' 
+                           style='background-color: #007bff; color: white; padding: 12px 24px; 
+                                  text-decoration: none; border-radius: 4px; display: inline-block;
+                                  font-weight: bold;'>
+                            Nhận Voucher Ngay
+                        </a>
+                    </div>
+                    <p style='color: #666; font-size: 14px;'>
+                        <strong>Lưu ý:</strong><br>
+                        - Voucher có hiệu lực trong 7 ngày kể từ ngày nhận<br>
+                        - Mỗi voucher chỉ được sử dụng một lần<br>
+                        - Không áp dụng đồng thời với các chương trình khuyến mãi khác
+                    </p>
+                ";
+
+                // Send the email
+                await _emailService.SendEmailAsync(user.Email, emailSubject, emailContent);
+                _logger.LogInformation("Sent first order voucher email to user {UserId} with email {Email}", user.UserID, user.Email);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending first order voucher email to user {UserId}", user?.UserID);
+            }
+        }
+
+        private async Task SendPremiumVoucherEmailAsync(User user)
+        {
+            try
+            {
+                if (user == null || string.IsNullOrEmpty(user.Email))
+                {
+                    _logger.LogWarning("Cannot send premium voucher email - user or email is null");
+                    return;
+                }
+
+                // Create a special voucher code for premium orders (over 1,000,000 VND)
+                string voucherCode = "PREMIUM10";
+
+                // Check if the user already has an active voucher with this code
+                var existingVoucher = await _context.Vouchers
+                    .FirstOrDefaultAsync(v => v.Code == voucherCode);
+
+                if (existingVoucher != null)
+                {
+                    // Check if the user already has this voucher and it's not used
+                    var existingUserVoucher = await _context.UserVouchers
+                        .FirstOrDefaultAsync(uv =>
+                            uv.UserID == user.UserID &&
+                            uv.VoucherID == existingVoucher.VoucherID &&
+                            !uv.IsUsed &&
+                            uv.Voucher.ValidTo > DateTime.Now);
+
+                    if (existingUserVoucher != null)
+                    {
+                        _logger.LogInformation("User {UserId} already has an active {VoucherCode} voucher. Skipping email.",
+                            user.UserID, voucherCode);
+                        return;
+                    }
+                }
+
+                // Check if the user already has a pending token for this voucher code
+                var existingToken = await _context.VoucherTokens
+                    .FirstOrDefaultAsync(vt =>
+                        vt.UserID == user.UserID &&
+                        vt.VoucherCode == voucherCode &&
+                        !vt.IsUsed &&
+                        vt.ExpiresAt > DateTime.Now);
+
+                if (existingToken != null)
+                {
+                    _logger.LogInformation("User {UserId} already has a pending token for {VoucherCode}. Skipping email.",
+                        user.UserID, voucherCode);
+                    return;
+                }
+
+                // Generate a token for the user
+                string token = await _voucherTokenService.GenerateVoucherTokenAsync(user.UserID, voucherCode, TimeSpan.FromDays(14));
+
+                // Create the voucher claim URL with correct base URL
+                string voucherClaimUrl = $"http://localhost:5246/voucher/claim?token={token}";
+
+                // Create the email content
+                string emailSubject = "Quà tặng đặc biệt dành cho khách hàng thân thiết!";
+                string emailContent = $@"
+                    <h2 style='color: #333; margin-top: 0;'>Quà tặng đặc biệt dành cho khách hàng thân thiết!</h2>
+                    <p style='color: #666; line-height: 1.6;'>
+                        Xin chào {user.Name},<br><br>
+                        Cảm ơn bạn đã tin tưởng và đặt hàng tại CyberTech. Với giá trị đơn hàng trên 1.000.000đ, 
+                        chúng tôi xin gửi tặng bạn một voucher giảm giá đặc biệt cho lần mua hàng tiếp theo.
+                    </p>
+                    <div style='background-color: #f0f0f0; border: 2px dashed #007bff; padding: 15px; text-align: center; margin: 20px 0;'>
+                        <h3 style='color: #007bff; margin-top: 0;'>VOUCHER GIẢM GIÁ</h3>
+                        <p style='font-size: 18px; font-weight: bold;'>PREMIUM10</p>
+                        <p>Giảm 10% cho đơn hàng tiếp theo của bạn</p>
+                    </div>
+                    <div style='text-align: center; margin: 30px 0;'>
+                        <a href='{voucherClaimUrl}' 
+                           style='background-color: #007bff; color: white; padding: 12px 24px; 
+                                  text-decoration: none; border-radius: 4px; display: inline-block;
+                                  font-weight: bold;'>
+                            Nhận Voucher Ngay
+                        </a>
+                    </div>
+                    <p style='color: #666; font-size: 14px;'>
+                        <strong>Lưu ý:</strong><br>
+                        - Voucher có hiệu lực trong 14 ngày kể từ ngày nhận<br>
+                        - Mỗi voucher chỉ được sử dụng một lần<br>
+                        - Không áp dụng đồng thời với các chương trình khuyến mãi khác
+                    </p>
+                ";
+
+                // Send the email
+                await _emailService.SendEmailAsync(user.Email, emailSubject, emailContent);
+                _logger.LogInformation("Sent premium voucher email to user {UserId} with email {Email}", user.UserID, user.Email);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending premium voucher email to user {UserId}", user?.UserID);
             }
         }
 

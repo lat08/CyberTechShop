@@ -38,5 +38,13 @@ namespace CyberTech.Services
         Task<bool> AddToWishlist(string userId, int productId);
         Task<bool> RemoveFromWishlist(string userId, int productId);
         Task<bool> IsInWishlist(string userId, int productId);
+
+        // User Voucher methods
+        Task<List<UserVoucher>> GetUserVouchersAsync(int userId);
+        Task<bool> AssignVoucherToUserAsync(int userId, int voucherId);
+        Task<bool> MarkVoucherAsUsedAsync(int userVoucherId, int orderId);
+        Task<UserVoucher> GetUserVoucherByIdAsync(int userVoucherId);
+        Task<bool> IsVoucherValidForUserAsync(int userId, int voucherId);
+        Task<bool> SendVoucherNotificationAsync(int userId, int voucherId, string notificationMessage);
     }
 }

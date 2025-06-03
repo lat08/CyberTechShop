@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "E:\\OOAD\\CyberTechShop\\cybertech\\CyberTechShop.csproj": {}
+    "E:\\OOAD\\CyberTechShop\\CyberTech\\CyberTechShop.csproj": {}
   },
   "projects": {
-    "E:\\OOAD\\CyberTechShop\\cybertech\\CyberTechShop.csproj": {
+    "E:\\OOAD\\CyberTechShop\\CyberTech\\CyberTechShop.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "E:\\OOAD\\CyberTechShop\\cybertech\\CyberTechShop.csproj",
+        "projectUniqueName": "E:\\OOAD\\CyberTechShop\\CyberTech\\CyberTechShop.csproj",
         "projectName": "CyberTechShop",
-        "projectPath": "E:\\OOAD\\CyberTechShop\\cybertech\\CyberTechShop.csproj",
+        "projectPath": "E:\\OOAD\\CyberTechShop\\CyberTech\\CyberTechShop.csproj",
         "packagesPath": "C:\\Users\\deanl\\.nuget\\packages\\",
-        "outputPath": "E:\\OOAD\\CyberTechShop\\cybertech\\obj\\",
+        "outputPath": "E:\\OOAD\\CyberTechShop\\CyberTech\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\deanl\\AppData\\Roaming\\NuGet\\NuGet.Config",

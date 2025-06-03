@@ -16,6 +16,8 @@ namespace CyberTech.Models
             Carts = new List<Cart>();
             Orders = new List<Order>();
             Reviews = new List<Review>();
+            UserVouchers = new List<UserVoucher>();
+            VoucherTokens = new List<VoucherToken>();
         }
 
         [Key]
@@ -81,5 +83,7 @@ namespace CyberTech.Models
         public virtual ICollection<Cart> Carts { get; set; }
         public virtual ICollection<Order> Orders { get; set; }
         public virtual ICollection<Review> Reviews { get; set; }
+        public virtual ICollection<UserVoucher> UserVouchers { get; set; }
+        public virtual ICollection<VoucherToken> VoucherTokens { get; set; }
     }
 }
