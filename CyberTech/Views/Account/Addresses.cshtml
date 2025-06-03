@@ -101,7 +101,7 @@
 
 <!-- Address Modal -->
 <div class="modal fade address-modal" id="addressModal" tabindex="-1" aria-labelledby="addressModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="addressModalLabel">Thêm địa chỉ mới</h5>
@@ -111,39 +111,53 @@
                 <div class="modal-body">
                     @Html.AntiForgeryToken()
                     <input type="hidden" id="addressId" name="AddressID" />
-                    <div class="mb-3">
-                        <label for="recipientName" class="form-label">Họ tên người nhận</label>
-                        <input type="text" class="form-control" id="recipientName" name="RecipientName" required>
-                        <div class="invalid-feedback">Vui lòng nhập họ tên người nhận</div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="recipientName" class="form-label">Họ tên người nhận</label>
+                            <input type="text" class="form-control" id="recipientName" name="RecipientName" required>
+                            <div class="invalid-feedback">Vui lòng nhập họ tên người nhận</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="phone" class="form-label">Số điện thoại</label>
+                            <input type="text" class="form-control" id="phone" name="Phone" required pattern="[0-9]{10,11}">
+                            <div class="invalid-feedback">Vui lòng nhập số điện thoại hợp lệ (10-11 số)</div>
+                        </div>
                     </div>
+                    
                     <div class="mb-3">
-                        <label for="phone" class="form-label">Số điện thoại</label>
-                        <input type="text" class="form-control" id="phone" name="Phone" required pattern="[0-9]{10,11}">
-                        <div class="invalid-feedback">Vui lòng nhập số điện thoại hợp lệ (10-11 số)</div>
+                        <label for="addressLine" class="form-label">Địa chỉ chi tiết</label>
+                        <input type="text" class="form-control" id="addressLine" name="AddressLine" required placeholder="Số nhà, tên đường, thôn/xóm">
+                        <div class="invalid-feedback">Vui lòng nhập địa chỉ chi tiết</div>
                     </div>
-                    <div class="mb-3">
-                        <label for="addressLine" class="form-label">Địa chỉ</label>
-                        <input type="text" class="form-control" id="addressLine" name="AddressLine" required>
-                        <div class="invalid-feedback">Vui lòng nhập địa chỉ</div>
-                    </div>
+                    
+                    <!-- Địa chỉ hành chính -->
                     <div class="row">
                         <div class="col-md-4 mb-3">
-                            <label for="city" class="form-label">Tỉnh/TP</label>
-                            <input type="text" class="form-control" id="city" name="City" required>
-                            <div class="invalid-feedback">Vui lòng nhập tỉnh/thành phố</div>
+                            <label for="province" class="form-label">Tỉnh/Thành phố</label>
+                            <select class="form-select" id="province" name="City" required>
+                                <option value="">Chọn Tỉnh/Thành phố</option>
+                            </select>
+                            <div class="invalid-feedback">Vui lòng chọn tỉnh/thành phố</div>
                         </div>
+                        
                         <div class="col-md-4 mb-3">
                             <label for="district" class="form-label">Quận/Huyện</label>
-                            <input type="text" class="form-control" id="district" name="District" required>
-                            <div class="invalid-feedback">Vui lòng nhập quận/huyện</div>
+                            <select class="form-select" id="district" name="District" required disabled>
+                                <option value="">Chọn Quận/Huyện</option>
+                            </select>
+                            <div class="invalid-feedback">Vui lòng chọn quận/huyện</div>
                         </div>
+                        
                         <div class="col-md-4 mb-3">
                             <label for="ward" class="form-label">Phường/Xã</label>
-                            <input type="text" class="form-control" id="ward" name="Ward" required>
-                            <div class="invalid-feedback">Vui lòng nhập phường/xã</div>
+                            <select class="form-select" id="ward" name="Ward" required disabled>
+                                <option value="">Chọn Phường/Xã</option>
+                            </select>
+                            <div class="invalid-feedback">Vui lòng chọn phường/xã</div>
                         </div>
                     </div>
-                    <div class="form-check">
+                    
+                    <div class="form-check mb-3">
                         <input type="checkbox" class="form-check-input" id="isPrimary" name="IsPrimary" value="true">
                         <label class="form-check-label" for="isPrimary">Đặt làm địa chỉ mặc định</label>
                     </div>
@@ -203,6 +217,7 @@
         }
 
         .modal-content {
+            height: auto;
             border-radius: 10px;
         }
 
@@ -238,18 +253,197 @@
         .alert i {
             font-size: 1.1rem;
         }
+
+        /* Modal Enhancements */
+        .modal-lg {
+            max-width: 800px;
+        }
+
+        .modal-dialog-centered {
+            display: flex;
+            align-items: center;
+            min-height: calc(100% - 1rem);
+        }
+
+        .modal-content {
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .modal-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            padding: 1.5rem;
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .modal-footer {
+            background-color: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+            padding: 1.5rem;
+        }
+
+        /* Form Enhancements */
+        .form-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control, .form-select {
+            padding: 0.75rem 1rem;
+            border-color: #ced4da;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.15);
+        }
+
+        .form-check-input {
+            margin-right: 0.5rem;
+        }
+
+        .invalid-feedback {
+            font-size: 0.875rem;
+            color: #dc3545;
+        }
     </style>
 }
 
 @section Scripts {
 <script>
     $(function() {
+        // API URLs
+        const API_BASE_URL = 'https://provinces.open-api.vn/api';
+        
+        // Load provinces on page load
+        loadProvinces();
+        
+        // Province change event
+        $('#province').on('change', function() {
+            const provinceCode = $(this).val();
+            if (provinceCode) {
+                loadDistricts(provinceCode);
+                $('#district').prop('disabled', false).val('');
+                $('#ward').prop('disabled', true).val('');
+            } else {
+                $('#district').prop('disabled', true).val('');
+                $('#ward').prop('disabled', true).val('');
+            }
+        });
+        
+        // District change event
+        $('#district').on('change', function() {
+            const districtCode = $(this).val();
+            if (districtCode) {
+                loadWards(districtCode);
+                $('#ward').prop('disabled', false).val('');
+            } else {
+                $('#ward').prop('disabled', true).val('');
+            }
+        });
+        
+        // Load provinces from API
+        function loadProvinces() {
+            $.ajax({
+                url: `${API_BASE_URL}/p`,
+                type: 'GET',
+                success: function(data) {
+                    const provinceSelect = $('#province');
+                    provinceSelect.empty().append('<option value="">Chọn Tỉnh/Thành phố</option>');
+                    
+                    data.forEach(function(province) {
+                        provinceSelect.append(`<option value="${province.name}">${province.name}</option>`);
+                    });
+                },
+                error: function(error) {
+                    console.error('Error loading provinces:', error);
+                    utils.showToast('Không thể tải danh sách tỉnh/thành phố', 'error');
+                }
+            });
+        }
+        
+        // Load districts from API
+        function loadDistricts(provinceName) {
+            $.ajax({
+                url: `${API_BASE_URL}/p/search/?q=${encodeURIComponent(provinceName)}`,
+                type: 'GET',
+                success: function(data) {
+                    if (data.length > 0) {
+                        $.ajax({
+                            url: `${API_BASE_URL}/p/${data[0].code}?depth=2`,
+                            type: 'GET',
+                            success: function(provinceData) {
+                                const districtSelect = $('#district');
+                                districtSelect.empty().append('<option value="">Chọn Quận/Huyện</option>');
+                                
+                                if (provinceData && provinceData.districts) {
+                                    provinceData.districts.forEach(function(district) {
+                                        districtSelect.append(`<option value="${district.name}">${district.name}</option>`);
+                                    });
+                                }
+                            },
+                            error: function(error) {
+                                console.error('Error loading districts:', error);
+                                utils.showToast('Không thể tải danh sách quận/huyện', 'error');
+                            }
+                        });
+                    }
+                },
+                error: function(error) {
+                    console.error('Error searching province:', error);
+                    utils.showToast('Không thể tìm kiếm tỉnh/thành phố', 'error');
+                }
+            });
+        }
+        
+        // Load wards from API
+        function loadWards(districtName) {
+            $.ajax({
+                url: `${API_BASE_URL}/d/search/?q=${encodeURIComponent(districtName)}`,
+                type: 'GET',
+                success: function(data) {
+                    if (data.length > 0) {
+                        $.ajax({
+                            url: `${API_BASE_URL}/d/${data[0].code}?depth=2`,
+                            type: 'GET',
+                            success: function(districtData) {
+                                const wardSelect = $('#ward');
+                                wardSelect.empty().append('<option value="">Chọn Phường/Xã</option>');
+                                
+                                if (districtData && districtData.wards) {
+                                    districtData.wards.forEach(function(ward) {
+                                        wardSelect.append(`<option value="${ward.name}">${ward.name}</option>`);
+                                    });
+                                }
+                            },
+                            error: function(error) {
+                                console.error('Error loading wards:', error);
+                                utils.showToast('Không thể tải danh sách phường/xã', 'error');
+                            }
+                        });
+                    }
+                },
+                error: function(error) {
+                    console.error('Error searching district:', error);
+                    utils.showToast('Không thể tìm kiếm quận/huyện', 'error');
+                }
+            });
+        }
+
         // Reset form when modal is closed
         $('#addressModal').on('hidden.bs.modal', function() {
             $('#addressForm')[0].reset();
             $('#addressId').val('');
             $('#addressModalLabel').text('Thêm địa chỉ mới');
             $('.is-invalid').removeClass('is-invalid');
+            $('#district').prop('disabled', true);
+            $('#ward').prop('disabled', true);
         });
 
         // Add/Edit Address
@@ -292,9 +486,46 @@
             $('#recipientName').val(card.find('.recipient-name').text().trim());
             $('#phone').val(card.find('.fa-phone').parent().text().trim());
             $('#addressLine').val(card.find('.fa-map-marker-alt').parent().text().trim());
-            $('#city').val(card.find('.fa-city').parent().text().trim());
-            $('#district').val(card.find('.fa-building').parent().text().trim());
-            $('#ward').val(card.find('.fa-map').parent().text().trim());
+            
+            // For editing, we need to set the province/district/ward by text
+            const cityText = card.find('.fa-city').parent().text().trim();
+            const districtText = card.find('.fa-building').parent().text().trim();
+            const wardText = card.find('.fa-map').parent().text().trim();
+            console.log(cityText, districtText, wardText);
+            
+            // We'll need to load the provinces first, then find and select the matching one
+            loadProvinces();
+            
+            // Set a timeout to allow provinces to load
+            setTimeout(() => {
+                // Find province option with matching text
+                $('#province option').each(function() {
+                    if ($(this).text() === cityText) {
+                        $('#province').val($(this).val()).trigger('change');
+                        
+                        // Set a timeout to allow districts to load
+                        setTimeout(() => {
+                            // Find district option with matching text
+                            $('#district option').each(function() {
+                                if ($(this).text() === districtText) {
+                                    $('#district').val($(this).val()).trigger('change');
+                                    
+                                    // Set a timeout to allow wards to load
+                                    setTimeout(() => {
+                                        // Find ward option with matching text
+                                        $('#ward option').each(function() {
+                                            if ($(this).text() === wardText) {
+                                                $('#ward').val($(this).val());
+                                            }
+                                        });
+                                    }, 500);
+                                }
+                            });
+                        }, 500);
+                    }
+                });
+            }, 500);
+            
             $('#isPrimary').prop('checked', card.hasClass('primary'));
             
             $('#addressModalLabel').text('Chỉnh sửa địa chỉ');
@@ -369,9 +600,9 @@
             var recipientName = $('#recipientName').val().trim();
             var phone = $('#phone').val().trim();
             var addressLine = $('#addressLine').val().trim();
-            var city = $('#city').val().trim();
-            var district = $('#district').val().trim();
-            var ward = $('#ward').val().trim();
+            var province = $('#province').val();
+            var district = $('#district').val();
+            var ward = $('#ward').val();
 
             if (!recipientName) {
                 $('#recipientName').addClass('is-invalid');
@@ -395,8 +626,8 @@
                 return false;
             }
 
-            if (!city) {
-                $('#city').addClass('is-invalid');
+            if (!province) {
+                $('#province').addClass('is-invalid');
                 return false;
             }
 
@@ -414,7 +645,7 @@
         }
 
         // Real-time validation
-        $('.form-control').on('input', function() {
+        $('.form-control, .form-select').on('input change', function() {
             $(this).removeClass('is-invalid');
         });
     });

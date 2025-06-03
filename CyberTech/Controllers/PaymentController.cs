@@ -18,15 +18,18 @@ namespace CyberTech.Controllers
         private readonly ApplicationDbContext _context;
         private readonly VNPayService _vnPayService;
         private readonly ILogger<PaymentController> _logger;
+        private readonly IEmailService _emailService;
 
         public PaymentController(
             ApplicationDbContext context,
             VNPayService vnPayService,
-            ILogger<PaymentController> logger)
+            ILogger<PaymentController> logger,
+            IEmailService emailService)
         {
             _context = context;
             _vnPayService = vnPayService;
             _logger = logger;
+            _emailService = emailService;
         }
 
         [HttpPost]
@@ -85,6 +88,7 @@ namespace CyberTech.Controllers
                     var order = await _context.Orders
                         .Include(o => o.Payments)
                         .Include(o => o.User)
+                            .ThenInclude(u => u.Rank)
                         .FirstOrDefaultAsync(o => o.OrderID == vnPayResponse.OrderId);
 
                     if (order != null)
@@ -118,6 +122,9 @@ namespace CyberTech.Controllers
                             // Update user's TotalSpent and OrderCount
                             if (order.User != null)
                             {
+                                var oldRank = order.User.Rank;
+                                var oldRankName = oldRank?.RankName ?? "Thành viên";
+
                                 order.User.TotalSpent += order.TotalPrice;
                                 order.User.OrderCount++;
 
@@ -131,6 +138,23 @@ namespace CyberTech.Controllers
                                 {
                                     order.User.RankId = newRank.RankId;
                                     _logger.LogInformation("User {UserId} rank updated to {RankId} after successful payment", order.User.UserID, newRank.RankId);
+
+                                    // Send rank upgrade email notification
+                                    try
+                                    {
+                                        await _emailService.SendRankUpgradeEmailAsync(
+                                            order.User.Email,
+                                            order.User.Name,
+                                            oldRankName,
+                                            newRank.RankName,
+                                            newRank.DiscountPercent ?? 0
+                                        );
+                                        _logger.LogInformation("Rank upgrade email sent to user {UserId}", order.User.UserID);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        _logger.LogError(ex, "Error sending rank upgrade email to user {UserId}", order.User.UserID);
+                                    }
                                 }
                             }
 

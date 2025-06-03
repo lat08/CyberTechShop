@@ -191,5 +191,50 @@ namespace CyberTech.Services
                 throw new InvalidOperationException("Không thể gửi email. Vui lòng thử lại sau.", ex);
             }
         }
+
+        public async Task SendRankUpgradeEmailAsync(string email, string userName, string oldRankName, string newRankName, decimal newDiscountPercent)
+        {
+            _logger.LogDebug("Preparing to send rank upgrade email to {Email}", email);
+
+            try
+            {
+                string subject = $"Chúc mừng! Bạn đã được nâng hạng thành {newRankName}";
+                string content = $@"
+                    <h2 style='color: #333; margin-top: 0;'>Chúc mừng thăng hạng!</h2>
+                    <p style='color: #666; line-height: 1.6;'>
+                        Xin chào {userName},<br><br>
+                        Chúng tôi rất vui mừng thông báo rằng bạn đã được nâng hạng từ <strong>{oldRankName}</strong> lên <strong>{newRankName}</strong>!
+                    </p>
+                    <div style='background-color: #f0f0f0; border: 2px dashed #007bff; padding: 15px; text-align: center; margin: 20px 0;'>
+                        <h3 style='color: #007bff; margin-top: 0;'>Đặc quyền mới của bạn</h3>
+                        <p style='font-size: 18px;'>Giảm giá <strong>{newDiscountPercent}%</strong> cho mọi đơn hàng</p>
+                    </div>
+                    <p style='color: #666; line-height: 1.6;'>
+                        Với hạng thành viên mới, bạn sẽ được hưởng nhiều ưu đãi hấp dẫn hơn:<br>
+                        - Giảm giá {newDiscountPercent}% cho tất cả đơn hàng<br>
+                        - Ưu tiên hỗ trợ khách hàng<br>
+                        - Các ưu đãi độc quyền dành cho thành viên {newRankName}
+                    </p>
+                    <div style='text-align: center; margin: 30px 0;'>
+                        <a href='http://localhost:5246/Account/Profile' 
+                           style='background-color: #007bff; color: white; padding: 12px 24px; 
+                                  text-decoration: none; border-radius: 4px; display: inline-block;
+                                  font-weight: bold;'>
+                            Xem Thông Tin Thành Viên
+                        </a>
+                    </div>
+                    <p style='color: #666; font-size: 14px;'>
+                        Tiếp tục mua sắm để duy trì và nâng cao hạng thành viên của bạn!
+                    </p>";
+
+                await SendEmailAsync(email, subject, content);
+                _logger.LogInformation("Rank upgrade email sent successfully to {Email}", email);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send rank upgrade email to {Email}: {Message}", email, ex.Message);
+                throw new InvalidOperationException("Không thể gửi email thông báo nâng hạng. Vui lòng thử lại sau.", ex);
+            }
+        }
     }
 }

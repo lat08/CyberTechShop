@@ -1309,6 +1309,39 @@ namespace CyberTech.Controllers
             }
         }
 
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> GetActiveVoucherCount()
+        {
+            try
+            {
+                var emailClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email);
+                if (emailClaim == null)
+                {
+                    return Json(new { success = false, message = "User not found" });
+                }
+
+                var user = await _userService.GetUserByEmailAsync(emailClaim.Value);
+                if (user == null)
+                {
+                    return Json(new { success = false, message = "User not found" });
+                }
+
+                var activeVoucherCount = await _context.UserVouchers
+                    .CountAsync(uv => uv.UserID == user.UserID &&
+                           !uv.IsUsed &&
+                           uv.Voucher.IsActive &&
+                           uv.Voucher.ValidTo > DateTime.Now);
+
+                return Json(new { success = true, count = activeVoucherCount });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting active voucher count");
+                return Json(new { success = false, message = "Error getting voucher count" });
+            }
+        }
+
         private async Task SignInUserAsync(User user, bool isPersistent)
         {
             // Get user's auth methods
@@ -1702,7 +1735,5 @@ namespace CyberTech.Controllers
                 return Json(new { success = false, message = "Có lỗi xảy ra khi áp dụng mã giảm giá" });
             }
         }
-
-
     }
 }

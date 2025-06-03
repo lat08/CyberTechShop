@@ -20,17 +20,20 @@ namespace CyberTech.Controllers
         private readonly IUserService _userService;
         private readonly ILogger<CartController> _logger;
         private readonly ICartService _cartService;
+        private readonly IEmailService _emailService;
 
         public CartController(
             ApplicationDbContext context,
             IUserService userService,
             ILogger<CartController> logger,
-            ICartService cartService)
+            ICartService cartService,
+            IEmailService emailService)
         {
             _context = context;
             _userService = userService;
             _logger = logger;
             _cartService = cartService;
+            _emailService = emailService;
         }
 
         [HttpGet]
@@ -1041,6 +1044,70 @@ namespace CyberTech.Controllers
                 }
                 else if (paymentMethod == "COD")
                 {
+                    if (orderId.HasValue)
+                    {
+                        var order = await _context.Orders
+                            .Include(o => o.User)
+                            .FirstOrDefaultAsync(o => o.OrderID == orderId.Value);
+
+                        if (order != null)
+                        {
+                            using var transaction = await _context.Database.BeginTransactionAsync();
+                            try
+                            {
+                                // Update order status
+                                order.Status = "Processing";
+
+                                // Update user's TotalSpent and OrderCount
+                                if (order.User != null)
+                                {
+                                    var oldRank = order.User.Rank;
+                                    var oldRankName = oldRank?.RankName ?? "Thành viên";
+
+                                    order.User.TotalSpent += order.TotalPrice;
+                                    order.User.OrderCount++;
+
+                                    // Update user's rank if necessary
+                                    var newRank = await _context.Ranks
+                                        .Where(r => r.MinTotalSpent <= order.User.TotalSpent)
+                                        .OrderByDescending(r => r.MinTotalSpent)
+                                        .FirstOrDefaultAsync();
+
+                                    if (newRank != null && order.User.RankId != newRank.RankId)
+                                    {
+                                        order.User.RankId = newRank.RankId;
+                                        _logger.LogInformation("User {UserId} rank updated to {RankId} after successful COD payment", order.User.UserID, newRank.RankId);
+
+                                        // Send rank upgrade email notification
+                                        try
+                                        {
+                                            await _emailService.SendRankUpgradeEmailAsync(
+                                                order.User.Email,
+                                                order.User.Name,
+                                                oldRankName,
+                                                newRank.RankName,
+                                                newRank.DiscountPercent ?? 0
+                                            );
+                                            _logger.LogInformation("Rank upgrade email sent to user {UserId}", order.User.UserID);
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            _logger.LogError(ex, "Error sending rank upgrade email to user {UserId}", order.User.UserID);
+                                        }
+                                    }
+                                }
+
+                                await _context.SaveChangesAsync();
+                                await transaction.CommitAsync();
+                            }
+                            catch (Exception ex)
+                            {
+                                await transaction.RollbackAsync();
+                                _logger.LogError(ex, "Error updating order {OrderId} after successful COD payment", order.OrderID);
+                            }
+                        }
+                    }
+
                     return Json(new
                     {
                         success = true,

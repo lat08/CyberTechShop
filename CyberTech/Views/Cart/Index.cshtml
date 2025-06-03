@@ -893,7 +893,6 @@
                             $('#paymentModal').modal('hide');
                             if (response.success) {
                                 if (paymentMethod === 'VNPay') {
-                                    // Make another AJAX call to get the VNPay payment URL
                                     $.ajax({
                                         url: '/Payment/ProcessVNPayPayment',
                                         type: 'POST',

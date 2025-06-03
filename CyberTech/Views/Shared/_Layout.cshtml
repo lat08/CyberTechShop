@@ -136,6 +136,19 @@
                                         </a>
                                     </li>
                                     <li>
+                                        <a class="dropdown-item" href="@Url.Action("Vouchers", "Account")">
+                                            <i class="fas fa-ticket-alt"></i>
+                                            Kho voucher
+                                            @{
+                                                var voucherCount = Context.Session.GetString("VoucherCount");
+                                                if (!string.IsNullOrEmpty(voucherCount) && int.Parse(voucherCount) > 0)
+                                                {
+                                                    <span class="badge bg-danger rounded-pill ms-2">@voucherCount</span>
+                                                }
+                                            }
+                                        </a>
+                                    </li>
+                                    <li>
                                         <a class="dropdown-item" href="@Url.Action("Settings", "Account")">
                                             <i class="fas fa-cog"></i>
                                             Cài đặt tài khoản
@@ -254,6 +267,26 @@
                     setTimeout(() => element.classList.remove('updated'), 1000);
                 });
             };
+
+            // Function to update voucher count
+            window.updateVoucherCount = function(count) {
+                const voucherBadge = document.querySelector('.dropdown-item[href*="Vouchers"] .badge');
+                if (count > 0) {
+                    if (voucherBadge) {
+                        voucherBadge.textContent = count;
+                    } else {
+                        const voucherLink = document.querySelector('.dropdown-item[href*="Vouchers"]');
+                        if (voucherLink) {
+                            const badge = document.createElement('span');
+                            badge.className = 'badge bg-danger rounded-pill ms-2';
+                            badge.textContent = count;
+                            voucherLink.appendChild(badge);
+                        }
+                    }
+                } else if (voucherBadge) {
+                    voucherBadge.remove();
+                }
+            };
             
             // Fetch initial cart count
             $.ajax({
@@ -265,6 +298,19 @@
                     }
                 }
             });
+
+            // Fetch initial voucher count
+            if (document.querySelector('.dropdown-item[href*="Vouchers"]')) {
+                $.ajax({
+                    url: '/Account/GetActiveVoucherCount',
+                    type: 'GET',
+                    success: function(response) {
+                        if (response.success) {
+                            updateVoucherCount(response.count);
+                        }
+                    }
+                });
+            }
         });
     </script>
     @await RenderSectionAsync("Scripts", required: false)
