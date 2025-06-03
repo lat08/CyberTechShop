@@ -19374,6 +19374,11 @@
       "FileKind": "mvc"
     },
     {
+      "FilePath": "e:\\OOAD\\CyberTechShop\\CyberTech\\Views\\Shared\\_ProductCardSimple.cshtml",
+      "TargetPath": "Views\\Shared\\_ProductCardSimple.cshtml",
+      "FileKind": "mvc"
+    },
+    {
       "FilePath": "e:\\OOAD\\CyberTechShop\\CyberTech\\Views\\Account\\ResetPassword.cshtml",
       "TargetPath": "Views\\Account\\ResetPassword.cshtml",
       "FileKind": "mvc"
@@ -19426,11 +19431,6 @@
     {
       "FilePath": "e:\\OOAD\\CyberTechShop\\CyberTech\\Views\\Home\\Product.cshtml",
       "TargetPath": "Views\\Home\\Product.cshtml",
-      "FileKind": "mvc"
-    },
-    {
-      "FilePath": "e:\\OOAD\\CyberTechShop\\CyberTech\\Views\\Shared\\Product\\_ProductCard.cshtml",
-      "TargetPath": "Views\\Shared\\Product\\_ProductCard.cshtml",
       "FileKind": "mvc"
     },
     {

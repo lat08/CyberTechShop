@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace CyberTech.Models
 {
+    [Table("Users")]
     public class User
     {
         public User()
@@ -12,12 +13,12 @@ namespace CyberTech.Models
             AuthMethods = new List<UserAuthMethod>();
             Addresses = new List<UserAddress>();
             PasswordResetTokens = new List<PasswordResetToken>();
-            Wishlists = new List<Wishlist>();
             Carts = new List<Cart>();
             Orders = new List<Order>();
             Reviews = new List<Review>();
             UserVouchers = new List<UserVoucher>();
             VoucherTokens = new List<VoucherToken>();
+            WishlistItems = new List<WishlistItem>();
         }
 
         [Key]
@@ -79,7 +80,7 @@ namespace CyberTech.Models
         public virtual ICollection<UserAuthMethod> AuthMethods { get; set; }
         public virtual ICollection<UserAddress> Addresses { get; set; }
         public virtual ICollection<PasswordResetToken> PasswordResetTokens { get; set; }
-        public virtual ICollection<Wishlist> Wishlists { get; set; }
+        public virtual ICollection<WishlistItem> WishlistItems { get; set; }
         public virtual ICollection<Cart> Carts { get; set; }
         public virtual ICollection<Order> Orders { get; set; }
         public virtual ICollection<Review> Reviews { get; set; }

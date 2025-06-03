@@ -7,6 +7,7 @@ namespace CyberTech.Models
     {
         public required Product Product { get; set; }
         public required List<Product> RelatedProducts { get; set; }
+        public bool IsInWishlist { get; set; } = false;
     }
 
     public class SubSubcategoryViewModel
@@ -66,14 +67,14 @@ namespace CyberTech.Models
         public required string Status { get; set; }
 
         // Computed properties
-        public decimal CurrentPrice 
-        { 
-            get 
+        public decimal CurrentPrice
+        {
+            get
             {
                 // Nếu có SalePrice trực tiếp, dùng SalePrice
                 if (SalePrice.HasValue && SalePrice > 0)
                     return SalePrice.Value;
-                
+
                 // Nếu có SalePercentage, tính từ percentage với Round Down
                 if (SalePercentage.HasValue && SalePercentage > 0)
                 {
@@ -81,28 +82,28 @@ namespace CyberTech.Models
                     // Round xuống nghìn gần nhất để có UX tốt hơn
                     return Math.Floor(calculatedPrice / 1000) * 1000;
                 }
-                
+
                 // Không có sale, trả về giá gốc
                 return Price;
             }
         }
-        
-        public bool HasDiscount 
-        { 
-            get 
+
+        public bool HasDiscount
+        {
+            get
             {
                 // Có SalePrice và nhỏ hơn giá gốc
                 if (SalePrice.HasValue && SalePrice > 0 && SalePrice < Price)
                     return true;
-                
+
                 // Có SalePercentage lớn hơn 0
                 if (SalePercentage.HasValue && SalePercentage > 0)
                     return true;
-                
+
                 return false;
             }
         }
-        
+
         public decimal DiscountAmount => HasDiscount ? (Price - CurrentPrice) : 0;
         public string ImageUrl => PrimaryImageUrl;
     }

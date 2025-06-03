@@ -101,11 +101,11 @@ namespace CyberTech.Controllers
             else
             {
                 Console.WriteLine("No filter attributes found - checking query parameters directly");
-                
+
                 // Read attributes from query parameters directly
                 var queryParams = Request.Query;
                 var knownAttributeNames = new[] { "RAM", "CPU", "SSD", "Graphics Card", "Display", "OS", "LED RGB", "Kết nối" };
-                
+
                 foreach (var attrName in knownAttributeNames)
                 {
                     if (queryParams.ContainsKey(attrName))
@@ -118,7 +118,7 @@ namespace CyberTech.Controllers
                         }
                     }
                 }
-                
+
                 if (filter.Attributes.Any())
                 {
                     Console.WriteLine($"Added {filter.Attributes.Count} attributes from query parameters");
@@ -155,7 +155,7 @@ namespace CyberTech.Controllers
             // Lọc theo tìm kiếm
             if (!string.IsNullOrEmpty(filter.SearchQuery))
             {
-                query = query.Where(p => p.Name.Contains(filter.SearchQuery) || 
+                query = query.Where(p => p.Name.Contains(filter.SearchQuery) ||
                                         p.Description.Contains(filter.SearchQuery) ||
                                         p.Brand.Contains(filter.SearchQuery));
             }
@@ -182,32 +182,33 @@ namespace CyberTech.Controllers
             {
                 var attributeKey = attr.Key?.Trim();
                 var attributeValue = attr.Value?.Trim();
-                
+
                 Console.WriteLine($"Filtering by attribute: '{attributeKey}' = '{attributeValue}'");
-                
+
                 var beforeCount = await query.CountAsync();
                 Console.WriteLine($"Products before filtering by {attributeKey}: {beforeCount}");
-                
-                query = query.Where(p => p.ProductAttributeValues.Any(pav => 
-                    pav.AttributeValue.ProductAttribute.AttributeName.Trim() == attributeKey && 
+
+                query = query.Where(p => p.ProductAttributeValues.Any(pav =>
+                    pav.AttributeValue.ProductAttribute.AttributeName.Trim() == attributeKey &&
                     pav.AttributeValue.ValueName.Trim() == attributeValue));
-                    
+
                 var afterCount = await query.CountAsync();
                 Console.WriteLine($"Products after filtering by {attributeKey}: {afterCount}");
-                
+
                 // Debug: Check what values exist for this attribute
                 var existingValues = await _context.ProductAttributeValues
                     .Include(pav => pav.AttributeValue)
                         .ThenInclude(av => av.ProductAttribute)
                     .Where(pav => pav.AttributeValue.ProductAttribute.AttributeName.Trim() == attributeKey)
-                    .Select(pav => new { 
+                    .Select(pav => new
+                    {
                         AttributeName = pav.AttributeValue.ProductAttribute.AttributeName,
                         ValueName = pav.AttributeValue.ValueName,
                         ProductId = pav.ProductID
                     })
                     .Distinct()
                     .ToListAsync();
-                    
+
                 Console.WriteLine($"Existing values for '{attributeKey}':");
                 foreach (var ev in existingValues.Take(10)) // Limit to first 10 for readability
                 {
@@ -282,7 +283,7 @@ namespace CyberTech.Controllers
                             Value = g.Key,
                             DisplayText = g.Key,
                             ProductCount = g.Select(pav => pav.Product.ProductID).Distinct().Count(), // Count unique products
-                            IsSelected = filter.Attributes.ContainsKey(categoryAttr.AttributeName) && 
+                            IsSelected = filter.Attributes.ContainsKey(categoryAttr.AttributeName) &&
                                         filter.Attributes[categoryAttr.AttributeName] == g.Key
                         })
                         .Where(avo => avo.ProductCount > 0) // Only include values that have products
@@ -309,12 +310,12 @@ namespace CyberTech.Controllers
                 .Where(p => currentCategoryId == null || p.SubSubcategory.Subcategory.CategoryID == currentCategoryId)
                 .ToListAsync();
 
-            var priceRange = allFilteredProducts.Any() ? 
-                new { Min = allFilteredProducts.Min(p => p.SalePrice != null ? p.SalePrice.Value : p.Price), Max = allFilteredProducts.Max(p => p.SalePrice != null ? p.SalePrice.Value : p.Price) } : 
+            var priceRange = allFilteredProducts.Any() ?
+                new { Min = allFilteredProducts.Min(p => p.SalePrice != null ? p.SalePrice.Value : p.Price), Max = allFilteredProducts.Max(p => p.SalePrice != null ? p.SalePrice.Value : p.Price) } :
                 new { Min = 0m, Max = 0m };
 
             // Tạo ProductViewModel
-            var productViewModels = products.Select(p => new ProductViewModel
+            var productViewModels = products.Select(p => new CyberTech.Models.ProductViewModel
             {
                 ProductID = p.ProductID,
                 Name = p.Name ?? "",
@@ -354,12 +355,12 @@ namespace CyberTech.Controllers
         {
             var discountPriceAttr = product.ProductAttributeValues
                 .FirstOrDefault(pav => pav.AttributeValue.ProductAttribute.AttributeName == "DiscountPrice");
-            
+
             if (discountPriceAttr != null && decimal.TryParse(discountPriceAttr.AttributeValue.ValueName, out decimal discountPrice))
             {
                 return discountPrice;
             }
-            
+
             return null;
         }
 
@@ -397,16 +398,40 @@ namespace CyberTech.Controllers
                 return NotFound();
             }
 
-            // Lấy sản phẩm liên quan
+            // Lấy sản phẩm liên quan với đầy đủ thông tin
             var relatedProducts = await _context.Products
-                .Where(p => p.SubSubcategoryID == product.SubSubcategoryID && p.ProductID != id)
-                .Take(4)
+                .Include(p => p.ProductImages)
+                .Include(p => p.ProductAttributeValues)
+                    .ThenInclude(pav => pav.AttributeValue)
+                        .ThenInclude(av => av.ProductAttribute)
+                .Include(p => p.Reviews)
+                .Include(p => p.SubSubcategory)
+                    .ThenInclude(ss => ss.Subcategory)
+                        .ThenInclude(s => s.Category)
+                .Where(p => p.SubSubcategoryID == product.SubSubcategoryID && p.ProductID != id && p.Status == "Active")
+                .Take(8)
                 .ToListAsync();
+
+            bool isInWishlist = false;
+            if (User.Identity.IsAuthenticated)
+            {
+                var emailClaim = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Email);
+                if (emailClaim != null)
+                {
+                    var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == emailClaim.Value);
+                    if (user != null)
+                    {
+                        isInWishlist = await _context.WishlistItems
+                            .AnyAsync(wi => wi.UserID == user.UserID && wi.ProductID == id);
+                    }
+                }
+            }
 
             var viewModel = new ProductDetailViewModel
             {
                 Product = product,
-                RelatedProducts = relatedProducts
+                RelatedProducts = relatedProducts,
+                IsInWishlist = isInWishlist
             };
 
             return View(viewModel);
@@ -438,7 +463,7 @@ namespace CyberTech.Controllers
                 .ToListAsync();
 
             var result = new List<object>();
-            
+
             foreach (var categoryAttr in categoryAttributes)
             {
                 var attributeValues = await _context.ProductAttributeValues
@@ -450,7 +475,8 @@ namespace CyberTech.Controllers
                     .Where(pav => pav.AttributeValue.ProductAttribute.AttributeName == categoryAttr.AttributeName &&
                                  pav.Product.SubSubcategory.Subcategory.CategoryID == categoryId &&
                                  pav.Product.Status == "Active")
-                    .Select(pav => new {
+                    .Select(pav => new
+                    {
                         AttributeName = pav.AttributeValue.ProductAttribute.AttributeName,
                         ValueName = pav.AttributeValue.ValueName,
                         ProductId = pav.Product.ProductID,
@@ -458,10 +484,12 @@ namespace CyberTech.Controllers
                     })
                     .ToListAsync();
 
-                result.Add(new {
+                result.Add(new
+                {
                     AttributeName = categoryAttr.AttributeName,
                     Values = attributeValues.GroupBy(av => av.ValueName)
-                        .Select(g => new {
+                        .Select(g => new
+                        {
                             Value = g.Key,
                             Count = g.Count(),
                             Products = g.Select(x => new { x.ProductId, x.ProductName }).ToList()
@@ -483,7 +511,7 @@ namespace CyberTech.Controllers
                 }
 
                 var products = await _context.Products
-                    .Where(p => p.Status == "Active" && 
+                    .Where(p => p.Status == "Active" &&
                                p.Stock > 0 &&
                                p.Name.Contains(query))
                     .OrderByDescending(p => p.Name.StartsWith(query) ? 1 : 0)
@@ -492,15 +520,15 @@ namespace CyberTech.Controllers
                     .ToListAsync();
 
                 var suggestions = new List<object>();
-                
+
                 foreach (var product in products)
                 {
                     var primaryImage = await _context.ProductImages
                         .Where(pi => pi.ProductID == product.ProductID && pi.IsPrimary)
                         .FirstOrDefaultAsync();
-                    
+
                     var imageUrl = primaryImage?.ImageURL ?? "/images/no-image.png";
-                    
+
                     // Create simple object with explicit properties
                     var suggestion = new
                     {
@@ -511,15 +539,15 @@ namespace CyberTech.Controllers
                         salePercentage = product.SalePercentage,
                         image = imageUrl,
                         // Computed properties từ logic mới với Round Down
-                        currentPrice = product.SalePrice.HasValue && product.SalePrice > 0 
-                                      ? product.SalePrice.Value 
-                                      : (product.SalePercentage.HasValue && product.SalePercentage > 0 
+                        currentPrice = product.SalePrice.HasValue && product.SalePrice > 0
+                                      ? product.SalePrice.Value
+                                      : (product.SalePercentage.HasValue && product.SalePercentage > 0
                                          ? Math.Floor((product.Price * (1 - product.SalePercentage.Value / 100)) / 1000) * 1000
                                          : product.Price),
                         hasSale = (product.SalePrice.HasValue && product.SalePrice > 0 && product.SalePrice < product.Price) ||
                                  (product.SalePercentage.HasValue && product.SalePercentage > 0)
                     };
-                    
+
                     suggestions.Add(suggestion);
                 }
 
@@ -550,7 +578,7 @@ namespace CyberTech.Controllers
                 var searchTerms = filter.SearchQuery.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                 foreach (var term in searchTerms)
                 {
-                    query = query.Where(p => p.Name.Contains(term) || 
+                    query = query.Where(p => p.Name.Contains(term) ||
                                            p.Description.Contains(term) ||
                                            p.Brand.Contains(term));
                 }
@@ -559,7 +587,7 @@ namespace CyberTech.Controllers
             // Refine search
             if (!string.IsNullOrWhiteSpace(filter.RefineQuery))
             {
-                query = query.Where(p => p.Name.Contains(filter.RefineQuery) || 
+                query = query.Where(p => p.Name.Contains(filter.RefineQuery) ||
                                        p.Description.Contains(filter.RefineQuery));
             }
 
@@ -601,7 +629,7 @@ namespace CyberTech.Controllers
             // Sorting
             query = filter.SortBy?.ToLower() switch
             {
-                "relevance" => query.OrderByDescending(p => p.Name.StartsWith(filter.SearchQuery != null ? filter.SearchQuery : "") ? 2 : 
+                "relevance" => query.OrderByDescending(p => p.Name.StartsWith(filter.SearchQuery != null ? filter.SearchQuery : "") ? 2 :
                                                            p.Name.Contains(filter.SearchQuery != null ? filter.SearchQuery : "") ? 1 : 0)
                                    .ThenBy(p => p.Name),
                 "price" when filter.SortOrder == "desc" => query.OrderByDescending(p => p.SalePrice != null ? p.SalePrice.Value : p.Price),
@@ -611,7 +639,7 @@ namespace CyberTech.Controllers
                 "newest" => query.OrderByDescending(p => p.CreatedAt),
                 "rating" => query.OrderByDescending(p => p.Reviews.Any() ? p.Reviews.Average(r => r.Rating) : 0),
                 "bestseller" => query.OrderByDescending(p => p.OrderItems.Sum(oi => oi.Quantity)),
-                _ => query.OrderByDescending(p => p.Name.StartsWith(filter.SearchQuery != null ? filter.SearchQuery : "") ? 2 : 
+                _ => query.OrderByDescending(p => p.Name.StartsWith(filter.SearchQuery != null ? filter.SearchQuery : "") ? 2 :
                                            p.Name.Contains(filter.SearchQuery != null ? filter.SearchQuery : "") ? 1 : 0)
                            .ThenBy(p => p.Name)
             };
@@ -636,7 +664,7 @@ namespace CyberTech.Controllers
             var categoryAttributes = await BuildSearchCategoryAttributes(query, filter);
 
             // Create ProductViewModels
-            var productViewModels = products.Select(p => new ProductViewModel
+            var productViewModels = products.Select(p => new CyberTech.Models.ProductViewModel
             {
                 ProductID = p.ProductID,
                 Name = p.Name ?? "",
@@ -644,9 +672,9 @@ namespace CyberTech.Controllers
                 SalePrice = p.SalePrice.HasValue ? p.SalePrice.Value : (decimal?)null,
                 SalePercentage = p.SalePercentage,
                 DiscountedPrice = p.SalePrice,
-                PrimaryImageUrl = p.ProductImages.FirstOrDefault(pi => pi.IsPrimary)?.ImageURL ?? 
+                PrimaryImageUrl = p.ProductImages.FirstOrDefault(pi => pi.IsPrimary)?.ImageURL ??
                                 p.ProductImages.FirstOrDefault()?.ImageURL ?? "/images/no-image.png",
-                PrimaryImageUrlSmall = p.ProductImages.FirstOrDefault(pi => pi.IsPrimary)?.ImageURL ?? 
+                PrimaryImageUrlSmall = p.ProductImages.FirstOrDefault(pi => pi.IsPrimary)?.ImageURL ??
                                      p.ProductImages.FirstOrDefault()?.ImageURL ?? "/images/no-image.png",
                 Url = Url.Action("ProductDetail", "Product", new { id = p.ProductID }),
                 Attributes = p.ProductAttributeValues.ToDictionary(
@@ -680,9 +708,10 @@ namespace CyberTech.Controllers
 
             // Get categories from search results
             var categories = await searchQuery
-                .Select(p => new { 
-                    p.SubSubcategory.Subcategory.Category.CategoryID, 
-                    p.SubSubcategory.Subcategory.Category.Name 
+                .Select(p => new
+                {
+                    p.SubSubcategory.Subcategory.Category.CategoryID,
+                    p.SubSubcategory.Subcategory.Category.Name
                 })
                 .Distinct()
                 .GroupBy(c => new { c.CategoryID, c.Name })

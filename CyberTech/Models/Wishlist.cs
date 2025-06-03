@@ -5,36 +5,23 @@ using System.Collections.Generic;
 
 namespace CyberTech.Models
 {
-    public class Wishlist
-    {
-        [Key]
-        public int WishlistID { get; set; }
-
-        [Required]
-        public int UserID { get; set; }
-
-        [ForeignKey("UserID")]
-        public virtual User User { get; set; }
-
-        public virtual ICollection<WishlistItem> WishlistItems { get; set; }
-    }
-
+    [Table("WishlistItems")]
     public class WishlistItem
     {
         [Key]
         public int WishlistItemID { get; set; }
 
         [Required]
-        public int WishlistID { get; set; }
+        public int UserID { get; set; }
 
         [Required]
         public int ProductID { get; set; }
 
         [Required]
-        public DateTime AddedDate { get; set; } = DateTime.Now;
+        public DateTime AddedDate { get; set; }
 
-        [ForeignKey("WishlistID")]
-        public virtual Wishlist Wishlist { get; set; }
+        [ForeignKey("UserID")]
+        public virtual User User { get; set; }
 
         [ForeignKey("ProductID")]
         public virtual Product Product { get; set; }

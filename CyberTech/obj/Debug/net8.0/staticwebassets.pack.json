@@ -149,6 +149,10 @@
       "PackagePath": "staticwebassets\\images\\team.jpg"
     },
     {
+      "Id": "E:\\OOAD\\CyberTechShop\\CyberTech\\wwwroot\\images\\vnpay-logo.png",
+      "PackagePath": "staticwebassets\\images\\vnpay-logo.png"
+    },
+    {
       "Id": "E:\\OOAD\\CyberTechShop\\CyberTech\\wwwroot\\js\\Admin\\dashboard.js",
       "PackagePath": "staticwebassets\\js\\Admin\\dashboard.js"
     },

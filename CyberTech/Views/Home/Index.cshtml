@@ -5,6 +5,265 @@
 
 @section Styles {
         <link rel="stylesheet" href="~/css/HomePage_Layout/styles.css">
+        <style>
+            /* ========================================
+               FLASH SALE SECTION - SPECIAL DESIGN
+            ======================================== */
+            
+            .flash-sale {
+                background: linear-gradient(135deg, #0056b3 0%, #007bff 100%);
+                border-radius: 8px;
+                padding: 15px;
+                margin-bottom: 30px;
+                overflow: hidden;
+                position: relative;
+                box-shadow: 0 5px 15px rgba(0, 86, 179, 0.2);
+                border: 1px solid rgba(0, 86, 179, 0.3);
+            }
+            
+            .flash-sale::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: -50%;
+                width: 200%;
+                height: 100%;
+                background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+                animation: flashSweep 3s infinite;
+            }
+            
+            @@keyframes flashSweep {
+                0% { transform: translateX(-100%); }
+                50% { transform: translateX(100%); }
+                100% { transform: translateX(100%); }
+            }
+            
+            .flash-sale-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 15px;
+                position: relative;
+                z-index: 2;
+            }
+            
+            .flash-sale-title {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                color: white;
+                font-size: 20px;
+                font-weight: 700;
+                text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+                margin: 0;
+            }
+            
+            .flash-sale-icon {
+                font-size: 22px;
+                color: #ffc107;
+                animation: lightning 2s infinite alternate;
+                text-shadow: 0 0 5px rgba(255, 193, 7, 0.5);
+            }
+            
+            @@keyframes lightning {
+                0% { transform: scale(1) rotate(-5deg); }
+                50% { transform: scale(1.1) rotate(5deg); }
+                100% { transform: scale(1) rotate(-5deg); }
+            }
+            
+            .countdown-timer {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                background: rgba(255,255,255,0.15);
+                padding: 6px 12px;
+                border-radius: 20px;
+                backdrop-filter: blur(5px);
+                border: 1px solid rgba(255,255,255,0.2);
+            }
+            
+            .countdown-label {
+                color: white;
+                font-weight: 600;
+                font-size: 12px;
+            }
+            
+            .countdown-display {
+                display: flex;
+                gap: 5px;
+            }
+            
+            .countdown-item {
+                background: rgba(0,0,0,0.3);
+                color: white;
+                padding: 4px 6px;
+                border-radius: 4px;
+                font-weight: 700;
+                font-size: 14px;
+                min-width: 28px;
+                text-align: center;
+                border: 1px solid rgba(255,255,255,0.2);
+                box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
+            }
+            
+            .countdown-separator {
+                color: white;
+                font-weight: 700;
+                font-size: 14px;
+                animation: blink 1s infinite;
+            }
+            
+            @@keyframes blink {
+                0%, 50% { opacity: 1; }
+                51%, 100% { opacity: 0.3; }
+            }
+            
+            .flash-sale-calendar {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                background: rgba(255,255,255,0.15);
+                padding: 8px;
+                border-radius: 8px;
+                backdrop-filter: blur(5px);
+                border: 1px solid rgba(255,255,255,0.2);
+                min-width: 65px;
+            }
+            
+            .current-date {
+                font-size: 18px;
+                font-weight: 700;
+                color: white;
+                text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+            }
+            
+            .flash-sale-content {
+                position: relative;
+                z-index: 2;
+            }
+            
+            .flash-sale .product-slider {
+                background: rgba(255,255,255,0.08);
+                border-radius: 6px;
+                padding: 12px;
+                backdrop-filter: blur(5px);
+                border: 1px solid rgba(255,255,255,0.15);
+            }
+            
+            /* Override product card styles for flash sale */
+            .flash-sale .proloop-block {
+                background: white;
+                box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+                transform: none;
+                transition: all 0.3s ease;
+            }
+            
+            .flash-sale .proloop-block:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+            }
+            
+            /* Responsive */
+            @@media (max-width: 768px) {
+                .flash-sale-header {
+                    flex-direction: column;
+                    gap: 10px;
+                    text-align: center;
+                }
+                
+                .flash-sale-title {
+                    font-size: 18px;
+                }
+                
+                .countdown-timer {
+                    flex-direction: column;
+                    gap: 5px;
+                    padding: 8px;
+                }
+                
+                .flash-sale-calendar {
+                    order: -1;
+                }
+            }
+            
+            @@media (max-width: 480px) {
+                .flash-sale-title {
+                    font-size: 16px;
+                    gap: 8px;
+                }
+                
+                .flash-sale-icon {
+                    font-size: 18px;
+                }
+                
+                .countdown-item {
+                    padding: 3px 5px;
+                    font-size: 12px;
+                    min-width: 24px;
+                }
+            }
+            
+            /* ========================================
+               SECTION HEADER & SUBTITLE STYLES
+            ======================================== */
+            
+            .section-header {
+                display: flex;
+                align-items: center;
+                justify-content: flex-start;
+                margin-bottom: 15px;
+                flex-wrap: wrap;
+            }
+            
+            .section-title {
+                margin: 0;
+                margin-right: 15px;
+            }
+            
+            .section-separator {
+                color: #6c757d;
+                margin: 0 10px;
+                font-weight: 300;
+            }
+            
+            .section-subtitle {
+                font-size: 14px;
+                color: #6c757d;
+                display: flex;
+                align-items: center;
+            }
+            
+            .section-subtitle span {
+                display: inline-flex;
+                align-items: center;
+                gap: 5px;
+            }
+            
+            .section-subtitle i {
+                color: #007bff;
+                font-size: 16px;
+            }
+            
+            @@media (max-width: 768px) {
+                .section-header {
+                    flex-direction: column;
+                    align-items: flex-start;
+                    gap: 5px;
+                }
+                
+                .section-title {
+                    margin-right: 0;
+                }
+                
+                .section-separator {
+                    display: none;
+                }
+                
+                .section-subtitle {
+                    font-size: 12px;
+                }
+            }
+        </style>
 }
 
 <!-- Sidebar Categories -->
@@ -125,20 +384,50 @@
         </div>
     </section>
 
-    <!-- Flash Sale Section -->
+    <!-- Flash Sale Section - SPECIAL DESIGN -->
     <section class="flash-sale">
-        <h2 class="section-title">Flash Sale</h2>
-        <div class="product-slider">
-            @foreach (var product in Model.Products.Where(p => p.HasDiscount))
-            {
-                <partial name="~/Views/Shared/_ProductCard.cshtml" model="product" />
-            }
+        <div class="flash-sale-header">
+            <div class="flash-sale-title">
+                <i class="fas fa-bolt flash-sale-icon"></i>
+                <span>FLASH SALE</span>
+                <div class="countdown-timer">
+                    <span class="countdown-label">
+                        <i class="fas fa-clock"></i> Kết thúc sau:
+                    </span>
+                    <div class="countdown-display">
+                        <span class="countdown-item hours">02</span>
+                        <span class="countdown-separator">:</span>
+                        <span class="countdown-item minutes">00</span>
+                        <span class="countdown-separator">:</span>
+                        <span class="countdown-item seconds">00</span>
+                    </div>
+                </div>
+            </div>
+            <div class="flash-sale-calendar">
+                <div class="current-date" id="currentDate"></div>
+            </div>
+        </div>
+        <div class="flash-sale-content">
+            <div class="product-slider">
+                <div class="slider-track">
+                    @foreach (var product in Model.Products.Where(p => p.HasDiscount))
+                    {
+                        <partial name="~/Views/Shared/_ProductCardSimple.cshtml" model="product" />
+                    }
+                </div>
+            </div>
         </div>
     </section>
 
     <!-- Laptop Gaming Slider -->
     <section class="product-category">
-        <h2 class="section-title">Laptop Gaming Bán Chạy</h2>
+        <div class="section-header">
+            <h2 class="section-title">Laptop Gaming Bán Chạy</h2>
+            <span class="section-separator">|</span>
+            <div class="section-subtitle">
+                <span><i class="fas fa-truck"></i> Trả góp 0%</span>
+            </div>
+        </div>
         <div class="product-slider">
             <div class="slider-track">
                 @foreach (var product in Model.LaptopGamingBestSellers)
@@ -152,7 +441,13 @@
 
     <!-- Laptop Văn Phòng Slider -->
     <section class="product-category">
-        <h2 class="section-title">Laptop Văn Phòng Bán Chạy</h2>
+        <div class="section-header">
+            <h2 class="section-title">Laptop Văn Phòng Bán Chạy</h2>
+            <span class="section-separator">|</span>
+            <div class="section-subtitle">
+                <span><i class="fas fa-truck"></i> Giao hàng toàn quốc</span>
+            </div>
+        </div>
         <div class="product-slider">
             <div class="slider-track">
                 @foreach (var product in Model.LaptopOfficeBestSellers)
@@ -166,7 +461,13 @@
 
     <!-- PC Gaming Slider -->
     <section class="product-category">
-        <h2 class="section-title">PC Gaming Bán Chạy</h2>
+        <div class="section-header">
+            <h2 class="section-title">PC Gaming Bán Chạy</h2>
+            <span class="section-separator">|</span>
+            <div class="section-subtitle">
+                <span><i class="fas fa-truck"></i> Miễn phí giao hàng</span>
+            </div>
+        </div>
         <div class="product-slider">
             <div class="slider-track">
                 @foreach (var product in Model.PcGamingBestSellers)
@@ -180,7 +481,13 @@
 
     <!-- Chuột Slider -->
     <section class="product-category">
-        <h2 class="section-title">Chuột Bán Chạy</h2>
+        <div class="section-header">
+            <h2 class="section-title">Chuột Bán Chạy</h2>
+            <span class="section-separator">|</span>
+            <div class="section-subtitle">
+                <span><i class="fas fa-truck"></i> Trả góp 0%</span>
+            </div>
+        </div>
         <div class="product-slider">
             <div class="slider-track">
                 @foreach (var product in Model.MouseBestSellers)
@@ -194,7 +501,13 @@
 
     <!-- Màn Hình Slider -->
     <section class="product-category">
-        <h2 class="section-title">Màn Hình Bán Chạy</h2>
+        <div class="section-header">
+            <h2 class="section-title">Màn Hình Bán Chạy</h2>
+            <span class="section-separator">|</span>
+            <div class="section-subtitle">
+                <span><i class="fas fa-truck"></i> Giao hàng toàn quốc</span>
+            </div>
+        </div>
         <div class="product-slider">
             <div class="slider-track">
                 @foreach (var product in Model.MonitorBestSellers)
@@ -208,7 +521,13 @@
 
     <!-- Bàn Phím Slider -->
     <section class="product-category">
-        <h2 class="section-title">Bàn Phím Bán Chạy</h2>
+        <div class="section-header">
+            <h2 class="section-title">Bàn Phím Bán Chạy</h2>
+            <span class="section-separator">|</span>
+            <div class="section-subtitle">
+                <span><i class="fas fa-truck"></i> Miễn phí giao hàng</span>
+            </div>
+        </div>
         <div class="product-slider">
             <div class="slider-track">
                 @foreach (var product in Model.KeyboardBestSellers)
@@ -223,6 +542,64 @@
 
 @section Scripts {
         <script>
+            // Chạy ngay khi DOM đã sẵn sàng
+            document.addEventListener('DOMContentLoaded', function() {
+                // Cập nhật ngày tháng hiện tại ngay lập tức
+                updateCurrentDate();
+                
+                // Bắt đầu đồng hồ đếm ngược ngay lập tức
+                updateCountdown();
+            });
+            
+            // ========================================
+            // CALENDAR DISPLAY - Hiển thị ngày/tháng thực
+            // ========================================
+            
+            // Cập nhật ngày tháng hiện tại
+            function updateCurrentDate() {
+                const today = new Date();
+                const day = today.getDate();
+                const month = today.getMonth() + 1; // JavaScript tháng bắt đầu từ 0
+                
+                // Format: DD/MM
+                const formattedDate = 
+                    (day < 10 ? '0' + day : day) + '/' + 
+                    (month < 10 ? '0' + month : month);
+                
+                // Cập nhật vào DOM
+                document.getElementById('currentDate').textContent = formattedDate;
+            }
+            
+            // ========================================
+            // FLASH SALE COUNTDOWN TIMER (2 Hours Loop)
+            // ========================================
+            
+            // Bắt đầu với 2:00:00 (7200 giây)
+            let timeRemaining = 7200;
+            
+            // Cập nhật đồng hồ countdown
+            function updateCountdown() {
+                const hours = Math.floor(timeRemaining / 3600);
+                const minutes = Math.floor((timeRemaining % 3600) / 60);
+                const seconds = timeRemaining % 60;
+                
+                // Cập nhật giao diện
+                document.querySelector('.hours').textContent = String(hours).padStart(2, '0');
+                document.querySelector('.minutes').textContent = String(minutes).padStart(2, '0');
+                document.querySelector('.seconds').textContent = String(seconds).padStart(2, '0');
+                
+                // Giảm thời gian đếm ngược
+                timeRemaining--;
+                
+                // Reset về 2:00:00 khi về 0
+                if (timeRemaining < 0) {
+                    timeRemaining = 7200;
+                }
+                
+                // Tiếp tục đếm ngược mỗi 1 giây
+                setTimeout(updateCountdown, 1000);
+            }
+            
             $(document).ready(function() {
                 $('.product-slider').slick({
                     dots: true,

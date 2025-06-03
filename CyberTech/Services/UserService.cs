@@ -999,34 +999,21 @@ namespace CyberTech.Services
             return await _context.WishlistItems
                 .Include(w => w.Product)
                     .ThenInclude(p => p.ProductImages)
-                .Where(w => w.Wishlist.UserID.ToString() == userId)
+                .Where(w => w.UserID.ToString() == userId)
                 .OrderByDescending(w => w.AddedDate)
                 .ToListAsync();
         }
 
         public async Task<bool> AddToWishlist(string userId, int productId)
         {
-            var wishlist = await _context.Wishlists
-                .FirstOrDefaultAsync(w => w.UserID.ToString() == userId);
-
-            if (wishlist == null)
-            {
-                wishlist = new Wishlist
-                {
-                    UserID = int.Parse(userId)
-                };
-                _context.Wishlists.Add(wishlist);
-                await _context.SaveChangesAsync();
-            }
-
             var existingItem = await _context.WishlistItems
-                .FirstOrDefaultAsync(w => w.WishlistID == wishlist.WishlistID && w.ProductID == productId);
+                .FirstOrDefaultAsync(w => w.UserID.ToString() == userId && w.ProductID == productId);
 
             if (existingItem != null) return false;
 
             var wishlistItem = new WishlistItem
             {
-                WishlistID = wishlist.WishlistID,
+                UserID = int.Parse(userId),
                 ProductID = productId,
                 AddedDate = DateTime.Now
             };
@@ -1038,13 +1025,8 @@ namespace CyberTech.Services
 
         public async Task<bool> RemoveFromWishlist(string userId, int productId)
         {
-            var wishlist = await _context.Wishlists
-                .FirstOrDefaultAsync(w => w.UserID.ToString() == userId);
-
-            if (wishlist == null) return false;
-
             var wishlistItem = await _context.WishlistItems
-                .FirstOrDefaultAsync(w => w.WishlistID == wishlist.WishlistID && w.ProductID == productId);
+                .FirstOrDefaultAsync(w => w.UserID.ToString() == userId && w.ProductID == productId);
 
             if (wishlistItem == null) return false;
 
@@ -1057,13 +1039,8 @@ namespace CyberTech.Services
         {
             if (string.IsNullOrEmpty(userId)) return false;
 
-            var wishlist = await _context.Wishlists
-                .FirstOrDefaultAsync(w => w.UserID == int.Parse(userId));
-
-            if (wishlist == null) return false;
-
             return await _context.WishlistItems
-                .AnyAsync(wi => wi.WishlistID == wishlist.WishlistID && wi.ProductID == productId);
+                .AnyAsync(wi => wi.UserID == int.Parse(userId) && wi.ProductID == productId);
         }
 
         public async Task<List<UserVoucher>> GetUserVouchersAsync(int userId)

@@ -1,6 +1,6 @@
 {
   "Version": 1,
-  "Hash": "NOQG+G7kBi1WUmUJuwvmB/y/ht18BB57V4DhArD6pbk=",
+  "Hash": "r8d6bLBlp8jnGKhZVJY11K72wkr3+0ovm3iaMmmtrX4=",
   "Source": "CyberTechShop",
   "BasePath": "_content/CyberTechShop",
   "Mode": "Default",
@@ -737,6 +737,25 @@
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
       "OriginalItemSpec": "wwwroot\\images\\team.jpg"
+    },
+    {
+      "Identity": "E:\\OOAD\\CyberTechShop\\CyberTech\\wwwroot\\images\\vnpay-logo.png",
+      "SourceId": "CyberTechShop",
+      "SourceType": "Discovered",
+      "ContentRoot": "E:\\OOAD\\CyberTechShop\\CyberTech\\wwwroot\\",
+      "BasePath": "_content/CyberTechShop",
+      "RelativePath": "images/vnpay-logo.png",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "PreferTarget",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\images\\vnpay-logo.png"
     },
     {
       "Identity": "E:\\OOAD\\CyberTechShop\\CyberTech\\wwwroot\\js\\Admin\\dashboard.js",

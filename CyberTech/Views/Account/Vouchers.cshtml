@@ -45,21 +45,21 @@
                             <a class="nav-link @(ViewBag.CurrentTab == "active" ? "active" : "")" 
                                href="@Url.Action("Vouchers", new { tab = "active", page = 1 })" role="tab">
                                 <i class="fas fa-check-circle me-1 text-success"></i>Có thể sử dụng
-                                <span class="badge bg-success ms-1">@ViewBag.ActiveCount</span>
+                                <span class="badge bg-success ms-1">@(ViewBag.ActiveCount ?? 0)</span>
                             </a>
                         </li>
                         <li class="nav-item" role="presentation">
                             <a class="nav-link @(ViewBag.CurrentTab == "used" ? "active" : "")" 
                                href="@Url.Action("Vouchers", new { tab = "used", page = 1 })" role="tab">
                                 <i class="fas fa-history me-1 text-secondary"></i>Đã sử dụng
-                                <span class="badge bg-secondary ms-1">@ViewBag.UsedCount</span>
+                                <span class="badge bg-secondary ms-1">@(ViewBag.UsedCount ?? 0)</span>
                             </a>
                         </li>
                         <li class="nav-item" role="presentation">
                             <a class="nav-link @(ViewBag.CurrentTab == "expired" ? "active" : "")" 
                                href="@Url.Action("Vouchers", new { tab = "expired", page = 1 })" role="tab">
                                 <i class="fas fa-times-circle me-1 text-danger"></i>Đã hết hạn
-                                <span class="badge bg-danger ms-1">@ViewBag.ExpiredCount</span>
+                                <span class="badge bg-danger ms-1">@(ViewBag.ExpiredCount ?? 0)</span>
                             </a>
                         </li>
                     </ul>
@@ -67,7 +67,7 @@
                     <div class="tab-content pt-3" id="voucherTabsContent">
                         <!-- Active Vouchers -->
                         <div class="tab-pane fade @(ViewBag.CurrentTab == "active" ? "show active" : "")" id="active" role="tabpanel">
-                            @if (ViewBag.ActiveVouchers.Count > 0)
+                            @if (ViewBag.ActiveVouchers != null && ViewBag.ActiveVouchers.Count > 0)
                             {
                                 <div class="row">
                                     @foreach (var userVoucher in ViewBag.ActiveVouchers)
@@ -144,7 +144,7 @@
                         
                         <!-- Used Vouchers -->
                         <div class="tab-pane fade @(ViewBag.CurrentTab == "used" ? "show active" : "")" id="used" role="tabpanel">
-                            @if (ViewBag.UsedVouchers.Count > 0)
+                            @if (ViewBag.UsedVouchers != null && ViewBag.UsedVouchers.Count > 0)
                             {
                                 <div class="row">
                                     @foreach (var userVoucher in ViewBag.UsedVouchers)
@@ -217,7 +217,7 @@
                         
                         <!-- Expired Vouchers -->
                         <div class="tab-pane fade @(ViewBag.CurrentTab == "expired" ? "show active" : "")" id="expired" role="tabpanel">
-                            @if (ViewBag.ExpiredVouchers.Count > 0)
+                            @if (ViewBag.ExpiredVouchers != null && ViewBag.ExpiredVouchers.Count > 0)
                             {
                                 <div class="row">
                                     @foreach (var userVoucher in ViewBag.ExpiredVouchers)
@@ -278,19 +278,19 @@
                     </div>
 
                     <!-- Pagination -->
-                    @if (ViewBag.TotalItems > 0)
+                    @if (ViewBag.TotalItems != null && ViewBag.TotalItems > 0)
                     {
                         <div class="pagination-container mt-4">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div class="pagination-info">
-                                    <span>Hiển thị @ViewBag.StartItem - @ViewBag.EndItem của @ViewBag.TotalItems voucher</span>
+                                    <span>Hiển thị @(ViewBag.StartItem ?? 0) - @(ViewBag.EndItem ?? 0) của @(ViewBag.TotalItems ?? 0) voucher</span>
                                 </div>
-                                @if (ViewBag.TotalPages > 1)
+                                @if (ViewBag.TotalPages != null && ViewBag.TotalPages > 1)
                                 {
                                     <nav aria-label="Page navigation">
                                         <ul class="pagination mb-0">
-                                            <li class="page-item @(ViewBag.CurrentPage == 1 ? "disabled" : "")">
-                                                <a class="page-link" href="@Url.Action("Vouchers", new { tab = ViewBag.CurrentTab, page = ViewBag.CurrentPage - 1 })" aria-label="Previous">
+                                            <li class="page-item @((ViewBag.CurrentPage == null || ViewBag.CurrentPage == 1) ? "disabled" : "")">
+                                                <a class="page-link" href="@Url.Action("Vouchers", new { tab = ViewBag.CurrentTab, page = (ViewBag.CurrentPage ?? 1) - 1 })" aria-label="Previous">
                                                     <span aria-hidden="true">&laquo;</span>
                                                 </a>
                                             </li>
@@ -300,8 +300,8 @@
                                                     <a class="page-link" href="@Url.Action("Vouchers", new { tab = ViewBag.CurrentTab, page = i })">@i</a>
                                                 </li>
                                             }
-                                            <li class="page-item @(ViewBag.CurrentPage == ViewBag.TotalPages ? "disabled" : "")">
-                                                <a class="page-link" href="@Url.Action("Vouchers", new { tab = ViewBag.CurrentTab, page = ViewBag.CurrentPage + 1 })" aria-label="Next">
+                                            <li class="page-item @((ViewBag.CurrentPage == null || ViewBag.CurrentPage == ViewBag.TotalPages) ? "disabled" : "")">
+                                                <a class="page-link" href="@Url.Action("Vouchers", new { tab = ViewBag.CurrentTab, page = (ViewBag.CurrentPage ?? 1) + 1 })" aria-label="Next">
                                                     <span aria-hidden="true">&raquo;</span>
                                                 </a>
                                             </li>

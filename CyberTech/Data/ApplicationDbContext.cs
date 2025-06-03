@@ -25,7 +25,6 @@ namespace CyberTech.Data
         public DbSet<ProductAttribute> ProductAttributes { get; set; }
         public DbSet<AttributeValue> AttributeValues { get; set; }
         public DbSet<ProductAttributeValue> ProductAttributeValues { get; set; }
-        public DbSet<Wishlist> Wishlists { get; set; }
         public DbSet<Cart> Carts { get; set; }
         public DbSet<CartItem> CartItems { get; set; }
         public DbSet<Voucher> Vouchers { get; set; }
@@ -53,7 +52,6 @@ namespace CyberTech.Data
             modelBuilder.Entity<ProductAttribute>().ToTable("ProductAttribute");
             modelBuilder.Entity<AttributeValue>().ToTable("AttributeValue");
             modelBuilder.Entity<ProductAttributeValue>().ToTable("ProductAttributeValue");
-            modelBuilder.Entity<Wishlist>().ToTable("Wishlists");
             modelBuilder.Entity<Cart>().ToTable("Carts");
             modelBuilder.Entity<CartItem>().ToTable("CartItems");
             modelBuilder.Entity<Voucher>().ToTable("Vouchers");
@@ -65,6 +63,23 @@ namespace CyberTech.Data
             modelBuilder.Entity<WishlistItem>().ToTable("WishlistItems");
             modelBuilder.Entity<UserVoucher>().ToTable("UserVouchers");
             modelBuilder.Entity<VoucherToken>().ToTable("VoucherTokens");
+
+            // Cấu hình mối quan hệ giữa User và WishlistItem
+            modelBuilder.Entity<User>()
+                .HasMany(u => u.WishlistItems)
+                .WithOne(wi => wi.User)
+                .HasForeignKey(wi => wi.UserID);
+
+            // Cấu hình mối quan hệ giữa WishlistItem và Product
+            modelBuilder.Entity<WishlistItem>()
+                .HasOne(wi => wi.Product)
+                .WithMany(p => p.WishlistItems)
+                .HasForeignKey(wi => wi.ProductID);
+
+            // Cấu hình unique constraint cho WishlistItem
+            modelBuilder.Entity<WishlistItem>()
+                .HasIndex(wi => new { wi.UserID, wi.ProductID })
+                .IsUnique();
 
             modelBuilder.Entity<VoucherProducts>()
                 .HasKey(vp => new { vp.VoucherID, vp.ProductID });

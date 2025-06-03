@@ -551,12 +551,16 @@
 
 .logo {
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .logo img {
-    height: 60px;
+    height: 80px;
     width: auto;
     transition: transform 0.3s ease;
+    margin: 0;
 }
 
 .logo img:hover {
@@ -567,11 +571,11 @@
 .search-bar {
     flex: 1;
     max-width: 500px;
-    min-width: 300px;
+    min-width: 400px;
     position: relative;
     display: flex;
     align-items: center;
-    margin: 0 20px;
+    margin: 0 10px;
 }
 
 .search-bar input {

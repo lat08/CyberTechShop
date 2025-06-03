@@ -6,17 +6,15 @@ namespace CyberTech.Helpers
     {
         private static readonly Dictionary<string, string> AttributeIcons = new Dictionary<string, string>
         {
-            // Thuộc tính chính
+            // === LAPTOP/PC ATTRIBUTES ===
             ["cpu"] = "fas fa-microchip",
-            ["ram"] = "fas fa-memory", 
+            ["ram"] = "fas fa-memory",
             ["ổ cứng"] = "fas fa-hdd",
             ["card đồ họa"] = "fas fa-tv",
             ["màn hình"] = "fas fa-desktop",
             ["hệ điều hành"] = "fab fa-windows",
-            
-            // Thuộc tính khác
             ["gpu"] = "fas fa-tv",
-            ["vga"] = "fas fa-tv", 
+            ["vga"] = "fas fa-tv",
             ["ssd"] = "fas fa-save",
             ["hdd"] = "fas fa-hdd",
             ["storage"] = "fas fa-hdd",
@@ -26,31 +24,85 @@ namespace CyberTech.Helpers
             ["windows"] = "fab fa-windows",
             ["mainboard"] = "fas fa-th",
             ["motherboard"] = "fas fa-th",
-            ["led rgb"] = "fas fa-lightbulb",
+
+            // === DATABASE ATTRIBUTES ===
+            ["cảm biến"] = "fas fa-search",
+            ["card đồ họa"] = "fas fa-tv",
+            ["cổng kết nối"] = "fas fa-plug",
+            ["công nghệ đồng bộ"] = "fas fa-sync",
+            ["cpu"] = "fas fa-microchip",
+            ["độ phân giải"] = "fas fa-expand",
+            ["dpi"] = "fas fa-crosshairs",
+            ["hệ điều hành"] = "fab fa-windows",
             ["kết nối"] = "fas fa-wifi",
-            ["connection"] = "fas fa-wifi",
+            ["kích thước"] = "fas fa-ruler",
+            ["led"] = "fas fa-lightbulb",
+            ["ổ cứng"] = "fas fa-hdd",
+            ["ram"] = "fas fa-memory",
+            ["số nút"] = "fas fa-hand-pointer",
+            ["tấm nền"] = "fas fa-tv",
+            ["tần số quét"] = "fas fa-sync-alt",
+            ["thời gian phản hồi"] = "fas fa-clock",
+            ["thời lượng pin"] = "fas fa-battery-full",
+            ["trọng lượng"] = "fas fa-weight-hanging",
+
+            // === TAI NGHE ATTRIBUTES ===
+            ["loại kết nối"] = "fas fa-plug",
+            ["âm thanh"] = "fas fa-volume-up",
+            ["microphone"] = "fas fa-microphone",
+            ["noise cancelling"] = "fas fa-volume-mute",
+            ["wireless"] = "fas fa-wifi",
+            ["bluetooth"] = "fab fa-bluetooth",
+
+            // === BÀN PHÍM ATTRIBUTES ===
+            ["loại switch"] = "fas fa-keyboard",
+            ["layout"] = "fas fa-th-large",
+            ["keycap"] = "fas fa-square",
+            ["rgb lighting"] = "fas fa-palette",
+            ["macro"] = "fas fa-code",
+
+            // === MÀN HÌNH ATTRIBUTES ===
+            ["panel"] = "fas fa-tv",
+
+            // === GHẾ/BÀN ATTRIBUTES ===
+            ["chất liệu"] = "fas fa-couch",
+            ["màu sắc"] = "fas fa-palette",
+            ["điều chỉnh"] = "fas fa-sliders-h",
+            ["bánh xe"] = "fas fa-circle",
+            ["tựa lưng"] = "fas fa-chair",
+
+            // === GENERAL ATTRIBUTES ===
+            ["thương hiệu"] = "fas fa-tag",
             ["brand"] = "fas fa-tag",
-            ["thương hiệu"] = "fas fa-tag"
+            ["giá tiền"] = "fas fa-dollar-sign",
+            ["price"] = "fas fa-dollar-sign",
+            ["connection"] = "fas fa-wifi",
+            ["led rgb"] = "fas fa-lightbulb",
+            ["wireless"] = "fas fa-wifi",
+            ["wired"] = "fas fa-plug",
+            ["gaming"] = "fas fa-gamepad",
+            ["office"] = "fas fa-briefcase",
+            ["professional"] = "fas fa-briefcase"
         };
 
         public static string GetFontAwesomeClass(string key)
         {
             if (string.IsNullOrEmpty(key)) return "fas fa-cog";
-            
+
             key = key.ToLower().Trim();
             var iconClass = AttributeIcons.ContainsKey(key) ? AttributeIcons[key] : "fas fa-cog";
-            
+
             // Debug logging
             System.Diagnostics.Debug.WriteLine($"IconHelper: Key='{key}' -> Class='{iconClass}'");
-            
+
             return iconClass;
         }
-        
+
         // Backward compatibility
         public static string GetIconClass(string key) => GetFontAwesomeClass(key);
         public static string GetIconSvg(string key) => GetFontAwesomeClass(key);
     }
-    
+
     // Backward compatibility
     public static class SvgHelper
     {

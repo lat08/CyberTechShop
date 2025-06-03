@@ -23,11 +23,6 @@ namespace CyberTech.Models
         public int? OrderID { get; set; }
         [ForeignKey("OrderID")]
         public Order Order { get; set; }
-
-        /// <summary>
-        /// Checks if this voucher is valid for use
-        /// </summary>
-        /// <returns>True if the voucher is valid, false otherwise</returns>
         public bool IsValid()
         {
             // Check if voucher has been used

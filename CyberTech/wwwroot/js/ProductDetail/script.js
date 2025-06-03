@@ -13,18 +13,50 @@
         })
     })
 
-    // Product gallery thumbnails
+    // Product gallery functionality
     const mainImage = document.getElementById("mainImage")
     const thumbnails = document.querySelectorAll(".thumbnail")
+    const galleryPrevBtn = document.querySelector(".gallery-prev")
+    const galleryNextBtn = document.querySelector(".gallery-next")
+    
+    let currentImageIndex = 0
+    const images = Array.from(thumbnails).map(thumb => thumb.getAttribute("data-image"))
 
-    thumbnails.forEach((thumbnail) => {
+    // Thumbnail click
+    thumbnails.forEach((thumbnail, index) => {
         thumbnail.addEventListener("click", () => {
-            thumbnails.forEach((t) => t.classList.remove("active"))
-            thumbnail.classList.add("active")
-            const imageUrl = thumbnail.getAttribute("data-image")
-            mainImage.src = imageUrl
+            currentImageIndex = index
+            updateMainImage()
+            updateActiveThumbnail()
         })
     })
+
+    // Gallery navigation buttons
+    if (galleryPrevBtn && galleryNextBtn) {
+        galleryPrevBtn.addEventListener("click", () => {
+            currentImageIndex = currentImageIndex > 0 ? currentImageIndex - 1 : images.length - 1
+            updateMainImage()
+            updateActiveThumbnail()
+        })
+
+        galleryNextBtn.addEventListener("click", () => {
+            currentImageIndex = currentImageIndex < images.length - 1 ? currentImageIndex + 1 : 0
+            updateMainImage()
+            updateActiveThumbnail()
+        })
+    }
+
+    function updateMainImage() {
+        if (mainImage && images[currentImageIndex]) {
+            mainImage.src = images[currentImageIndex]
+        }
+    }
+
+    function updateActiveThumbnail() {
+        thumbnails.forEach((thumb, index) => {
+            thumb.classList.toggle("active", index === currentImageIndex)
+        })
+    }
 
     // Quantity controls
     const quantityInput = document.getElementById("quantity")
@@ -32,18 +64,112 @@
     const plusBtn = document.querySelector(".quantity-btn.plus")
 
     if (quantityInput && minusBtn && plusBtn) {
-        minusBtn.addEventListener("click", () => {
-            const currentValue = parseInt(quantityInput.value)
-            if (currentValue > parseInt(quantityInput.min)) {
+        // Remove any existing event listeners
+        minusBtn.replaceWith(minusBtn.cloneNode(true))
+        plusBtn.replaceWith(plusBtn.cloneNode(true))
+        
+        // Get fresh references
+        const newMinusBtn = document.querySelector(".quantity-btn.minus")
+        const newPlusBtn = document.querySelector(".quantity-btn.plus")
+        
+        newMinusBtn.addEventListener("click", (e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            
+            const currentValue = parseInt(quantityInput.value) || 1
+            const minValue = parseInt(quantityInput.min) || 1
+            
+            if (currentValue > minValue) {
                 quantityInput.value = currentValue - 1
             }
         })
 
-        plusBtn.addEventListener("click", () => {
-            const currentValue = parseInt(quantityInput.value)
-            if (currentValue < parseInt(quantityInput.max)) {
+        newPlusBtn.addEventListener("click", (e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            
+            const currentValue = parseInt(quantityInput.value) || 1
+            const maxValue = parseInt(quantityInput.max) || 999
+            
+            if (currentValue < maxValue) {
                 quantityInput.value = currentValue + 1
             }
+        })
+        
+        // Prevent form submission and manual input
+        quantityInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault()
+            }
+        })
+        
+        quantityInput.addEventListener("input", (e) => {
+            const value = parseInt(e.target.value) || 1
+            const minValue = parseInt(quantityInput.min) || 1
+            const maxValue = parseInt(quantityInput.max) || 999
+            
+            if (value < minValue) {
+                e.target.value = minValue
+            } else if (value > maxValue) {
+                e.target.value = maxValue
+            }
+        })
+    }
+
+    // Related products slider
+    const sliderContainer = document.querySelector(".product-grid-slider")
+    const sliderPrevBtn = document.querySelector(".slider-prev")
+    const sliderNextBtn = document.querySelector(".slider-next")
+    
+    if (sliderContainer && sliderPrevBtn && sliderNextBtn) {
+        let currentSlideIndex = 0
+        const slidesToShow = window.innerWidth <= 768 ? 1 : window.innerWidth <= 1024 ? 2 : 3
+        const totalSlides = sliderContainer.children.length
+        const maxSlideIndex = Math.max(0, totalSlides - slidesToShow)
+
+        function updateSlider() {
+            if (sliderContainer.children.length === 0) return;
+            
+            const slideWidth = sliderContainer.children[0].offsetWidth + 20 // including gap
+            const translateX = -currentSlideIndex * slideWidth
+            sliderContainer.style.transform = `translateX(${translateX}px)`
+            
+            // Update button states
+            sliderPrevBtn.style.opacity = currentSlideIndex === 0 ? "0.5" : "1"
+            sliderNextBtn.style.opacity = currentSlideIndex >= maxSlideIndex ? "0.5" : "1"
+            sliderPrevBtn.style.pointerEvents = currentSlideIndex === 0 ? "none" : "auto"
+            sliderNextBtn.style.pointerEvents = currentSlideIndex >= maxSlideIndex ? "none" : "auto"
+        }
+
+        sliderPrevBtn.addEventListener("click", () => {
+            if (currentSlideIndex > 0) {
+                currentSlideIndex--
+                updateSlider()
+            }
+        })
+
+        sliderNextBtn.addEventListener("click", () => {
+            if (currentSlideIndex < maxSlideIndex) {
+                currentSlideIndex++
+                updateSlider()
+            }
+        })
+
+        // Initialize slider
+        setTimeout(() => {
+            updateSlider()
+        }, 100) // Delay để đảm bảo DOM đã render
+
+        // Update on window resize
+        window.addEventListener("resize", () => {
+            const newSlidesToShow = window.innerWidth <= 768 ? 1 : window.innerWidth <= 1024 ? 2 : 3
+            const newMaxSlideIndex = Math.max(0, totalSlides - newSlidesToShow)
+            if (currentSlideIndex > newMaxSlideIndex) {
+                currentSlideIndex = newMaxSlideIndex
+            }
+            setTimeout(() => {
+                updateSlider()
+            }, 100)
         })
     }
 
@@ -172,157 +298,53 @@
         })
     }
 
-    // Buy now functionality
-    const buyNowButton = document.querySelector(".btn-buy-now")
-    if (buyNowButton) {
-        buyNowButton.addEventListener("click", async () => {
-            if (buyNowButton.disabled) return
-
-            const productId = buyNowButton.getAttribute("data-product-id")
-            const quantity = parseInt(quantityInput.value)
-            
-            // Hiệu ứng loading
-            const originalText = buyNowButton.innerHTML
-            buyNowButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...'
-            buyNowButton.disabled = true
-            
-            try {
-                const token = document.querySelector('input[name="__RequestVerificationToken"]').value
-                const response = await fetch("/Cart/AddToCart", {
-                    method: "POST",
-                    headers: { 
-                        "Content-Type": "application/json",
-                        "RequestVerificationToken": token
-                    },
-                    body: JSON.stringify({ productId: parseInt(productId), quantity: quantity })
-                })
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`)
-                }
-                
-                const result = await response.json()
-                if (result.success) {
-                    // Cập nhật số lượng giỏ hàng trước khi chuyển hướng
-                    updateCartCount(result.cartCount)
-                    window.location.href = "/Cart/Checkout"
-                } else {
-                    buyNowButton.innerHTML = originalText
-                    buyNowButton.disabled = false
-                    showToast(result.message, "error")
-                }
-            } catch (error) {
-                console.error("Error processing buy now:", error)
-                buyNowButton.innerHTML = originalText
-                buyNowButton.disabled = false
-                showToast("Lỗi khi xử lý đơn hàng", "error")
-            }
-        })
-    }
+    // Keyboard navigation for gallery
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowLeft" && galleryPrevBtn) {
+            galleryPrevBtn.click()
+        } else if (e.key === "ArrowRight" && galleryNextBtn) {
+            galleryNextBtn.click()
+        }
+    })
 })
 
-// Function to update cart count
+// Utility functions
 function updateCartCount(count) {
-    const cartCountElements = document.querySelectorAll(".cart-count")
-    cartCountElements.forEach(element => {
-        element.textContent = count
-        element.classList.add("updated")
-        setTimeout(() => element.classList.remove("updated"), 1000)
-    })
+    const cartBadge = document.querySelector(".cart-count")
+    if (cartBadge) {
+        cartBadge.textContent = count
+        cartBadge.classList.add("updated")
+        setTimeout(() => {
+            cartBadge.classList.remove("updated")
+        }, 300)
+    }
 }
 
-// Toast notification function
 function showToast(message, type) {
-    const toast = document.createElement("div")
-    toast.className = `toast toast-${type}`
+    // Create toast element if it doesn't exist
+    let toast = document.querySelector(".toast")
+    if (!toast) {
+        toast = document.createElement("div")
+        toast.className = "toast"
+        document.body.appendChild(toast)
+    }
+
+    // Set toast content and type
     toast.innerHTML = `
         <div class="toast-content">
-            <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
-            <span>${message}</span>
+            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+            ${message}
         </div>
     `
-    
-    document.body.appendChild(toast)
-    
+    toast.className = `toast toast-${type}`
+
+    // Show toast
     setTimeout(() => {
         toast.classList.add("show")
     }, 100)
-    
+
+    // Hide toast after 3 seconds
     setTimeout(() => {
         toast.classList.remove("show")
-        setTimeout(() => {
-            document.body.removeChild(toast)
-        }, 300)
     }, 3000)
-}
-
-// Add styles if not exists
-if (!document.getElementById("cart-styles")) {
-    const style = document.createElement("style")
-    style.id = "cart-styles"
-    style.textContent = `
-        .toast {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 12px 20px;
-            border-radius: 4px;
-            color: white;
-            opacity: 0;
-            transform: translateY(-20px);
-            transition: opacity 0.3s, transform 0.3s;
-            z-index: 9999;
-            max-width: 300px;
-        }
-        .toast.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        .toast-success {
-            background-color: #28a745;
-        }
-        .toast-error {
-            background-color: #dc3545;
-        }
-        .toast-content {
-            display: flex;
-            align-items: center;
-        }
-        .toast-content i {
-            margin-right: 10px;
-        }
-        .btn-add-cart.success {
-            background-color: #28a745;
-            border-color: #28a745;
-        }
-        .quantity-control {
-            display: flex;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
-        .quantity-btn {
-            width: 30px;
-            height: 30px;
-            border: 1px solid #ddd;
-            background: #f8f9fa;
-            cursor: pointer;
-        }
-        .quantity-btn:hover {
-            background: #e9ecef;
-        }
-        .quantity-control input {
-            width: 50px;
-            height: 30px;
-            text-align: center;
-            border: 1px solid #ddd;
-            margin: 0 5px;
-        }
-        .cart-count {
-            transition: transform 0.3s;
-        }
-        .cart-count.updated {
-            transform: scale(1.2);
-        }
-    `
-    document.head.appendChild(style)
 }

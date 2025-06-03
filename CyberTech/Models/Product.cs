@@ -11,7 +11,7 @@ namespace CyberTech.Models
         {
             ProductImages = new List<ProductImage>();
             ProductAttributeValues = new List<ProductAttributeValue>();
-            Wishlists = new List<Wishlist>();
+            WishlistItems = new List<WishlistItem>();
             CartItems = new List<CartItem>();
             OrderItems = new List<OrderItem>();
             Reviews = new List<Review>();
@@ -85,7 +85,7 @@ namespace CyberTech.Models
 
         public virtual ICollection<ProductImage> ProductImages { get; set; }
         public virtual ICollection<ProductAttributeValue> ProductAttributeValues { get; set; }
-        public virtual ICollection<Wishlist> Wishlists { get; set; }
+        public virtual ICollection<WishlistItem> WishlistItems { get; set; }
         public virtual ICollection<CartItem> CartItems { get; set; }
         public virtual ICollection<OrderItem> OrderItems { get; set; }
         public virtual ICollection<Review> Reviews { get; set; }

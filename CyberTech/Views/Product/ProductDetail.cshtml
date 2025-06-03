@@ -5,6 +5,23 @@
 
 @section Styles {
     <link rel="stylesheet" href="~/css/ProductDetail/styles.css">
+    <style>
+        .btn-wishlist.active {
+            color: red;
+            border-color: red;
+        }
+    </style>
+    <script>
+        var productId = @Model.Product.ProductID;
+        var isInWishlist = '@Model.IsInWishlist.ToString()';
+        console.log(isInWishlist);
+        window.addEventListener('DOMContentLoaded', function() {
+            if (isInWishlist === 'True') {
+                $('.btn-wishlist').addClass('active');
+                $('.btn-wishlist i').removeClass('far').addClass('fas');
+            }
+        });
+    </script>
 }
 
 @Html.AntiForgeryToken()
@@ -12,17 +29,25 @@
 <main class="product-container">
     <!-- Breadcrumb -->
     <div class="breadcrumb">
-        <a href="@Url.Action("Index", "Home")">Trang chủ</a> /
-        <a href="@Url.Action("Category", "Product", new { category = Model.Product.SubSubcategory.Subcategory.Category.Name.ToLower().Replace(" ", "-") })">@Model.Product.SubSubcategory.Subcategory.Category.Name</a> /
-        <a href="@Url.Action("Subcategory", "Product", new { subcategory = Model.Product.SubSubcategory.Subcategory.Name.ToLower().Replace(" ", "-") })">@Model.Product.SubSubcategory.Subcategory.Name</a> /
-        <span>@Model.Product.Name</span>
+        <a href="@Url.Action("Index", "Home")"><i class="fas fa-home"></i> Trang chủ </a> /&nbsp;
+        <a href="@Url.Action("Category", "Product", new { category = Model.Product.SubSubcategory.Subcategory.Category.Name.ToLower().Replace(" ", "-") })"> @Model.Product.SubSubcategory.Subcategory.Category.Name </a> /&nbsp;
+        <a href="@Url.Action("Subcategory", "Product", new { subcategory = Model.Product.SubSubcategory.Subcategory.Name.ToLower().Replace(" ", "-") })"> @Model.Product.SubSubcategory.Subcategory.Name </a> /&nbsp;
+        <span> @Model.Product.Name</span>
     </div>
 
     <div class="product-content">
         <!-- Product Gallery -->
         <div class="product-gallery">
-            <div class="main-image">
-                <img id="mainImage" src="@(Model.Product.ProductImages.FirstOrDefault()?.ImageURL ?? "/placeholder.svg?height=500&width=500")" alt="@Model.Product.Name">
+            <div class="gallery-main">
+                <button class="gallery-btn gallery-prev">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div class="main-image">
+                    <img id="mainImage" src="@(Model.Product.ProductImages.FirstOrDefault()?.ImageURL ?? "/placeholder.svg?height=500&width=500")" alt="@Model.Product.Name">
+                </div>
+                <button class="gallery-btn gallery-next">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
             </div>
             <div class="thumbnail-container">
                 @foreach (var image in Model.Product.ProductImages)
@@ -59,10 +84,30 @@
                     }
                 </div>
                 <span class="rating-count">@(Model.Product.Reviews?.Count ?? 0) đánh giá</span>
+                <span class="view-reviews-link" onclick="scrollToReviews()">Xem đánh giá</span>
             </div>
 
             <div class="product-price">
-                <div class="current-price">@Model.Product.Price.ToString("N0")₫</div>
+                @{
+                    var hasDiscount = Model.Product.SalePrice.HasValue && Model.Product.SalePrice.Value < Model.Product.Price;
+                }
+                @if (hasDiscount)
+                {
+                    <div class="original-price">@Model.Product.Price.ToString("N0")₫</div>
+                    <div class="current-price">@Model.Product.SalePrice.Value.ToString("N0")₫</div>
+                    <div class="discount-badge">-@(Math.Round((decimal)(Model.Product.Price - Model.Product.SalePrice.Value) / Model.Product.Price * 100))%</div>
+                }
+                else if (Model.Product.SalePercentage.HasValue && Model.Product.SalePercentage.Value > 0)
+                {
+                    var salePrice = Model.Product.Price * (1 - Model.Product.SalePercentage.Value / 100);
+                    <div class="original-price">@Model.Product.Price.ToString("N0")₫</div>
+                    <div class="current-price">@salePrice.ToString("N0")₫</div>
+                    <div class="discount-badge">-@Model.Product.SalePercentage.Value.ToString("0")%</div>
+                }
+                else
+                {
+                    <div class="current-price no-discount">@Model.Product.Price.ToString("N0")₫</div>
+                }
             </div>
 
             <div class="product-availability">
@@ -75,14 +120,11 @@
                     <input type="number" id="quantity" name="quantity" value="1" min="1" max="@Model.Product.Stock" readonly>
                     <button type="button" class="quantity-btn plus" data-action="increase">+</button>
                 </div>
-                <button class="btn-buy-now" data-product-id="@Model.Product.ProductID" @(Model.Product.Stock <= 0 ? "disabled" : "")>
-                    MUA NGAY
-                </button>
                 <button class="btn-add-cart" data-product-id="@Model.Product.ProductID" @(Model.Product.Stock <= 0 ? "disabled" : "")>
                     <i class="fas fa-shopping-cart"></i> THÊM VÀO GIỎ
                 </button>
                 <button class="btn-wishlist" data-product-id="@Model.Product.ProductID">
-                    <i class="far fa-heart"></i>
+                    <i class="@(Model.IsInWishlist ? "fas" : "far") fa-heart"></i>
                 </button>
             </div>
 
@@ -202,21 +244,45 @@
     <!-- Related Products -->
     <div class="related-products">
         <h2>Sản phẩm tương tự</h2>
-        <div class="product-grid">
-            @foreach (var product in Model.RelatedProducts)
-            {
-                <div class="product-card">
-                    <div class="product-image">
-                        <img src="@(product.ProductImages.FirstOrDefault()?.ImageURL ?? "/placeholder.svg?height=200&width=200")" alt="@product.Name">
-                    </div>
-                    <div class="product-card-info">
-                        <h3 class="product-card-title">@product.Name</h3>
-                        <div class="product-card-price">
-                            <span class="current-price">@product.Price.ToString("N0")₫</span>
+        <div class="related-slider-container">
+            <button class="slider-btn slider-prev">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div class="related-slider">
+                <div class="product-grid-slider">
+                    @foreach (var product in Model.RelatedProducts)
+                    {
+                        var productViewModel = new CyberTech.Models.ProductViewModel
+                        {
+                            ProductID = product.ProductID,
+                            Name = product.Name,
+                            Price = product.Price,
+                            SalePrice = product.SalePrice,
+                            SalePercentage = product.SalePercentage,
+                            DiscountedPrice = product.SalePrice,
+                            PrimaryImageUrl = product.ProductImages.FirstOrDefault()?.ImageURL ?? "/placeholder.svg?height=200&width=200",
+                            PrimaryImageUrlSmall = product.ProductImages.FirstOrDefault()?.ImageURL ?? "/placeholder.svg?height=200&width=200",
+                            Url = Url.Action("ProductDetail", "Product", new { id = product.ProductID }),
+                            Attributes = product.ProductAttributeValues.ToDictionary(
+                                pav => pav.AttributeValue.ProductAttribute.AttributeName,
+                                pav => pav.AttributeValue.ValueName
+                            ),
+                            AverageRating = product.Reviews?.Any() == true ? product.Reviews.Average(r => r.Rating) : 0,
+                            ReviewCount = product.Reviews?.Count ?? 0,
+                            Brand = product.Brand ?? "",
+                            Status = product.Status ?? "Active",
+                            SubSubcategory = product.SubSubcategory,
+                            IsInStock = product.Stock > 0
+                        };
+                        <div class="related-product-card">
+                            @Html.Partial("_ProductCard", productViewModel)
                         </div>
-                    </div>
+                    }
                 </div>
-            }
+            </div>
+            <button class="slider-btn slider-next">
+                <i class="fas fa-chevron-right"></i>
+            </button>
         </div>
     </div>
 </main>
@@ -224,20 +290,20 @@
 @section Scripts {
     <script src="~/js/ProductDetail/script.js"></script>
     <script>
+        function scrollToReviews() {
+            document.querySelector('.tab-btn[data-tab="reviews"]').click();
+            document.getElementById('reviews').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        var productId = @Model.Product.ProductID;
+
         $(function() {
-            // Check if product is in wishlist
-            var productId = @Model.Product.ProductID;
-            $.get('/Account/IsInWishlist', { productId: productId }, function(response) {
-                if (response) {
-                    $('.btn-wishlist i').removeClass('far').addClass('fas');
-                }
-            });
 
             // Toggle wishlist
             $('.btn-wishlist').on('click', function() {
                 var button = $(this);
                 var icon = button.find('i');
-
+                console.log("productId", productId);                
                 $.ajax({
                     url: '/Account/ToggleWishlist',
                     type: 'POST',
@@ -249,9 +315,11 @@
                         if (response.success) {
                             if (icon.hasClass('far')) {
                                 icon.removeClass('far').addClass('fas');
+                                button.addClass('active');
                                 utils.showToast('Đã thêm vào danh sách yêu thích', 'success');
                             } else {
                                 icon.removeClass('fas').addClass('far');
+                                button.removeClass('active');
                                 utils.showToast('Đã xóa khỏi danh sách yêu thích', 'success');
                             }
                         } else {
@@ -295,43 +363,6 @@
                             }, 2000);
                             
                             utils.showToast('Đã thêm vào giỏ hàng', 'success');
-                        } else {
-                            button.html(originalText).prop('disabled', false);
-                            utils.showToast(response.message || 'Có lỗi xảy ra', 'error');
-                        }
-                    },
-                    error: function() {
-                        button.html(originalText).prop('disabled', false);
-                        utils.showToast('Có lỗi xảy ra', 'error');
-                    }
-                });
-            });
-            
-            // Buy now functionality
-            $('.btn-buy-now').on('click', function() {
-                var button = $(this);
-                if (button.prop('disabled')) return;
-                
-                var productId = button.data('product-id');
-                var quantity = parseInt($('#quantity').val());
-                
-                // Hiệu ứng loading
-                var originalText = button.html();
-                button.html('<i class="fas fa-spinner fa-spin"></i> Đang xử lý...').prop('disabled', true);
-                
-                $.ajax({
-                    url: '/Cart/AddToCart',
-                    type: 'POST',
-                    data: { productId: productId, quantity: quantity },
-                    success: function(response) {
-                        if (response.success) {
-                            // Update cart count before redirecting
-                            if (response.cartCount !== undefined) {
-                                window.updateCartCount(response.cartCount);
-                            }
-                            
-                            // Redirect to cart page
-                            window.location.href = '@Url.Action("Index", "Cart")';
                         } else {
                             button.html(originalText).prop('disabled', false);
                             utils.showToast(response.message || 'Có lỗi xảy ra', 'error');

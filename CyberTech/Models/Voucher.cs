@@ -48,10 +48,6 @@ namespace CyberTech.Models
         public virtual ICollection<VoucherProducts> VoucherProducts { get; set; }
         public virtual ICollection<UserVoucher> UserVouchers { get; set; }
 
-        /// <summary>
-        /// Checks if this voucher is currently valid
-        /// </summary>
-        /// <returns>True if the voucher is valid, false otherwise</returns>
         public bool IsValid()
         {
             // Check if voucher is active
