@@ -1374,5 +1374,335 @@ namespace CyberTech.Controllers
             HttpContext.Session.SetString("Gender", user.Gender?.ToString() ?? "");
             HttpContext.Session.SetString("DateOfBirth", user.DateOfBirth?.ToString("o") ?? "");
         }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> ClaimVoucher(string code, int userId)
+        {
+            try
+            {
+                // Verify the current user is the same as the userId in the link
+                var emailClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email);
+                if (emailClaim == null)
+                {
+                    _logger.LogError("Email claim not found in user claims");
+                    TempData["ErrorMessage"] = "Không tìm thấy thông tin người dùng";
+                    return RedirectToAction("Vouchers");
+                }
+
+                var user = await _userService.GetUserByEmailAsync(emailClaim.Value);
+                if (user == null)
+                {
+                    TempData["ErrorMessage"] = "Không tìm thấy thông tin người dùng";
+                    return RedirectToAction("Vouchers");
+                }
+
+                // Check if the user in the link matches the logged-in user
+                if (user.UserID != userId)
+                {
+                    _logger.LogWarning("User {LoggedInUserId} attempted to claim a voucher for user {TargetUserId}", user.UserID, userId);
+                    TempData["ErrorMessage"] = "Bạn không có quyền nhận voucher này";
+                    return RedirectToAction("Vouchers");
+                }
+
+                // Find the voucher by code
+                var voucher = await _context.Vouchers
+                    .FirstOrDefaultAsync(v => v.Code == code && v.IsActive && v.ValidTo > DateTime.Now);
+
+                if (voucher == null)
+                {
+                    TempData["ErrorMessage"] = "Mã giảm giá không hợp lệ hoặc đã hết hạn";
+                    return RedirectToAction("Vouchers");
+                }
+
+                // Check if voucher is system-wide - only system-wide vouchers can be claimed by users
+                if (!voucher.IsSystemWide)
+                {
+                    TempData["ErrorMessage"] = "Mã giảm giá này không thể được sử dụng trực tiếp";
+                    return RedirectToAction("Vouchers");
+                }
+
+                // Check if voucher has available quantity
+                if (voucher.QuantityAvailable.HasValue && voucher.QuantityAvailable <= 0)
+                {
+                    TempData["ErrorMessage"] = "Mã giảm giá đã hết lượt sử dụng";
+                    return RedirectToAction("Vouchers");
+                }
+
+                // Check if user already has this voucher
+                var existingUserVoucher = await _context.UserVouchers
+                    .FirstOrDefaultAsync(uv => uv.UserID == user.UserID && uv.VoucherID == voucher.VoucherID);
+
+                if (existingUserVoucher != null)
+                {
+                    if (existingUserVoucher.IsUsed)
+                    {
+                        TempData["ErrorMessage"] = "Bạn đã sử dụng mã giảm giá này";
+                    }
+                    else
+                    {
+                        TempData["ErrorMessage"] = "Bạn đã có mã giảm giá này trong kho voucher";
+                    }
+                    return RedirectToAction("Vouchers");
+                }
+
+                // Assign voucher to user
+                var userVoucher = new UserVoucher
+                {
+                    UserID = user.UserID,
+                    VoucherID = voucher.VoucherID,
+                    AssignedDate = DateTime.Now,
+                    IsUsed = false
+                };
+
+                _context.UserVouchers.Add(userVoucher);
+
+                // Decrease available quantity if applicable
+                if (voucher.QuantityAvailable.HasValue)
+                {
+                    voucher.QuantityAvailable--;
+                }
+
+                await _context.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = "Đã thêm mã giảm giá vào kho voucher thành công";
+                return RedirectToAction("Vouchers");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error claiming voucher {VoucherCode}", code);
+                TempData["ErrorMessage"] = "Có lỗi xảy ra khi nhận mã giảm giá";
+                return RedirectToAction("Vouchers");
+            }
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> Vouchers(int page = 1, string tab = "active")
+        {
+            try
+            {
+                var emailClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email);
+                if (emailClaim == null)
+                {
+                    _logger.LogError("Email claim not found in user claims");
+                    return Unauthorized("Invalid user identifier.");
+                }
+
+                var user = await _userService.GetUserByEmailAsync(emailClaim.Value);
+                if (user == null) return NotFound();
+
+                // Ensure user has a rank
+                if (user.RankId == null)
+                {
+                    user.RankId = 1;
+                    await _context.SaveChangesAsync();
+                }
+
+                await SetCommonViewBagProperties(user);
+
+                const int pageSize = 6; // Number of vouchers per page
+
+                // Get total counts for badges
+                var activeCount = await _context.UserVouchers
+                    .CountAsync(uv => uv.UserID == user.UserID &&
+                           !uv.IsUsed &&
+                           uv.Voucher.IsActive &&
+                           uv.Voucher.ValidTo > DateTime.Now);
+
+                var expiredCount = await _context.UserVouchers
+                    .CountAsync(uv => uv.UserID == user.UserID &&
+                           (!uv.IsUsed && (uv.Voucher.ValidTo <= DateTime.Now || !uv.Voucher.IsActive)));
+
+                var usedCount = await _context.UserVouchers
+                    .CountAsync(uv => uv.UserID == user.UserID && uv.IsUsed);
+
+                ViewBag.ActiveCount = activeCount;
+                ViewBag.ExpiredCount = expiredCount;
+                ViewBag.UsedCount = usedCount;
+
+                // Get paginated data based on selected tab
+                IQueryable<UserVoucher> query;
+                int totalItems;
+
+                switch (tab.ToLower())
+                {
+                    case "expired":
+                        query = _context.UserVouchers
+                            .Include(uv => uv.Voucher)
+                            .Where(uv => uv.UserID == user.UserID &&
+                                   (!uv.IsUsed && (uv.Voucher.ValidTo <= DateTime.Now || !uv.Voucher.IsActive)))
+                            .OrderByDescending(uv => uv.Voucher.ValidTo);
+                        totalItems = expiredCount;
+                        break;
+
+                    case "used":
+                        query = _context.UserVouchers
+                            .Include(uv => uv.Voucher)
+                            .Include(uv => uv.Order)
+                            .Where(uv => uv.UserID == user.UserID && uv.IsUsed)
+                            .OrderByDescending(uv => uv.UsedDate);
+                        totalItems = usedCount;
+                        break;
+
+                    default: // "active"
+                        query = _context.UserVouchers
+                            .Include(uv => uv.Voucher)
+                            .Where(uv => uv.UserID == user.UserID &&
+                                   !uv.IsUsed &&
+                                   uv.Voucher.IsActive &&
+                                   uv.Voucher.ValidTo > DateTime.Now)
+                            .OrderByDescending(uv => uv.Voucher.ValidTo);
+                        totalItems = activeCount;
+                        break;
+                }
+
+                var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+                page = Math.Max(1, Math.Min(page, totalPages > 0 ? totalPages : 1));
+
+                var items = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                // Set view data
+                ViewBag.CurrentTab = tab;
+                ViewBag.CurrentPage = page;
+                ViewBag.TotalPages = totalPages;
+                ViewBag.TotalItems = totalItems;
+                ViewBag.PageSize = pageSize;
+                ViewBag.StartItem = totalItems == 0 ? 0 : ((page - 1) * pageSize) + 1;
+                ViewBag.EndItem = Math.Min(page * pageSize, totalItems);
+
+                switch (tab.ToLower())
+                {
+                    case "expired":
+                        ViewBag.ExpiredVouchers = items;
+                        ViewBag.ActiveVouchers = new List<UserVoucher>();
+                        ViewBag.UsedVouchers = new List<UserVoucher>();
+                        break;
+                    case "used":
+                        ViewBag.UsedVouchers = items;
+                        ViewBag.ActiveVouchers = new List<UserVoucher>();
+                        ViewBag.ExpiredVouchers = new List<UserVoucher>();
+                        break;
+                    default:
+                        ViewBag.ActiveVouchers = items;
+                        ViewBag.ExpiredVouchers = new List<UserVoucher>();
+                        ViewBag.UsedVouchers = new List<UserVoucher>();
+                        break;
+                }
+
+                return View();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading vouchers for user {Email}", User.Identity.Name);
+                return View(new List<UserVoucher>());
+            }
+        }
+
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ApplyVoucherCode(string voucherCode)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(voucherCode))
+                {
+                    return Json(new { success = false, message = "Vui lòng nhập mã giảm giá" });
+                }
+
+                var emailClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email);
+                if (emailClaim == null)
+                {
+                    _logger.LogError("Email claim not found in user claims");
+                    return Json(new { success = false, message = "Không tìm thấy thông tin người dùng" });
+                }
+
+                var user = await _userService.GetUserByEmailAsync(emailClaim.Value);
+                if (user == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy thông tin người dùng" });
+                }
+
+                // Find the voucher by code
+                var voucher = await _context.Vouchers
+                    .FirstOrDefaultAsync(v => v.Code == voucherCode && v.IsActive && v.ValidTo > DateTime.Now);
+
+                if (voucher == null)
+                {
+                    return Json(new { success = false, message = "Mã giảm giá không hợp lệ hoặc đã hết hạn" });
+                }
+
+                // Check if voucher is system-wide - only system-wide vouchers can be claimed by users
+                if (!voucher.IsSystemWide)
+                {
+                    return Json(new { success = false, message = "Mã giảm giá này không thể được sử dụng trực tiếp" });
+                }
+
+                // Check if voucher has available quantity
+                if (voucher.QuantityAvailable.HasValue && voucher.QuantityAvailable <= 0)
+                {
+                    return Json(new { success = false, message = "Mã giảm giá đã hết lượt sử dụng" });
+                }
+
+                // Check if user already has this voucher
+                var existingUserVoucher = await _context.UserVouchers
+                    .FirstOrDefaultAsync(uv => uv.UserID == user.UserID && uv.VoucherID == voucher.VoucherID);
+
+                if (existingUserVoucher != null)
+                {
+                    if (existingUserVoucher.IsUsed)
+                    {
+                        return Json(new { success = false, message = "Bạn đã sử dụng mã giảm giá này" });
+                    }
+                    else
+                    {
+                        return Json(new { success = false, message = "Bạn đã có mã giảm giá này trong kho voucher" });
+                    }
+                }
+
+                // Assign voucher to user
+                var userVoucher = new UserVoucher
+                {
+                    UserID = user.UserID,
+                    VoucherID = voucher.VoucherID,
+                    AssignedDate = DateTime.Now,
+                    IsUsed = false
+                };
+
+                _context.UserVouchers.Add(userVoucher);
+
+                // Decrease available quantity if applicable
+                if (voucher.QuantityAvailable.HasValue)
+                {
+                    voucher.QuantityAvailable--;
+                }
+
+                await _context.SaveChangesAsync();
+
+                return Json(new
+                {
+                    success = true,
+                    message = "Đã thêm mã giảm giá vào kho voucher thành công",
+                    voucher = new
+                    {
+                        code = voucher.Code,
+                        discountType = voucher.DiscountType,
+                        discountValue = voucher.DiscountValue,
+                        validTo = voucher.ValidTo.ToString("dd/MM/yyyy")
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error applying voucher code {VoucherCode}", voucherCode);
+                return Json(new { success = false, message = "Có lỗi xảy ra khi áp dụng mã giảm giá" });
+            }
+        }
+
+
     }
 }

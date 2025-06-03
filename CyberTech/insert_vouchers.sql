@@ -6,17 +6,17 @@ GO
 INSERT INTO Vouchers (Code, Description, DiscountType, DiscountValue, QuantityAvailable, ValidFrom, ValidTo, IsActive, AppliesTo)
 VALUES 
     -- Voucher cho đơn hàng đầu tiên
-    ('USERPROMO50', N'Giảm 5% cho đơn hàng đầu tiên của khách hàng mới', 'PERCENT', 5.00, 1000, '2024-01-01', '2024-12-31', 1, 'Order'),
+    ('USERPROMO50', N'Giảm 5% cho đơn hàng đầu tiên của khách hàng mới', 'PERCENT', 5.00, 1000, '2025-01-01', '2025-12-31', 1, 'Order'),
     
     -- Voucher premium
-    ('PREMIUM10', N'Giảm 10% cho đơn hàng', 'PERCENT', 10.00, 500, '2024-01-01', '2024-12-31', 1, 'Order'),
+    ('PREMIUM10', N'Giảm 10% cho đơn hàng', 'PERCENT', 10.00, 500, '2025-01-01', '2025-12-31', 1, 'Order'),
     
     -- Voucher theo mùa và sự kiện
-    ('SUMMER2025', N'Giảm 15% cho đơn hàng mùa hè', 'PERCENT', 15.00, 200, '2024-06-01', '2024-08-31', 1, 'Order'),
+    ('SUMMER2025', N'Giảm 15% cho đơn hàng mùa hè', 'PERCENT', 15.00, 200, '2025-06-01', '2025-08-31', 1, 'Order'),
     
     -- Voucher cho sản phẩm cụ thể
-    ('LAPTOP10', N'Giảm 10% cho Laptop Gaming', 'PERCENT', 10.00, 100, '2024-01-01', '2024-12-31', 1, 'Product'),
-    ('MONITOR15', N'Giảm 15% cho Màn hình', 'PERCENT', 15.00, 150, '2024-01-01', '2024-12-31', 1, 'Product');
+    ('LAPTOP10', N'Giảm 10% cho Laptop Gaming', 'PERCENT', 10.00, 100, '2025-01-01', '2025-12-31', 1, 'Product'),
+    ('MONITOR15', N'Giảm 15% cho Màn hình', 'PERCENT', 15.00, 150, '2025-01-01', '2025-12-31', 1, 'Product');
 
 -- Thêm mapping giữa voucher và sản phẩm
 INSERT INTO VoucherProducts (VoucherID, ProductID)

@@ -38,6 +38,20 @@ namespace CyberTech.Controllers
             _configuration = configuration;
         }
 
+        [HttpGet]
+        public IActionResult Index()
+        {
+            if (User.Identity.IsAuthenticated)
+            {
+                var role = User.FindFirst(ClaimTypes.Role)?.Value;
+                if (AllowedRoles.Contains(role))
+                {
+                    return RedirectToAction("Dashboard");
+                }
+            }
+            return RedirectToAction("Login");
+        }
+
         [HttpGet("Login")]
         public IActionResult Login(string returnUrl = null)
         {
