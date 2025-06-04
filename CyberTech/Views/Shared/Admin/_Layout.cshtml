@@ -17,23 +17,20 @@
                 case "CategoryManage":
                     <text>CyberTech - Quản lý danh mục</text>
                     break;
+                case "VoucherManage":
+                    <text>CyberTech - Quản lý voucher</text>
+                    break;
                 case "CustomerManage":
                     <text>CyberTech - Quản lý khách hàng</text>
                     break;
-                case "QRCodeManage":
-                    <text>CyberTech - Quản lý mã QR</text>
-                    break;
-                case "OrderManage":
-                    <text>CyberTech - Quản lý đơn hàng</text>
-                    break;
-                case "ReservationManage":
-                    <text>CyberTech - Quản lý đơn đặt hàng</text>
-                    break;
-                case "UserManage":
-                    <text>CyberTech - Cài đặt hệ thống</text>
+                case "EmployeeManage":
+                    <text>CyberTech - Quản lý nhân viên</text>
                     break;
                 case "RankManage":
                     <text>CyberTech - Quản lý cấp bậc</text>
+                    break;
+                case "OrderManage":
+                    <text>CyberTech - Quản lý đơn hàng</text>
                     break;
                 default:
                     <text>@ViewData["Title"]</text>
@@ -59,7 +56,7 @@
             <div class="logo-container">
                 <img src="~/admin/dashboard.png" class="logo-img">
                 <div class="logo-text">
-                    <h3>Quản Lý Hệ Thống</h3>
+                    <h3>CyberTech Admin</h3>
                 </div>
             </div>
         </div>
@@ -67,38 +64,73 @@
         <!-- Sidebar content with scrolling -->
         <div class="sidebar-content">
             <ul class="sidebar-menu">
-                <li><a href="/Dashboard" class="@(ViewContext.RouteData.Values["controller"].ToString() == "Dashboard" ? "active" : "")"><i class="fas fa-th-large"></i> <span class="menu-text">Trang Chủ</span></a></li>
-                <li><a href="/ProductManage" class="@(ViewContext.RouteData.Values["controller"].ToString() == "ProductManage" ? "active" : "")"><i class="fas fa-box"></i> <span class="menu-text">Sản Phẩm</span></a></li>
-                <li><a href="/CategoryManage" class="@(ViewContext.RouteData.Values["controller"].ToString() == "CategoryManage" ? "active" : "")"><i class="fas fa-layer-group"></i> <span class="menu-text">Danh Mục</span></a></li>
-                <li><a href="/CustomerManage" class="@(ViewContext.RouteData.Values["controller"].ToString() == "CustomerManage" ? "active" : "")"><i class="fas fa-users"></i> <span class="menu-text">Khách Hàng</span></a></li>
-                <li><a href="/OrderManage" class="@(ViewContext.RouteData.Values["controller"].ToString() == "OrderManage" ? "active" : "")"><i class="fas fa-clipboard-list"></i> <span class="menu-text">Đơn Hàng</span></a></li>
-                <li><a href="/QRCodeManage" class="@(ViewContext.RouteData.Values["controller"].ToString() == "QRCodeManage" ? "active" : "")"><i class="fas fa-qrcode"></i> <span class="menu-text">Mã QR</span></a></li>
-                <li><a href="/RankManage" class="@(ViewContext.RouteData.Values["controller"].ToString() == "RankManage" ? "active" : "")"><i class="fas fa-trophy"></i> <span class="menu-text">Cấp Bậc</span></a></li>
-                <li class="nav-item">
-                    <a class="nav-link" href="@Url.Action("Index", "RankManage")">
-                        <i class="fas fa-star nav-icon"></i>
-                        <span>Quản lý Hạng</span>
+                <!-- Dashboard -->
+                <li>
+                    <a href="/Dashboard" class="@(ViewContext.RouteData.Values["controller"].ToString() == "Dashboard" ? "active" : "")">
+                        <i class="fas fa-th-large"></i> 
+                        <span class="menu-text">Trang chủ</span>
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="@Url.Action("Index", "VoucherManage")">
-                        <i class="fas fa-ticket-alt nav-icon"></i>
-                        <span>Quản lý Voucher</span>
+
+                <!-- Products & Categories -->
+                <li>
+                    <a href="/ProductManage" class="@(ViewContext.RouteData.Values["controller"].ToString() == "ProductManage" ? "active" : "")">
+                        <i class="fas fa-box"></i> 
+                        <span class="menu-text">Quản lý sản phẩm</span>
                     </a>
                 </li>
-                <li><a href="/UserManage" class="@(ViewContext.RouteData.Values["controller"].ToString() == "UserManage" ? "active" : "")"><i class="fas fa-user-cog"></i> <span class="menu-text">Cài Đặt Hệ Thống</span></a></li>
+                <li>
+                    <a href="/CategoryManage" class="@(ViewContext.RouteData.Values["controller"].ToString() == "CategoryManage" ? "active" : "")">
+                        <i class="fas fa-tags"></i> 
+                        <span class="menu-text">Quản lý danh mục</span>
+                    </a>
+                </li>
+
+                <!-- Orders -->
+                <li>
+                    <a href="/OrderManage" class="@(ViewContext.RouteData.Values["controller"].ToString() == "OrderManage" ? "active" : "")">
+                        <i class="fas fa-shopping-cart"></i> 
+                        <span class="menu-text">Quản lý đơn hàng</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="/VoucherManage" class="@(ViewContext.RouteData.Values["controller"].ToString() == "VoucherManage" ? "active" : "")">
+                        <i class="fas fa-ticket-alt"></i> 
+                        <span class="menu-text">Quản lý voucher</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/RankManage" class="@(ViewContext.RouteData.Values["controller"].ToString() == "RankManage" ? "active" : "")">
+                        <i class="fas fa-trophy"></i> 
+                        <span class="menu-text">Quản lý cấp bậc</span>
+                    </a>
+                </li>
+
+                <!-- Users -->
+                <li>
+                    <a href="/CustomerManage" class="@(ViewContext.RouteData.Values["controller"].ToString() == "CustomerManage" ? "active" : "")">
+                        <i class="fas fa-users"></i> 
+                        <span class="menu-text">Quản lý khách hàng</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/EmployeeManage" class="@(ViewContext.RouteData.Values["controller"].ToString() == "EmployeeManage" ? "active" : "")">
+                        <i class="fas fa-user-tie"></i> 
+                        <span class="menu-text">Quản lý nhân viên</span>
+                    </a>
+                </li>
             </ul>
-            
         </div>
         
         <!-- User profile at bottom -->
         <div class="user-profile">
-            <div class="user-avatar" title="Nhấn để chỉnh sửa thông tin cá nhân">@(Context.Session.GetString("StaffFullName")?.Substring(0, 1) ?? "U")</div>
+            <div class="user-avatar" title="Nhấn để chỉnh sửa thông tin cá nhân">@(Context.Session.GetString("AdminFullName")?.Substring(0, 1) ?? "A")</div>
             <div class="user-info" title="Nhấn để chỉnh sửa thông tin cá nhân">
-                <p class="user-name">@(Context.Session.GetString("StaffFullName") ?? "Người dùng")</p>
-                <p class="user-role">@(Context.Session.GetString("RoleName") ?? "Nhân viên")</p>
+                <p class="user-name">@(Context.Session.GetString("AdminFullName") ?? "Admin")</p>
+                <p class="user-role">@(Context.Session.GetString("AdminRole") ?? "Administrator")</p>
             </div>
-            <a href="/admin/Logout" class="user-logout"><i class="fas fa-sign-out-alt" title="Nhấn để đăng xuất"></i></a>
+            <a href="/Logout" class="user-logout"><i class="fas fa-sign-out-alt" title="Nhấn để đăng xuất"></i></a>
         </div>
     </div>
     

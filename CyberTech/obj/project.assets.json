@@ -101,6 +101,19 @@
           }
         }
       },
+      "Markdig/0.41.1": {
+        "type": "package",
+        "compile": {
+          "lib/net8.0/Markdig.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/Markdig.dll": {
+            "related": ".xml"
+          }
+        }
+      },
       "Microsoft.AspNetCore.Authentication.Facebook/8.0.8": {
         "type": "package",
         "compile": {
@@ -1773,6 +1786,29 @@
         "lib/netstandard2.1/MailKit.xml",
         "mailkit.4.3.0.nupkg.sha512",
         "mailkit.nuspec"
+      ]
+    },
+    "Markdig/0.41.1": {
+      "sha512": "e9QXUg2agxd9iWV3hO5fA4Qp2avMuXFiElatzD8hp69yIEgESrdhKvDFf9y9NOlPe9jO7AA6W1JAnntLmqwRwA==",
+      "type": "package",
+      "path": "markdig/0.41.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/net462/Markdig.dll",
+        "lib/net462/Markdig.xml",
+        "lib/net8.0/Markdig.dll",
+        "lib/net8.0/Markdig.xml",
+        "lib/net9.0/Markdig.dll",
+        "lib/net9.0/Markdig.xml",
+        "lib/netstandard2.0/Markdig.dll",
+        "lib/netstandard2.0/Markdig.xml",
+        "lib/netstandard2.1/Markdig.dll",
+        "lib/netstandard2.1/Markdig.xml",
+        "markdig.0.41.1.nupkg.sha512",
+        "markdig.nuspec",
+        "markdig.png",
+        "readme.md"
       ]
     },
     "Microsoft.AspNetCore.Authentication.Facebook/8.0.8": {
@@ -4417,6 +4453,7 @@
     "net8.0": [
       "BCrypt.Net-Next >= 4.0.3",
       "MailKit >= 4.3.0",
+      "Markdig >= 0.41.1",
       "Microsoft.AspNetCore.Authentication.Facebook >= 8.0.8",
       "Microsoft.AspNetCore.Authentication.Google >= 8.0.8",
       "Microsoft.EntityFrameworkCore >= 8.0.8",
@@ -4477,6 +4514,10 @@
           "MailKit": {
             "target": "Package",
             "version": "[4.3.0, )"
+          },
+          "Markdig": {
+            "target": "Package",
+            "version": "[0.41.1, )"
           },
           "Microsoft.AspNetCore.Authentication.Facebook": {
             "target": "Package",

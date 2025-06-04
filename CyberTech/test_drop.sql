@@ -52,5 +52,6 @@ DROP TABLE IF EXISTS Vouchers;
 DROP TABLE IF EXISTS Ranks;
 DROP TABLE IF EXISTS UserVouchers;
 DROP TABLE IF EXISTS VoucherTokens;
+DROP TABLE IF EXISTS ProductStockNotifications;
 
 PRINT 'All tables dropped successfully!'; 

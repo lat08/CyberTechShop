@@ -236,5 +236,44 @@ namespace CyberTech.Services
                 throw new InvalidOperationException("Không thể gửi email thông báo nâng hạng. Vui lòng thử lại sau.", ex);
             }
         }
+
+        public async Task SendStockNotificationEmailAsync(string email, string userName, string productName, string productUrl, decimal price)
+        {
+            _logger.LogDebug("Preparing to send stock notification email to {Email} for product {Product}", email, productName);
+
+            try
+            {
+                string subject = $"Sản phẩm {productName} đã có hàng!";
+                string content = $@"
+                    <h2 style='color: #333; margin-top: 0;'>Thông báo sản phẩm có hàng!</h2>
+                    <p style='color: #666; line-height: 1.6;'>
+                        Xin chào {userName},<br><br>
+                        Chúng tôi rất vui mừng thông báo rằng sản phẩm bạn quan tâm đã có hàng trở lại!
+                    </p>
+                    <div style='background-color: #f0f0f0; border: 2px solid #28a745; padding: 15px; margin: 20px 0;'>
+                        <h3 style='color: #28a745; margin-top: 0;'>{productName}</h3>
+                        <p style='font-size: 18px;'>Giá: <strong>{price:N0}₫</strong></p>
+                    </div>
+                    <div style='text-align: center; margin: 30px 0;'>
+                        <a href='{productUrl}' 
+                           style='background-color: #28a745; color: white; padding: 12px 24px; 
+                                  text-decoration: none; border-radius: 4px; display: inline-block;
+                                  font-weight: bold;'>
+                            Mua Ngay
+                        </a>
+                    </div>
+                    <p style='color: #666; font-size: 14px;'>
+                        Hãy nhanh tay mua sắm trước khi sản phẩm hết hàng!
+                    </p>";
+
+                await SendEmailAsync(email, subject, content);
+                _logger.LogInformation("Stock notification email sent successfully to {Email} for product {Product}", email, productName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send stock notification email to {Email}: {Message}", email, ex.Message);
+                throw new InvalidOperationException("Không thể gửi email thông báo sản phẩm có hàng. Vui lòng thử lại sau.", ex);
+            }
+        }
     }
 }

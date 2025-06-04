@@ -16,6 +16,7 @@ namespace CyberTech.Models
             OrderItems = new List<OrderItem>();
             Reviews = new List<Review>();
             VoucherProducts = new List<VoucherProducts>();
+            ProductStockNotifications = new List<ProductStockNotification>();
         }
 
         [Key]
@@ -90,5 +91,6 @@ namespace CyberTech.Models
         public virtual ICollection<OrderItem> OrderItems { get; set; }
         public virtual ICollection<Review> Reviews { get; set; }
         public virtual ICollection<VoucherProducts> VoucherProducts { get; set; }
+        public virtual ICollection<ProductStockNotification> ProductStockNotifications { get; set; }
     }
 }

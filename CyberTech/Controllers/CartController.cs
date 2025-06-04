@@ -513,9 +513,9 @@ namespace CyberTech.Controllers
                     return Json(new { success = false, message = "Số lượng phải lớn hơn 0" });
                 }
 
-                if (quantity > cartItem.Product.Stock)
+                if (quantity >= cartItem.Product.Stock)
                 {
-                    return Json(new { success = false, message = "Số lượng vượt quá tồn kho" });
+                    quantity = cartItem.Product.Stock;
                 }
 
                 cartItem.Quantity = quantity;
@@ -1046,73 +1046,45 @@ namespace CyberTech.Controllers
                 {
                     if (orderId.HasValue)
                     {
-                        var order = await _context.Orders
-                            .Include(o => o.User)
-                            .FirstOrDefaultAsync(o => o.OrderID == orderId.Value);
-
-                        if (order != null)
+                        try
                         {
-                            using var transaction = await _context.Database.BeginTransactionAsync();
-                            try
-                            {
-                                // Update order status
-                                order.Status = "Processing";
+                            // Gọi API để xử lý thanh toán COD
+                            var httpClient = new System.Net.Http.HttpClient();
+                            var response = await httpClient.PostAsync(
+                                $"{Request.Scheme}://{Request.Host}/Payment/ProcessCODPayment?orderId={orderId.Value}",
+                                new System.Net.Http.StringContent("", System.Text.Encoding.UTF8, "application/json"));
 
-                                // Update user's TotalSpent and OrderCount
-                                if (order.User != null)
+                            if (response.IsSuccessStatusCode)
+                            {
+                                return Json(new
                                 {
-                                    var oldRank = order.User.Rank;
-                                    var oldRankName = oldRank?.RankName ?? "Thành viên";
-
-                                    order.User.TotalSpent += order.TotalPrice;
-                                    order.User.OrderCount++;
-
-                                    // Update user's rank if necessary
-                                    var newRank = await _context.Ranks
-                                        .Where(r => r.MinTotalSpent <= order.User.TotalSpent)
-                                        .OrderByDescending(r => r.MinTotalSpent)
-                                        .FirstOrDefaultAsync();
-
-                                    if (newRank != null && order.User.RankId != newRank.RankId)
-                                    {
-                                        order.User.RankId = newRank.RankId;
-                                        _logger.LogInformation("User {UserId} rank updated to {RankId} after successful COD payment", order.User.UserID, newRank.RankId);
-
-                                        // Send rank upgrade email notification
-                                        try
-                                        {
-                                            await _emailService.SendRankUpgradeEmailAsync(
-                                                order.User.Email,
-                                                order.User.Name,
-                                                oldRankName,
-                                                newRank.RankName,
-                                                newRank.DiscountPercent ?? 0
-                                            );
-                                            _logger.LogInformation("Rank upgrade email sent to user {UserId}", order.User.UserID);
-                                        }
-                                        catch (Exception ex)
-                                        {
-                                            _logger.LogError(ex, "Error sending rank upgrade email to user {UserId}", order.User.UserID);
-                                        }
-                                    }
-                                }
-
-                                await _context.SaveChangesAsync();
-                                await transaction.CommitAsync();
+                                    success = true,
+                                    message = "Đặt hàng thành công. Cảm ơn bạn đã mua hàng!"
+                                });
                             }
-                            catch (Exception ex)
+                            else
                             {
-                                await transaction.RollbackAsync();
-                                _logger.LogError(ex, "Error updating order {OrderId} after successful COD payment", order.OrderID);
+                                return Json(new
+                                {
+                                    success = false,
+                                    message = "Có lỗi xảy ra khi xử lý đơn hàng COD. Vui lòng thử lại."
+                                });
                             }
                         }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Error processing COD payment for order {OrderId}", orderId.Value);
+                            return Json(new
+                            {
+                                success = false,
+                                message = "Có lỗi xảy ra khi xử lý đơn hàng COD. Vui lòng thử lại."
+                            });
+                        }
                     }
-
-                    return Json(new
+                    else
                     {
-                        success = true,
-                        message = "Đặt hàng thành công. Cảm ơn bạn đã mua hàng!"
-                    });
+                        return Json(new { success = false, message = "Không tìm thấy thông tin đơn hàng" });
+                    }
                 }
                 else
                 {
