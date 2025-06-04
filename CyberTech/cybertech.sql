@@ -30,7 +30,7 @@ INSERT INTO Ranks (
 CREATE TABLE Category (
     CategoryID      INT             IDENTITY(1,1)   NOT NULL PRIMARY KEY,
     Name            NVARCHAR(100)                   NOT NULL UNIQUE,
-    Description     TEXT                            NULL
+    Description     NVARCHAR(MAX)                            NULL
 );
 
 -- 4. Bảng ProductAttribute
@@ -72,7 +72,7 @@ CREATE TABLE CategoryAttributes (
 CREATE TABLE Subcategory (
     SubcategoryID   INT             IDENTITY(1,1)   NOT NULL PRIMARY KEY,
     Name            NVARCHAR(100)                   NOT NULL,
-    Description     TEXT                            NULL,
+    Description     NVARCHAR(MAX)                            NULL,
     CategoryID      INT                             NOT NULL,
     FOREIGN KEY (CategoryID) REFERENCES Category(CategoryID)
 );
@@ -111,7 +111,7 @@ CREATE TABLE Users (
 CREATE TABLE SubSubcategory (
     SubSubcategoryID INT            IDENTITY(1,1)   NOT NULL PRIMARY KEY,
     Name            NVARCHAR(100)                   NOT NULL,
-    Description     TEXT                            NULL,
+    Description     NVARCHAR(MAX)                            NULL,
     SubcategoryID   INT                             NOT NULL,
     FOREIGN KEY (SubcategoryID) REFERENCES Subcategory(SubcategoryID) ON DELETE CASCADE
 );
@@ -186,7 +186,7 @@ CREATE TABLE Orders (
 CREATE TABLE Products (
     ProductID       INT             IDENTITY(1,1)   NOT NULL PRIMARY KEY,
     Name            NVARCHAR(100)                   NOT NULL,
-    Description     TEXT                            NULL,
+    Description     NVARCHAR(MAX)                            NULL,
     Price           DECIMAL(18,2)                   NOT NULL CHECK (Price >= 0),
     SalePercentage  DECIMAL(5,2)                    NULL CHECK (SalePercentage >= 0 AND SalePercentage <= 100),
     SalePrice       DECIMAL(18,2)                   NULL CHECK (SalePrice >= 0),
@@ -284,7 +284,7 @@ CREATE TABLE Reviews (
     UserID          INT                             NOT NULL,
     ProductID       INT                             NOT NULL,
     Rating          INT                             NOT NULL CHECK (Rating BETWEEN 1 AND 5),
-    Comment         TEXT                            NULL,
+    Comment         NVARCHAR(MAX)                            NULL,
     CreatedAt       DATETIME                        NOT NULL DEFAULT GETDATE(),
     FOREIGN KEY (UserID) REFERENCES Users(UserID),
     FOREIGN KEY (ProductID) REFERENCES Products(ProductID)

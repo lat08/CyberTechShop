@@ -34,7 +34,12 @@ builder.Services.AddDataProtection()
 
 // Configure Database
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
+           .EnableSensitiveDataLogging(false)
+           .EnableServiceProviderCaching(true)
+           .EnableDetailedErrors(false);
+});
 
 // Configure Dependency Injection
 builder.Services.AddScoped<IUserService, UserService>();
@@ -45,6 +50,7 @@ builder.Services.AddScoped<IVoucherTokenService, VoucherTokenService>();
 builder.Services.AddScoped<VNPayService>();
 builder.Services.AddScoped<IRankService, RankService>();
 builder.Services.AddScoped<IVoucherService, VoucherService>();
+builder.Services.AddScoped<IRecommendationService, RecommendationService>();
 
 // Add background services
 builder.Services.AddHostedService<StockNotificationBackgroundService>();
@@ -135,6 +141,16 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+// Add response caching
+builder.Services.AddResponseCaching(options =>
+{
+    options.MaximumBodySize = 1024 * 1024; // 1MB
+    options.UseCaseSensitivePaths = false;
+});
+
+// Add memory cache
+builder.Services.AddMemoryCache();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline
@@ -163,6 +179,8 @@ app.UseStaticFiles(new StaticFileOptions
         }
     }
 });
+
+app.UseResponseCaching();
 
 app.UseRouting();
 app.UseSession();

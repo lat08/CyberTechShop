@@ -10,76 +10,233 @@
             color: red;
             border-color: red;
         }
-
-        /* Style cho nút thông báo */
-        .btn-notify-stock {
+        
+        /* Review Form Styles */
+        .add-review-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .add-review-section h4 {
+            margin-bottom: 20px;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .review-form .rating-input {
+            margin-bottom: 20px;
+        }
+        
+        .review-form label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+        }
+        
+        .star-rating {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+            flex-direction: row-reverse;
+            justify-content: flex-end;
+            gap: 2px;
+        }
+        
+        .star-rating input {
+            display: none;
+        }
+        
+        .star-rating label {
+            cursor: pointer;
+            font-size: 24px;
+            color: #ddd;
+            transition: color 0.3s;
+            margin-bottom: 0;
+        }
+        
+        .star-rating label:hover,
+        .star-rating label:hover ~ label,
+        .star-rating input:checked ~ label {
+            color: #ffd700;
+        }
+        
+        .comment-input textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .comment-input textarea:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+        }
+        
+        .btn-submit-review {
+            background: #007bff;
+            color: white;
+            border: none;
             padding: 12px 24px;
             border-radius: 4px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            width: 100%;
-            max-width: 300px;
-            position: relative;
-            overflow: hidden;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.3s;
         }
-
-        .btn-notify-stock:not(.subscribed) {
-            background-color: #4CAF50;
-            color: white;
-            border: 2px solid #4CAF50;
+        
+        .btn-submit-review:hover {
+            background: #0056b3;
         }
-
-        .btn-notify-stock.subscribed {
-            background-color: #fff;
-            color: #4CAF50;
-            border: 2px solid #4CAF50;
-        }
-
-        .btn-notify-stock:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-
-        .btn-notify-stock:disabled {
-            opacity: 0.7;
+        
+        .btn-submit-review:disabled {
+            background: #6c757d;
             cursor: not-allowed;
         }
-
-        .btn-notify-stock .notify-icon {
-            font-size: 1.1em;
+        
+        .user-review-status {
+            background: #e8f5e8;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border: 1px solid #c3e6cb;
         }
-
-        .btn-notify-stock .loading-spinner {
-            animation: spin 1s linear infinite;
+        
+        .user-review-status h4 {
+            margin-bottom: 15px;
+            color: #155724;
         }
-
-        @@keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        
+        .user-review {
+            background: white;
+            border-radius: 6px;
+            padding: 15px;
         }
-
-        .btn-notify-stock:after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 0;
-            height: 0;
-            background: rgba(255,255,255,0.2);
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            transition: width 0.3s, height 0.3s;
+        
+        .no-review-permission {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border: 1px solid #ffeaa7;
         }
-
-        .btn-notify-stock:active:after {
-            width: 200px;
-            height: 200px;
+        
+        .no-review-permission p {
+            margin: 0;
+            color: #856404;
+        }
+        
+        .login-to-review {
+            background: #d1ecf1;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border: 1px solid #bee5eb;
+        }
+        
+        .login-to-review p {
+            margin: 0;
+            color: #0c5460;
+        }
+        
+        .login-to-review a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .login-to-review a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Edit Review Styles */
+        .btn-edit-review {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 10px;
+            transition: background 0.3s;
+        }
+        
+        .btn-edit-review:hover {
+            background: #218838;
+        }
+        
+        .edit-review-form {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .edit-form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .btn-cancel-edit {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+        
+        .btn-cancel-edit:hover {
+            background: #5a6268;
+        }
+        
+        /* Fix star rating interaction */
+        .star-rating input {
+            display: none !important;
+        }
+        
+        .star-rating {
+            display: flex;
+            flex-direction: row-reverse;
+            justify-content: flex-end;
+            gap: 2px;
+        }
+        
+        .star-rating label {
+            cursor: pointer !important;
+            font-size: 24px;
+            color: #ddd;
+            transition: color 0.3s;
+            margin-bottom: 0 !important;
+            user-select: none;
+        }
+        
+        .star-rating input:checked ~ label,
+        .star-rating label:hover,
+        .star-rating label:hover ~ label {
+            color: #ffd700 !important;
         }
     </style>
+    <script>
+        var productId = @Model.Product.ProductID;
+        var isInWishlist = '@Model.IsInWishlist.ToString()';
+        console.log(isInWishlist);
+        window.addEventListener('DOMContentLoaded', function() {
+            if (isInWishlist === 'True') {
+                $('.btn-wishlist').addClass('active');
+                $('.btn-wishlist i').removeClass('far').addClass('fas');
+            }
+        });
+    </script>
 }
 
 @Html.AntiForgeryToken()
@@ -125,9 +282,7 @@
                 <div class="stars">
                     @{
                         var avgRating = Model.Product.Reviews?.Any() == true ? Model.Product.Reviews.Average(r => r.Rating) : 0;
-
                         var fullStars = (int)Math.Floor(avgRating);
-
                         var hasHalfStar = avgRating - fullStars >= 0.5;
                     }
                     @for (int i = 0; i < fullStars; i++)
@@ -180,33 +335,9 @@
                     <input type="number" id="quantity" name="quantity" value="1" min="1" max="@Model.Product.Stock" readonly>
                     <button type="button" class="quantity-btn plus" data-action="increase">+</button>
                 </div>
-                @if (Model.Product.Stock > 0)
-                {
-                    <button class="btn-add-cart" data-product-id="@Model.Product.ProductID">
-                        <i class="fas fa-shopping-cart"></i> THÊM VÀO GIỎ
-                    </button>
-                }
-                else
-                {
-                    if (!User.Identity.IsAuthenticated)
-                    {
-                        <button class="btn-notify-stock" onclick="window.location.href='@Url.Action("Login", "Account", new { returnUrl = Context.Request.Path })'">
-                            <i class="fas fa-bell notify-icon"></i>
-                            <span class="notify-text">ĐĂNG NHẬP ĐỂ NHẬN THÔNG BÁO</span>
-                        </button>
-                    }
-                    else
-                    {
-                        <button class="btn-notify-stock @(Model.IsSubscribedToStock ? "subscribed" : "")" 
-                                data-product-id="@Model.Product.ProductID" 
-                                data-is-subscribed="@Model.IsSubscribedToStock">
-                            <i class="fas @(Model.IsSubscribedToStock ? "fa-bell-slash" : "fa-bell") notify-icon"></i>
-                            <span class="notify-text">
-                                @(Model.IsSubscribedToStock ? "HỦY NHẬN THÔNG BÁO" : "NHẬN THÔNG BÁO KHI CÓ HÀNG")
-                            </span>
-                        </button>
-                    }
-                }
+                <button class="btn-add-cart" data-product-id="@Model.Product.ProductID" @(Model.Product.Stock <= 0 ? "disabled" : "")>
+                    <i class="fas fa-shopping-cart"></i> THÊM VÀO GIỎ
+                </button>
                 <button class="btn-wishlist" data-product-id="@Model.Product.ProductID">
                     <i class="@(Model.IsInWishlist ? "fas" : "far") fa-heart"></i>
                 </button>
@@ -282,6 +413,112 @@
                         <span class="total-reviews">Dựa trên @(Model.Product.Reviews?.Count ?? 0) đánh giá</span>
                     </div>
                 </div>
+
+                <!-- Form đánh giá cho người dùng -->
+                @if (User.Identity.IsAuthenticated)
+                {
+                    @if (Model.CanReview)
+                    {
+                        <div class="add-review-section">
+                            <h4>Viết đánh giá của bạn</h4>
+                            <form id="reviewForm" class="review-form">
+                                <div class="rating-input">
+                                    <label>Đánh giá của bạn:</label>
+                                    <div class="star-rating">
+                                        <input type="radio" name="rating" value="5" id="star5">
+                                        <label for="star5" title="5 sao"><i class="fas fa-star"></i></label>
+                                        <input type="radio" name="rating" value="4" id="star4">
+                                        <label for="star4" title="4 sao"><i class="fas fa-star"></i></label>
+                                        <input type="radio" name="rating" value="3" id="star3">
+                                        <label for="star3" title="3 sao"><i class="fas fa-star"></i></label>
+                                        <input type="radio" name="rating" value="2" id="star2">
+                                        <label for="star2" title="2 sao"><i class="fas fa-star"></i></label>
+                                        <input type="radio" name="rating" value="1" id="star1">
+                                        <label for="star1" title="1 sao"><i class="fas fa-star"></i></label>
+                                    </div>
+                                </div>
+                                <div class="comment-input">
+                                    <label for="reviewComment">Nhận xét của bạn:</label>
+                                    <textarea id="reviewComment" name="comment" rows="4" placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm này..."></textarea>
+                                </div>
+                                <button type="submit" class="btn-submit-review">Gửi đánh giá</button>
+                            </form>
+                        </div>
+                    }
+                    else if (Model.HasUserReviewed)
+                    {
+                        <div class="user-review-status">
+                            <h4>Đánh giá của bạn <button type="button" class="btn-edit-review" onclick="toggleEditReview()">Chỉnh sửa</button></h4>
+                            
+                            <!-- Hiển thị đánh giá hiện tại -->
+                            <div class="review-item user-review" id="currentReview">
+                                <div class="reviewer-info">
+                                    <div class="reviewer-avatar">
+                                        <img src="/placeholder.svg?height=50&width=50" alt="Your Avatar">
+                                    </div>
+                                    <div class="reviewer-name-date">
+                                        <div class="reviewer-name">Bạn</div>
+                                        <div class="review-date">@Model.UserReview.CreatedAt.ToString("dd/MM/yyyy")</div>
+                                    </div>
+                                </div>
+                                <div class="review-rating">
+                                    @for (int i = 0; i < Model.UserReview.Rating; i++)
+                                    {
+                                        <i class="fas fa-star"></i>
+                                    }
+                                    @for (int i = 0; i < 5 - Model.UserReview.Rating; i++)
+                                    {
+                                        <i class="far fa-star"></i>
+                                    }
+                                </div>
+                                <div class="review-content">
+                                    <p>@Model.UserReview.Comment</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Form chỉnh sửa đánh giá (ẩn ban đầu) -->
+                            <div class="edit-review-form" id="editReviewForm" style="display: none;">
+                                <form id="editForm" class="review-form">
+                                    <div class="rating-input">
+                                        <label>Đánh giá của bạn:</label>
+                                        <div class="star-rating" id="editStarRating">
+                                            <input type="radio" name="editRating" value="5" id="editStar5" @(Model.UserReview.Rating == 5 ? "checked" : "")>
+                                            <label for="editStar5" title="5 sao"><i class="fas fa-star"></i></label>
+                                            <input type="radio" name="editRating" value="4" id="editStar4" @(Model.UserReview.Rating == 4 ? "checked" : "")>
+                                            <label for="editStar4" title="4 sao"><i class="fas fa-star"></i></label>
+                                            <input type="radio" name="editRating" value="3" id="editStar3" @(Model.UserReview.Rating == 3 ? "checked" : "")>
+                                            <label for="editStar3" title="3 sao"><i class="fas fa-star"></i></label>
+                                            <input type="radio" name="editRating" value="2" id="editStar2" @(Model.UserReview.Rating == 2 ? "checked" : "")>
+                                            <label for="editStar2" title="2 sao"><i class="fas fa-star"></i></label>
+                                            <input type="radio" name="editRating" value="1" id="editStar1" @(Model.UserReview.Rating == 1 ? "checked" : "")>
+                                            <label for="editStar1" title="1 sao"><i class="fas fa-star"></i></label>
+                                        </div>
+                                    </div>
+                                    <div class="comment-input">
+                                        <label for="editReviewComment">Nhận xét của bạn:</label>
+                                        <textarea id="editReviewComment" name="comment" rows="4" placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm này...">@Model.UserReview.Comment</textarea>
+                                    </div>
+                                    <div class="edit-form-actions">
+                                        <button type="submit" class="btn-submit-review">Cập nhật đánh giá</button>
+                                        <button type="button" class="btn-cancel-edit" onclick="toggleEditReview()">Hủy</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="no-review-permission">
+                            <p><i class="fas fa-info-circle"></i> Bạn cần mua sản phẩm này để có thể đánh giá.</p>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="login-to-review">
+                        <p><i class="fas fa-sign-in-alt"></i> <a href="@Url.Action("Login", "Account", new { returnUrl = Context.Request.Path + Context.Request.QueryString })">Đăng nhập</a> để viết đánh giá.</p>
+                    </div>
+                }
 
                 <div class="user-reviews">
                     @if (Model.Product.Reviews?.Any() == true)
@@ -373,164 +610,364 @@
 
 @section Scripts {
     <script src="~/js/ProductDetail/script.js"></script>
+    <script src="~/js/recently-viewed.js"></script>
     <script>
         function scrollToReviews() {
             document.querySelector('.tab-btn[data-tab="reviews"]').click();
             document.getElementById('reviews').scrollIntoView({ behavior: 'smooth' });
         }
 
-        $(function() {
-            // Kiểm tra trạng thái wishlist và subscription khi load trang
-            var isInWishlist = '@Model.IsInWishlist.ToString()' === 'True';
-            var isSubscribedToStock = '@Model.IsSubscribedToStock.ToString()' === 'True';
+        var productId = @Model.Product.ProductID;
 
-            // Cập nhật trạng thái wishlist
-            if (isInWishlist) {
-                $('.btn-wishlist').addClass('active');
-                $('.btn-wishlist i').removeClass('far').addClass('fas');
+        // Wait for DOM to be ready
+        document.addEventListener('DOMContentLoaded', function() {
+            // Track recently viewed product khi trang load
+            addToRecentlyViewed(
+                @Model.Product.ProductID,
+                '@Html.Raw(Model.Product.Name.Replace("'", "\\'"))',
+                '@(Model.Product.ProductImages.FirstOrDefault()?.ImageURL ?? "/placeholder.svg")',
+                @(Model.Product.SalePrice ?? Model.Product.Price),
+                @Model.Product.Price,
+                '@Url.Action("ProductDetail", "Product", new { id = Model.Product.ProductID })',
+                @(Model.Product.Reviews.Any() ? Model.Product.Reviews.Average(r => r.Rating) : 0),
+                @Model.Product.Reviews.Count()
+            );
+
+            // Toggle wishlist - vanilla JS
+            const wishlistBtn = document.querySelector('.btn-wishlist');
+            if (wishlistBtn) {
+                wishlistBtn.addEventListener('click', function() {
+                    const button = this;
+                    const icon = button.querySelector('i');
+                    console.log("productId", productId);
+
+                    // Create AJAX request
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('POST', '/Account/ToggleWishlist', true);
+                    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                    
+                    // Get anti-forgery token
+                    const tokenElement = document.querySelector('input[name="__RequestVerificationToken"]');
+                    const token = tokenElement ? tokenElement.value : '';
+                    xhr.setRequestHeader('RequestVerificationToken', token);
+
+                    xhr.onreadystatechange = function() {
+                        if (xhr.readyState === 4) {
+                            if (xhr.status === 200) {
+                                try {
+                                    const response = JSON.parse(xhr.responseText);
+                                    if (response.success) {
+                                        if (icon.classList.contains('far')) {
+                                            icon.classList.remove('far');
+                                            icon.classList.add('fas');
+                                            button.classList.add('active');
+                                            if (window.utils) utils.showToast('Đã thêm vào danh sách yêu thích', 'success');
+                                        } else {
+                                            icon.classList.remove('fas');
+                                            icon.classList.add('far');
+                                            button.classList.remove('active');
+                                            if (window.utils) utils.showToast('Đã xóa khỏi danh sách yêu thích', 'success');
+                                        }
+                                    } else {
+                                        if (window.utils) utils.showToast(response.message || 'Có lỗi xảy ra', 'error');
+                                    }
+                                } catch (e) {
+                                    console.error('Error parsing response:', e);
+                                    if (window.utils) utils.showToast('Có lỗi xảy ra', 'error');
+                                }
+                            } else {
+                                if (window.utils) utils.showToast('Có lỗi xảy ra', 'error');
+                            }
+                        }
+                    };
+
+                    // Send request
+                    xhr.send('productId=' + encodeURIComponent(productId));
+                });
+            }
+            
+            // Add to cart functionality - vanilla JS
+            const addToCartBtn = document.querySelector('.btn-add-cart');
+            if (addToCartBtn) {
+                addToCartBtn.addEventListener('click', function() {
+                    const button = this;
+                    if (button.disabled) return;
+                    
+                    const productId = button.getAttribute('data-product-id');
+                    const quantityInput = document.getElementById('quantity');
+                    const quantity = quantityInput ? parseInt(quantityInput.value) : 1;
+                    
+                    // Loading state
+                    const originalText = button.innerHTML;
+                    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang thêm...';
+                    button.disabled = true;
+                    
+                    // Create AJAX request
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('POST', '/Cart/AddToCart', true);
+                    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+                    xhr.onreadystatechange = function() {
+                        if (xhr.readyState === 4) {
+                            if (xhr.status === 200) {
+                                try {
+                                    const response = JSON.parse(xhr.responseText);
+                                    if (response.success) {
+                                        // Update cart count badge
+                                        if (response.cartCount !== undefined && window.updateCartCount) {
+                                            window.updateCartCount(response.cartCount);
+                                        }
+                                        
+                                        // Success state
+                                        button.innerHTML = '<i class="fas fa-check"></i> Đã thêm';
+                                        button.classList.add('success');
+                                        
+                                        setTimeout(function() {
+                                            button.innerHTML = originalText;
+                                            button.classList.remove('success');
+                                            button.disabled = false;
+                                        }, 2000);
+                                        
+                                        if (window.utils) utils.showToast('Đã thêm vào giỏ hàng', 'success');
+                                    } else {
+                                        button.innerHTML = originalText;
+                                        button.disabled = false;
+                                        if (window.utils) utils.showToast(response.message || 'Có lỗi xảy ra', 'error');
+                                    }
+                                } catch (e) {
+                                    console.error('Error parsing response:', e);
+                                    button.innerHTML = originalText;
+                                    button.disabled = false;
+                                    if (window.utils) utils.showToast('Có lỗi xảy ra', 'error');
+                                }
+                            } else {
+                                button.innerHTML = originalText;
+                                button.disabled = false;
+                                if (window.utils) utils.showToast('Có lỗi xảy ra', 'error');
+                            }
+                        }
+                    };
+
+                    // Send request
+                    xhr.send('productId=' + encodeURIComponent(productId) + '&quantity=' + encodeURIComponent(quantity));
+                });
+            }
+            
+            // Review form handling
+            const reviewForm = document.getElementById('reviewForm');
+            if (reviewForm) {
+                reviewForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    const formData = new FormData(reviewForm);
+                    const rating = formData.get('rating');
+                    const comment = formData.get('comment');
+                    
+                    if (!rating) {
+                        if (window.utils) utils.showToast('Vui lòng chọn số sao đánh giá', 'error');
+                        return;
+                    }
+                    
+                    const submitBtn = reviewForm.querySelector('.btn-submit-review');
+                    const originalText = submitBtn.innerHTML;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang gửi...';
+                    submitBtn.disabled = true;
+                    
+                    // Create AJAX request
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('POST', '/Product/AddReview', true);
+                    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                    
+                    // Get anti-forgery token
+                    const tokenElement = document.querySelector('input[name="__RequestVerificationToken"]');
+                    const token = tokenElement ? tokenElement.value : '';
+                    xhr.setRequestHeader('RequestVerificationToken', token);
+                    
+                    xhr.onreadystatechange = function() {
+                        if (xhr.readyState === 4) {
+                            if (xhr.status === 200) {
+                                try {
+                                    const response = JSON.parse(xhr.responseText);
+                                    if (response.success) {
+                                        if (window.utils) utils.showToast(response.message, 'success');
+                                        
+                                        // Reload page để hiển thị đánh giá mới
+                                        setTimeout(() => {
+                                            window.location.reload();
+                                        }, 1500);
+                                    } else {
+                                        if (window.utils) utils.showToast(response.message || 'Có lỗi xảy ra', 'error');
+                                        submitBtn.innerHTML = originalText;
+                                        submitBtn.disabled = false;
+                                    }
+                                } catch (e) {
+                                    console.error('Error parsing response:', e);
+                                    if (window.utils) utils.showToast('Có lỗi xảy ra', 'error');
+                                    submitBtn.innerHTML = originalText;
+                                    submitBtn.disabled = false;
+                                }
+                            } else {
+                                if (window.utils) utils.showToast('Có lỗi xảy ra', 'error');
+                                submitBtn.innerHTML = originalText;
+                                submitBtn.disabled = false;
+                            }
+                        }
+                    };
+                    
+                    // Send request
+                    xhr.send('productId=' + encodeURIComponent(productId) + 
+                            '&rating=' + encodeURIComponent(rating) + 
+                            '&comment=' + encodeURIComponent(comment || '') +
+                            '&__RequestVerificationToken=' + encodeURIComponent(token));
+                });
             }
 
-            // Cập nhật trạng thái subscription
-            if (isSubscribedToStock) {
-                const button = $('.btn-notify-stock');
-                button.addClass('subscribed');
-                button.find('.notify-icon').removeClass('fa-bell').addClass('fa-bell-slash');
-                button.find('.notify-text').text('HỦY NHẬN THÔNG BÁO');
+            // Edit review form handling
+            const editForm = document.getElementById('editForm');
+            if (editForm) {
+                editForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    const formData = new FormData(editForm);
+                    const rating = formData.get('editRating');
+                    const comment = formData.get('comment');
+                    
+                    if (!rating) {
+                        if (window.utils) utils.showToast('Vui lòng chọn số sao đánh giá', 'error');
+                        return;
+                    }
+                    
+                    const submitBtn = editForm.querySelector('.btn-submit-review');
+                    const originalText = submitBtn.innerHTML;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang cập nhật...';
+                    submitBtn.disabled = true;
+                    
+                    // Create AJAX request
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('POST', '/Product/EditReview', true);
+                    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                    
+                    // Get anti-forgery token
+                    const tokenElement = document.querySelector('input[name="__RequestVerificationToken"]');
+                    const token = tokenElement ? tokenElement.value : '';
+                    xhr.setRequestHeader('RequestVerificationToken', token);
+                    
+                    xhr.onreadystatechange = function() {
+                        if (xhr.readyState === 4) {
+                            if (xhr.status === 200) {
+                                try {
+                                    const response = JSON.parse(xhr.responseText);
+                                    if (response.success) {
+                                        if (window.utils) utils.showToast(response.message, 'success');
+                                        
+                                        // Reload page để hiển thị đánh giá đã cập nhật
+                                        setTimeout(() => {
+                                            window.location.reload();
+                                        }, 1500);
+                                    } else {
+                                        if (window.utils) utils.showToast(response.message || 'Có lỗi xảy ra', 'error');
+                                        submitBtn.innerHTML = originalText;
+                                        submitBtn.disabled = false;
+                                    }
+                                } catch (e) {
+                                    console.error('Error parsing response:', e);
+                                    if (window.utils) utils.showToast('Có lỗi xảy ra', 'error');
+                                    submitBtn.innerHTML = originalText;
+                                    submitBtn.disabled = false;
+                                }
+                            } else {
+                                if (window.utils) utils.showToast('Có lỗi xảy ra', 'error');
+                                submitBtn.innerHTML = originalText;
+                                submitBtn.disabled = false;
+                            }
+                        }
+                    };
+                    
+                    // Send request
+                    xhr.send('productId=' + encodeURIComponent(productId) + 
+                            '&rating=' + encodeURIComponent(rating) + 
+                            '&comment=' + encodeURIComponent(comment || '') +
+                            '&__RequestVerificationToken=' + encodeURIComponent(token));
+                });
             }
 
-            // Toggle wishlist
-            $('.btn-wishlist').on('click', function() {
-                var button = $(this);
-                var icon = button.find('i');
-                var productId = button.data('product-id');
-                console.log("productId", productId);                
-                $.ajax({
-                    url: '/Account/ToggleWishlist',
-                    type: 'POST',
-                    data: { productId: productId },
-                    headers: {
-                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            if (icon.hasClass('far')) {
-                                icon.removeClass('far').addClass('fas');
-                                button.addClass('active');
-                                utils.showToast('Đã thêm vào danh sách yêu thích', 'success');
-                            } else {
-                                icon.removeClass('fas').addClass('far');
-                                button.removeClass('active');
-                                utils.showToast('Đã xóa khỏi danh sách yêu thích', 'success');
-                            }
-                        } else {
-                            utils.showToast(response.message || 'Có lỗi xảy ra', 'error');
-                        }
-                    },
-                    error: function() {
-                        utils.showToast('Có lỗi xảy ra', 'error');
-                    }
-                });
-            });
-
-            // Add to cart functionality
-            $('.btn-add-cart').on('click', function() {
-                var button = $(this);
-                if (button.prop('disabled')) return;
-
-                var productId = button.data('product-id');
-                var quantity = parseInt($('#quantity').val());
-
-                // Hiệu ứng loading
-                var originalText = button.html();
-                button.html('<i class="fas fa-spinner fa-spin"></i> Đang thêm...').prop('disabled', true);
-
-                $.ajax({
-                    url: '/Cart/AddToCart',
-                    type: 'POST',
-                    data: { productId: productId, quantity: quantity },
-                    success: function(response) {
-                        if (response.success) {
-                            // Update cart count badge
-                            if (response.cartCount !== undefined) {
-                                window.updateCartCount(response.cartCount);
-                            }
-
-                            // Hiệu ứng thành công
-                            button.html('<i class="fas fa-check"></i> Đã thêm').addClass('success');
-
-                            setTimeout(function() {
-                                button.html(originalText).removeClass('success').prop('disabled', false);
-                            }, 2000);
-
-                            utils.showToast('Đã thêm vào giỏ hàng', 'success');
-                        } else {
-                            button.html(originalText).prop('disabled', false);
-                            utils.showToast(response.message || 'Có lỗi xảy ra', 'error');
-                        }
-                    },
-                    error: function() {
-                        button.html(originalText).prop('disabled', false);
-                        utils.showToast('Có lỗi xảy ra', 'error');
-                    }
-                });
-            });
-
-            // Stock notification functionality
-            $('.btn-notify-stock').on('click', function() {
-                if (!@User.Identity.IsAuthenticated.ToString().ToLower()) {
-                    window.location.href = '@Url.Action("Login", "Account", new { returnUrl = Context.Request.Path })';
-                    return;
-                }
-
-                var button = $(this);
-                var isSubscribed = button.hasClass('subscribed');
-                var productId = button.data('product-id');
-
-                // Hiệu ứng loading
-                var icon = button.find('.notify-icon');
-                var text = button.find('.notify-text');
-                var originalIcon = isSubscribed ? 'fa-bell-slash' : 'fa-bell';
-                
-                button.prop('disabled', true);
-                icon.removeClass(originalIcon).addClass('fa-spinner fa-spin');
-                text.text('ĐANG XỬ LÝ...');
-
-                $.ajax({
-                    url: '/Product/ToggleStockNotification',
-                    type: 'POST',
-                    data: { productId: productId },
-                    headers: {
-                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            if (isSubscribed) {
-                                button.removeClass('subscribed');
-                                icon.removeClass('fa-spinner fa-spin').addClass('fa-bell');
-                                text.text('NHẬN THÔNG BÁO KHI CÓ HÀNG');
-                                utils.showToast('Đã hủy đăng ký nhận thông báo', 'success');
-                            } else {
-                                button.addClass('subscribed');
-                                icon.removeClass('fa-spinner fa-spin').addClass('fa-bell-slash');
-                                text.text('HỦY NHẬN THÔNG BÁO');
-                                utils.showToast('Đã đăng ký nhận thông báo khi có hàng', 'success');
-                            }
-                        } else {
-                            icon.removeClass('fa-spinner fa-spin').addClass(originalIcon);
-                            text.text(isSubscribed ? 'HỦY NHẬN THÔNG BÁO' : 'NHẬN THÔNG BÁO KHI CÓ HÀNG');
-                            utils.showToast(response.message || 'Có lỗi xảy ra', 'error');
-                        }
-                    },
-                    error: function() {
-                        icon.removeClass('fa-spinner fa-spin').addClass(originalIcon);
-                        text.text(isSubscribed ? 'HỦY NHẬN THÔNG BÁO' : 'NHẬN THÔNG BÁO KHI CÓ HÀNG');
-                        utils.showToast('Có lỗi xảy ra', 'error');
-                    },
-                    complete: function() {
-                        button.prop('disabled', false);
-                    }
-                });
-            });
+            // Fix star rating interaction for all star rating forms
+            setupStarRating();
         });
+
+        // Toggle edit review form
+        function toggleEditReview() {
+            const currentReview = document.getElementById('currentReview');
+            const editForm = document.getElementById('editReviewForm');
+            
+            if (editForm.style.display === 'none') {
+                currentReview.style.display = 'none';
+                editForm.style.display = 'block';
+            } else {
+                currentReview.style.display = 'block';
+                editForm.style.display = 'none';
+            }
+        }
+
+        // Setup star rating functionality 
+        function setupStarRating() {
+            const starRatings = document.querySelectorAll('.star-rating');
+            
+            starRatings.forEach(rating => {
+                const labels = rating.querySelectorAll('label');
+                const inputs = rating.querySelectorAll('input[type="radio"]');
+                
+                // Handle label clicks
+                labels.forEach((label, index) => {
+                    label.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const input = rating.querySelector(`input[value="${this.getAttribute('for').replace(/\D/g, '')}"]`);
+                        if (input) {
+                            // Clear all inputs first
+                            inputs.forEach(inp => inp.checked = false);
+                            // Check the clicked one
+                            input.checked = true;
+                            
+                            // Update visual state
+                            updateStarDisplay(rating);
+                        }
+                    });
+                    
+                    // Handle hover effects
+                    label.addEventListener('mouseenter', function() {
+                        const value = parseInt(this.getAttribute('for').replace(/\D/g, ''));
+                        highlightStars(rating, value);
+                    });
+                });
+                
+                // Reset on mouse leave
+                rating.addEventListener('mouseleave', function() {
+                    updateStarDisplay(rating);
+                });
+                
+                // Initial display
+                updateStarDisplay(rating);
+            });
+        }
+
+        function updateStarDisplay(ratingContainer) {
+            const checkedInput = ratingContainer.querySelector('input[type="radio"]:checked');
+            const value = checkedInput ? parseInt(checkedInput.value) : 0;
+            highlightStars(ratingContainer, value);
+        }
+
+        function highlightStars(ratingContainer, value) {
+            const labels = ratingContainer.querySelectorAll('label');
+            labels.forEach((label, index) => {
+                const starValue = parseInt(label.getAttribute('for').replace(/\D/g, ''));
+                const icon = label.querySelector('i');
+                
+                if (starValue <= value) {
+                    icon.style.color = '#ffd700';
+                } else {
+                    icon.style.color = '#ddd';
+                }
+            });
+        }
     </script>
 }

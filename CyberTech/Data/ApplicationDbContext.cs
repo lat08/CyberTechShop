@@ -66,6 +66,31 @@ namespace CyberTech.Data
             modelBuilder.Entity<VoucherToken>().ToTable("VoucherTokens");
             modelBuilder.Entity<ProductStockNotification>().ToTable("ProductStockNotifications");
 
+            // Performance Indexes
+            modelBuilder.Entity<Product>()
+                .HasIndex(p => p.Name)
+                .HasDatabaseName("IX_Products_Name");
+
+            modelBuilder.Entity<Product>()
+                .HasIndex(p => p.Price)
+                .HasDatabaseName("IX_Products_Price");
+
+            modelBuilder.Entity<Product>()
+                .HasIndex(p => p.Stock)
+                .HasDatabaseName("IX_Products_Stock");
+
+            modelBuilder.Entity<Product>()
+                .HasIndex(p => p.SubSubcategoryID)
+                .HasDatabaseName("IX_Products_SubSubcategoryID");
+
+            modelBuilder.Entity<Product>()
+                .HasIndex(p => new { p.SubSubcategoryID, p.Stock, p.Name })
+                .HasDatabaseName("IX_Products_Composite_Search");
+
+            modelBuilder.Entity<ProductImage>()
+                .HasIndex(pi => new { pi.ProductID, pi.IsPrimary })
+                .HasDatabaseName("IX_ProductImages_ProductID_IsPrimary");
+
             // Cấu hình mối quan hệ giữa User và WishlistItem
             modelBuilder.Entity<User>()
                 .HasMany(u => u.WishlistItems)

@@ -62,7 +62,7 @@ namespace CyberTech.Controllers
                 Brand = p.Brand,
                 AverageRating = p.Reviews?.Any() == true ? p.Reviews.Average(r => r.Rating) : 0,
                 ReviewCount = p.Reviews?.Count ?? 0,
-                Url = Url.Action("Details", "Product", new { id = p.ProductID }),
+                Url = Url.Action("ProductDetail", "Product", new { id = p.ProductID }),
                 Status = p.Status ?? "Active"
             }).ToList();
 
@@ -184,7 +184,7 @@ namespace CyberTech.Controllers
                     Brand = p.Brand,
                     AverageRating = p.Reviews?.Any() == true ? p.Reviews.Average(r => r.Rating) : 0,
                     ReviewCount = p.Reviews?.Count ?? 0,
-                    Url = Url.Action("Details", "Product", new { id = p.ProductID }),
+                    Url = Url.Action("ProductDetail", "Product", new { id = p.ProductID }),
                     Status = p.Status ?? "Active"
                 }).ToList(),
                 LaptopOfficeBestSellers = laptopOfficeBestSellers.Select(p => new ProductViewModel
@@ -203,7 +203,7 @@ namespace CyberTech.Controllers
                     Brand = p.Brand,
                     AverageRating = p.Reviews?.Any() == true ? p.Reviews.Average(r => r.Rating) : 0,
                     ReviewCount = p.Reviews?.Count ?? 0,
-                    Url = Url.Action("Details", "Product", new { id = p.ProductID }),
+                    Url = Url.Action("ProductDetail", "Product", new { id = p.ProductID }),
                     Status = p.Status ?? "Active"
                 }).ToList(),
                 PcGamingBestSellers = pcGamingBestSellers.Select(p => new ProductViewModel
@@ -222,7 +222,7 @@ namespace CyberTech.Controllers
                     Brand = p.Brand,
                     AverageRating = p.Reviews?.Any() == true ? p.Reviews.Average(r => r.Rating) : 0,
                     ReviewCount = p.Reviews?.Count ?? 0,
-                    Url = Url.Action("Details", "Product", new { id = p.ProductID }),
+                    Url = Url.Action("ProductDetail", "Product", new { id = p.ProductID }),
                     Status = p.Status ?? "Active"
                 }).ToList(),
                 MouseBestSellers = mouseBestSellers.Select(p => new ProductViewModel
@@ -241,7 +241,7 @@ namespace CyberTech.Controllers
                     Brand = p.Brand,
                     AverageRating = p.Reviews?.Any() == true ? p.Reviews.Average(r => r.Rating) : 0,
                     ReviewCount = p.Reviews?.Count ?? 0,
-                    Url = Url.Action("Details", "Product", new { id = p.ProductID }),
+                    Url = Url.Action("ProductDetail", "Product", new { id = p.ProductID }),
                     Status = p.Status ?? "Active"
                 }).ToList(),
                 MonitorBestSellers = monitorBestSellers.Select(p => new ProductViewModel
@@ -260,7 +260,7 @@ namespace CyberTech.Controllers
                     Brand = p.Brand,
                     AverageRating = p.Reviews?.Any() == true ? p.Reviews.Average(r => r.Rating) : 0,
                     ReviewCount = p.Reviews?.Count ?? 0,
-                    Url = Url.Action("Details", "Product", new { id = p.ProductID }),
+                    Url = Url.Action("ProductDetail", "Product", new { id = p.ProductID }),
                     Status = p.Status ?? "Active"
                 }).ToList(),
                 KeyboardBestSellers = keyboardBestSellers.Select(p => new ProductViewModel
@@ -279,7 +279,7 @@ namespace CyberTech.Controllers
                     Brand = p.Brand,
                     AverageRating = p.Reviews?.Any() == true ? p.Reviews.Average(r => r.Rating) : 0,
                     ReviewCount = p.Reviews?.Count ?? 0,
-                    Url = Url.Action("Details", "Product", new { id = p.ProductID }),
+                    Url = Url.Action("ProductDetail", "Product", new { id = p.ProductID }),
                     Status = p.Status ?? "Active"
                 }).ToList()
             };
