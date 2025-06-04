@@ -35,6 +35,7 @@ namespace CyberTech.Data
         public DbSet<Review> Reviews { get; set; }
         public DbSet<UserVoucher> UserVouchers { get; set; }
         public DbSet<VoucherToken> VoucherTokens { get; set; }
+        public DbSet<ProductStockNotification> ProductStockNotifications { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -63,6 +64,7 @@ namespace CyberTech.Data
             modelBuilder.Entity<WishlistItem>().ToTable("WishlistItems");
             modelBuilder.Entity<UserVoucher>().ToTable("UserVouchers");
             modelBuilder.Entity<VoucherToken>().ToTable("VoucherTokens");
+            modelBuilder.Entity<ProductStockNotification>().ToTable("ProductStockNotifications");
 
             // Cấu hình mối quan hệ giữa User và WishlistItem
             modelBuilder.Entity<User>()
@@ -79,6 +81,11 @@ namespace CyberTech.Data
             // Cấu hình unique constraint cho WishlistItem
             modelBuilder.Entity<WishlistItem>()
                 .HasIndex(wi => new { wi.UserID, wi.ProductID })
+                .IsUnique();
+
+            // Cấu hình unique constraint cho ProductStockNotification
+            modelBuilder.Entity<ProductStockNotification>()
+                .HasIndex(psn => new { psn.UserID, psn.ProductID })
                 .IsUnique();
 
             modelBuilder.Entity<VoucherProducts>()

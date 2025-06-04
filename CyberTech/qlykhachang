@@ -1,0 +1,292 @@
+@{
+    Layout = "~/Views/Shared/Admin/_Layout.cshtml";
+    var title = ViewBag.Title ?? "Happy Kitchen";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/admin/css/customer-management.css">
+}
+<!-- Page Header -->
+<div class="page-header">
+    <h1>Cài đặt khách hàng</h1>
+    <p>Quản lý thông tin khách hàng</p>
+</div>
+
+<!-- Customer Management Tabs -->
+<div class="management-container">
+    <!-- Content -->
+    <div class="tab-pane fade show active" id="users" role="tabpanel" aria-labelledby="users-tab">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCustomerModal">
+                <i class="fas fa-plus me-2"></i> Thêm khách hàng
+            </button>
+        </div>
+
+        <div class="filter-container">
+            <div class="search-filter-col">
+                <div class="filter-label">Tìm kiếm</div>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0">
+                        <i class="fas fa-search text-muted"></i>
+                    </span>
+                    <input type="text" class="form-control border-start-0" id="customerSearchInput"
+                        placeholder="Tìm kiếm khách hàng...">
+                </div>
+            </div>
+            <div class="status-filter-col">
+                <div class="filter-label">Trạng thái</div>
+                    <select class="form-select" id="statusFilter">
+                        <option value="all">Tất cả</option>
+                        <option value="0">Hoạt động</option>
+                        <option value="1">Không hoạt động</option>
+                    </select>
+            </div>
+            <div class="status-filter-col">
+                <div class="filter-label">Sắp xếp theo</div>
+                    <select class="form-select" id="sortFilter">
+                        <option value="name_asc">Tên A-Z</option>
+                        <option value="name_desc">Tên Z-A</option>
+                        @* <option value="date_asc">Ngày tạo (Cũ nhất)</option>
+                        <option value="date_desc">Ngày tạo (Mới nhất)</option> *@
+                    </select>
+            </div>
+        </div>
+
+        <div class="customer-cards-container">
+            <div class="row" id="customerCardsRow">
+            </div>
+        </div>
+        
+
+        <nav aria-label="User pagination" class="mt-4">
+            <ul class="pagination justify-content-center" id="userPagination">
+                <li class="page-item disabled" id="paginationPrev">
+                    <a class="page-link" href="#" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                <div id="paginationItems" class="d-flex">
+                </div>
+                <li class="page-item" id="paginationNext">
+                    <a class="page-link" href="#" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</div>
+
+<!-- Add Customer Modal -->
+<div class="modal fade" id="addCustomerModal" tabindex="-1" aria-labelledby="addCustomerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addCustomerModalLabel">Thêm khách hàng mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addCustomerForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="customerFullName" class="form-label">Họ và tên <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="customerFullName" required>
+                                <div class="invalid-feedback">Vui lòng nhập họ tên (tối đa 100 ký tự)</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="customerPhone" class="form-label">Số điện thoại <span class="text-danger">*</span></label>
+                                <input type="tel" class="form-control" id="customerPhone" required pattern="[0-9]{10,15}">
+                                <div class="invalid-feedback">Vui lòng nhập số điện thoại hợp lệ (10-15 chữ số)</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="customerEmail" class="form-label">Email</label> <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="customerEmail">
+                                <div class="invalid-feedback">Email không đúng định dạng</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="customerPassword" class="form-label">Mật khẩu <span class="text-danger">*</span></label>
+                                <div class="position-relative">
+                                    <input type="password" class="form-control" id="customerPassword" required minlength="6">
+                                    <span class="position-absolute top-50 end-0 translate-middle-y pe-3 password-toggle" style="cursor: pointer;">
+                                        <i class="fas fa-eye-slash text-muted"></i>
+                                    </span>
+                                    <div class="invalid-feedback">Mật khẩu phải có ít nhất 6 ký tự</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Trạng thái</label>
+                                <select class="form-select" id="customerStatus">
+                                    <option value="0">Hoạt động</option>
+                                    <option value="1">Tạm khóa</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="customerAddress" class="form-label">Địa chỉ</label>
+                                <textarea class="form-control" id="customerAddress" rows="2"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" id="saveCustomerBtn">Lưu</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Customer Modal -->
+<div class="modal fade" id="editCustomerModal" tabindex="-1" aria-labelledby="editCustomerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editCustomerModalLabel">Chỉnh sửa thông tin khách hàng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editCustomerForm">
+                    <input type="hidden" id="editCustomerId">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editCustomerName" class="form-label">Họ và tên <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="editCustomerName" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editCustomerPhone" class="form-label">Số điện thoại <span class="text-danger">*</span></label>
+                                <input type="tel" class="form-control" id="editCustomerPhone" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editCustomerEmail" class="form-label">Email</label> <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="editCustomerEmail">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editCustomerPassword" class="form-label">Mật khẩu mới (để trống nếu không thay đổi)</label>
+                                <div class="position-relative">
+                                    <input type="password" class="form-control" id="editCustomerPassword" minlength="6">
+                                    <span class="position-absolute top-50 end-0 translate-middle-y pe-3 password-toggle" style="cursor: pointer;">
+                                        <i class="fas fa-eye-slash text-muted"></i>
+                                    </span>
+                                    <div class="invalid-feedback">Mật khẩu phải có ít nhất 6 ký tự</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editCustomerStatus" class="form-label">Trạng thái</label>
+                                <select class="form-select" id="editCustomerStatus">
+                                    <option value="0">Hoạt động</option>
+                                    <option value="1">Tạm khóa</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editCustomerAddress" class="form-label">Địa chỉ</label>
+                                <textarea class="form-control" id="editCustomerAddress" rows="2"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" id="updateCustomerBtn">Cập nhật</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Customer Confirmation Modal -->
+<div class="modal fade" id="deleteCustomerModal" tabindex="-1" aria-labelledby="deleteCustomerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteCustomerModalLabel">Xác nhận xóa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc chắn muốn xóa người dùng <span id="deleteFullName" class="fw-bold"></span>?</p>
+                <p class="text-danger">Hành động này không thể hoàn tác.</p>
+                <input type="hidden" id="deleteCustomerId">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteCustomerBtn">Xóa</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Order History Modal -->
+<div class="modal fade order-history-modal" id="orderHistoryModal" tabindex="-1" aria-labelledby="orderHistoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="orderHistoryModalLabel">Lịch sử đơn hàng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="order-history-header">
+                    <div class="customer-info">
+                        <h4 id="orderHistoryCustomerName">Khách hàng: </h4>
+                        <p id="orderHistoryCustomerPhone" class="text-muted mb-0">Số điện thoại: </p>
+                    </div>
+                    <div class="order-history-pagination">
+                        <nav aria-label="Order pagination">
+                            <ul class="pagination pagination-sm" id="orderHistoryPagination">
+                                <li class="page-item disabled" id="orderPaginationPrev">
+                                    <a class="page-link" href="#" aria-label="Previous">
+                                        <span aria-hidden="true">&laquo;</span>
+                                    </a>
+                                </li>
+                                <div id="orderPaginationItems" class="d-flex">
+                                </div>
+                                <li class="page-item" id="orderPaginationNext">
+                                    <a class="page-link" href="#" aria-label="Next">
+                                        <span aria-hidden="true">&raquo;</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+                <div class="order-history-container" id="customerOrdersContainer">
+                    <div id="customerOrdersTableBody"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts{
+    <script src="~/admin/js/customer-management.js"></script>
+}

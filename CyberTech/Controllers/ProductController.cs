@@ -3,16 +3,24 @@ using Microsoft.EntityFrameworkCore;
 using CyberTech.Data;
 using CyberTech.Models;
 using CyberTech.ViewModels;
+using CyberTech.Services;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
+using Microsoft.Extensions.Logging;
 
 namespace CyberTech.Controllers
 {
     public class ProductController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IEmailService _emailService;
+        private readonly ILogger<ProductController> _logger;
 
-        public ProductController(ApplicationDbContext context)
+        public ProductController(ApplicationDbContext context, IEmailService emailService, ILogger<ProductController> logger)
         {
             _context = context;
+            _emailService = emailService;
+            _logger = logger;
         }
 
         // Hiển thị sản phẩm theo category
@@ -413,6 +421,7 @@ namespace CyberTech.Controllers
                 .ToListAsync();
 
             bool isInWishlist = false;
+            bool isSubscribedToStock = false;
             if (User.Identity.IsAuthenticated)
             {
                 var emailClaim = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Email);
@@ -423,6 +432,9 @@ namespace CyberTech.Controllers
                     {
                         isInWishlist = await _context.WishlistItems
                             .AnyAsync(wi => wi.UserID == user.UserID && wi.ProductID == id);
+
+                        isSubscribedToStock = await _context.ProductStockNotifications
+                            .AnyAsync(n => n.UserID == user.UserID && n.ProductID == id && n.IsActive);
                     }
                 }
             }
@@ -431,7 +443,8 @@ namespace CyberTech.Controllers
             {
                 Product = product,
                 RelatedProducts = relatedProducts,
-                IsInWishlist = isInWishlist
+                IsInWishlist = isInWishlist,
+                IsSubscribedToStock = isSubscribedToStock
             };
 
             return View(viewModel);
@@ -759,6 +772,110 @@ namespace CyberTech.Controllers
             }
 
             return categoryAttributes;
+        }
+
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleStockNotification(int productId)
+        {
+            try
+            {
+                var emailClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email);
+                if (emailClaim == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy thông tin người dùng" });
+                }
+
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == emailClaim.Value);
+                if (user == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy thông tin người dùng" });
+                }
+
+                var product = await _context.Products.FindAsync(productId);
+                if (product == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy sản phẩm" });
+                }
+
+                if (product.Stock > 0)
+                {
+                    return Json(new { success = false, message = "Sản phẩm hiện đang có hàng" });
+                }
+
+                var existingNotification = await _context.ProductStockNotifications
+                    .FirstOrDefaultAsync(n => n.ProductID == productId && n.UserID == user.UserID);
+
+                if (existingNotification != null)
+                {
+                    _context.ProductStockNotifications.Remove(existingNotification);
+                    await _context.SaveChangesAsync();
+                    return Json(new { success = true, message = "Đã hủy đăng ký nhận thông báo" });
+                }
+
+                var notification = new ProductStockNotification
+                {
+                    ProductID = productId,
+                    UserID = user.UserID,
+                    CreatedAt = DateTime.Now,
+                    IsActive = true
+                };
+
+                _context.ProductStockNotifications.Add(notification);
+                await _context.SaveChangesAsync();
+
+                return Json(new { success = true, message = "Đã đăng ký nhận thông báo khi có hàng" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Có lỗi xảy ra khi xử lý yêu cầu" });
+            }
+        }
+
+        public async Task<ProductDetailViewModel> BuildProductDetailViewModel(Product product)
+        {
+            var isInWishlist = false;
+            var isSubscribedToStock = false;
+
+            if (User.Identity.IsAuthenticated)
+            {
+                var emailClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email);
+                if (emailClaim != null)
+                {
+                    var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == emailClaim.Value);
+                    if (user != null)
+                    {
+                        isInWishlist = await _context.WishlistItems
+                            .AnyAsync(wi => wi.UserID == user.UserID && wi.ProductID == product.ProductID);
+                        _logger.LogInformation("isInWishlist: " + isInWishlist);
+                        isSubscribedToStock = await _context.ProductStockNotifications
+                            .AnyAsync(n => n.UserID == user.UserID && n.ProductID == product.ProductID && n.IsActive);
+                        _logger.LogInformation("isSubscribedToStock: " + isSubscribedToStock);
+                    }
+                }
+            }
+
+            var relatedProducts = await _context.Products
+                .Include(p => p.ProductImages)
+                .Include(p => p.ProductAttributeValues)
+                    .ThenInclude(pav => pav.AttributeValue)
+                        .ThenInclude(av => av.ProductAttribute)
+                .Include(p => p.Reviews)
+                .Include(p => p.SubSubcategory)
+                    .ThenInclude(ss => ss.Subcategory)
+                        .ThenInclude(s => s.Category)
+                .Where(p => p.SubSubcategoryID == product.SubSubcategoryID && p.ProductID != product.ProductID && p.Status == "Active")
+                .Take(8)
+                .ToListAsync();
+
+            return new ProductDetailViewModel
+            {
+                Product = product,
+                RelatedProducts = relatedProducts,
+                IsInWishlist = isInWishlist,
+                IsSubscribedToStock = isSubscribedToStock
+            };
         }
     }
 }

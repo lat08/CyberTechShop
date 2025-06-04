@@ -314,6 +314,19 @@ CREATE TABLE VoucherTokens (
     VoucherCode NVARCHAR(50) NULL,
     CONSTRAINT FK_VoucherTokens_Users FOREIGN KEY (UserID) REFERENCES Users(UserID)
 );
+
+CREATE TABLE ProductStockNotifications (
+    NotificationID INT PRIMARY KEY IDENTITY(1,1),
+    ProductID INT NOT NULL,
+    UserID INT NOT NULL,
+    IsNotified BIT NOT NULL DEFAULT 0,
+    NotificationSentAt DATETIME NULL,
+    CreatedAt DATETIME NOT NULL DEFAULT GETDATE(),
+    IsActive BIT NOT NULL DEFAULT 1,
+    CONSTRAINT FK_ProductStockNotifications_Products FOREIGN KEY (ProductID) REFERENCES Products(ProductID),
+    CONSTRAINT FK_ProductStockNotifications_Users FOREIGN KEY (UserID) REFERENCES Users(UserID),
+    CONSTRAINT UQ_ProductStockNotifications_User_Product UNIQUE (UserID, ProductID)
+);
 --------------------------------- THÊM DỮ LIỆU -------------------------------------
 -- Thêm Dữ Liệu Vào Danh Mục Chính
 INSERT INTO Category (Name, Description)

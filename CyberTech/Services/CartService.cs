@@ -87,10 +87,10 @@ namespace CyberTech.Services
                     return false;
                 }
 
-                if (product.Stock < quantity)
+                // Kiểm tra stock
+                if (product.Stock <= 0)
                 {
-                    _logger.LogWarning("Not enough stock for product {ProductId}. Available: {Stock}, Requested: {Quantity}",
-                        productId, product.Stock, quantity);
+                    _logger.LogWarning("Product {ProductId} is out of stock", productId);
                     return false;
                 }
 
@@ -98,6 +98,12 @@ namespace CyberTech.Services
 
                 if (cartItem == null)
                 {
+                    // Nếu là item mới, kiểm tra số lượng yêu cầu với stock
+                    if (quantity > product.Stock)
+                    {
+                        quantity = product.Stock; // Giới hạn số lượng bằng stock hiện có
+                    }
+
                     cartItem = new CartItem
                     {
                         CartID = cart.CartID,
@@ -110,15 +116,15 @@ namespace CyberTech.Services
                 }
                 else
                 {
-                    if (product.Stock < cartItem.Quantity + quantity)
+                    // Nếu item đã tồn tại, kiểm tra tổng số lượng sau khi thêm
+                    int newQuantity = cartItem.Quantity + quantity;
+                    if (newQuantity > product.Stock)
                     {
-                        _logger.LogWarning("Not enough stock for product {ProductId}. Available: {Stock}, Requested: {Quantity}",
-                            productId, product.Stock, cartItem.Quantity + quantity);
-                        return false;
+                        newQuantity = product.Stock; // Giới hạn số lượng bằng stock hiện có
                     }
 
-                    cartItem.Quantity += quantity;
-                    cartItem.Subtotal = product.Price * cartItem.Quantity;
+                    cartItem.Quantity = newQuantity;
+                    cartItem.Subtotal = product.Price * newQuantity;
                 }
 
                 // Update cart total price (original prices)
@@ -158,11 +164,17 @@ namespace CyberTech.Services
                     return await RemoveFromCartAsync(userId, productId);
                 }
 
-                if (product.Stock < quantity)
+                // Kiểm tra stock
+                if (product.Stock <= 0)
                 {
-                    _logger.LogWarning("Not enough stock for product {ProductId}. Available: {Stock}, Requested: {Quantity}",
-                        productId, product.Stock, quantity);
+                    _logger.LogWarning("Product {ProductId} is out of stock", productId);
                     return false;
+                }
+
+                // Giới hạn số lượng không vượt quá stock hiện có
+                if (quantity > product.Stock)
+                {
+                    quantity = product.Stock;
                 }
 
                 cartItem.Quantity = quantity;
@@ -468,10 +480,17 @@ namespace CyberTech.Services
                     foreach (var cartItem in cart.CartItems)
                     {
                         var product = await _context.Products.FindAsync(cartItem.ProductID);
-                        if (product == null || product.Stock < cartItem.Quantity)
+                        if (product == null)
                         {
                             await transaction.RollbackAsync();
-                            return (false, $"Sản phẩm {product?.Name ?? "không xác định"} không đủ số lượng", null);
+                            return (false, $"Sản phẩm {product?.Name ?? "không xác định"} không tồn tại", null);
+                        }
+
+                        // Check if product has enough stock
+                        if (product.Stock < cartItem.Quantity)
+                        {
+                            await transaction.RollbackAsync();
+                            return (false, $"Sản phẩm {product.Name} chỉ còn {product.Stock} sản phẩm", null);
                         }
 
                         // Calculate product discount if on sale
@@ -553,10 +572,10 @@ namespace CyberTech.Services
                     foreach (var cartItem in cart.CartItems)
                     {
                         var product = await _context.Products.FindAsync(cartItem.ProductID);
-                        if (product == null || product.Stock < cartItem.Quantity)
+                        if (product == null)
                         {
                             await transaction.RollbackAsync();
-                            return (false, $"Sản phẩm {product?.Name ?? "không xác định"} không đủ số lượng", null);
+                            return (false, $"Sản phẩm {product?.Name ?? "không xác định"} không tồn tại", null);
                         }
 
                         // Calculate item's effective price after product discount

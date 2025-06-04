@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "bmhjigR2vJY=",
+  "dgSpecHash": "cOFFNHMsxkA=",
   "success": true,
   "projectFilePath": "E:\\OOAD\\CyberTechShop\\CyberTech\\CyberTechShop.csproj",
   "expectedPackageFiles": [
@@ -10,6 +10,7 @@
     "C:\\Users\\deanl\\.nuget\\packages\\bouncycastle.cryptography\\2.2.1\\bouncycastle.cryptography.2.2.1.nupkg.sha512",
     "C:\\Users\\deanl\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
     "C:\\Users\\deanl\\.nuget\\packages\\mailkit\\4.3.0\\mailkit.4.3.0.nupkg.sha512",
+    "C:\\Users\\deanl\\.nuget\\packages\\markdig\\0.41.1\\markdig.0.41.1.nupkg.sha512",
     "C:\\Users\\deanl\\.nuget\\packages\\microsoft.aspnetcore.authentication.facebook\\8.0.8\\microsoft.aspnetcore.authentication.facebook.8.0.8.nupkg.sha512",
     "C:\\Users\\deanl\\.nuget\\packages\\microsoft.aspnetcore.authentication.google\\8.0.8\\microsoft.aspnetcore.authentication.google.8.0.8.nupkg.sha512",
     "C:\\Users\\deanl\\.nuget\\packages\\microsoft.bcl.asyncinterfaces\\6.0.0\\microsoft.bcl.asyncinterfaces.6.0.0.nupkg.sha512",

@@ -19,6 +19,7 @@ namespace CyberTech.Models
             UserVouchers = new List<UserVoucher>();
             VoucherTokens = new List<VoucherToken>();
             WishlistItems = new List<WishlistItem>();
+            ProductStockNotifications = new List<ProductStockNotification>();
         }
 
         [Key]
@@ -86,5 +87,6 @@ namespace CyberTech.Models
         public virtual ICollection<Review> Reviews { get; set; }
         public virtual ICollection<UserVoucher> UserVouchers { get; set; }
         public virtual ICollection<VoucherToken> VoucherTokens { get; set; }
+        public virtual ICollection<ProductStockNotification> ProductStockNotifications { get; set; }
     }
 }

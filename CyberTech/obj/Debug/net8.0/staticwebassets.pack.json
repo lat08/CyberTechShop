@@ -5,8 +5,20 @@
       "PackagePath": "staticwebassets\\CyberTechShop.bundle.scp.css"
     },
     {
+      "Id": "E:\\OOAD\\CyberTechShop\\CyberTech\\wwwroot\\admin\\css\\customer-management.css",
+      "PackagePath": "staticwebassets\\admin\\css\\customer-management.css"
+    },
+    {
       "Id": "E:\\OOAD\\CyberTechShop\\CyberTech\\wwwroot\\admin\\css\\dashboard.css",
       "PackagePath": "staticwebassets\\admin\\css\\dashboard.css"
+    },
+    {
+      "Id": "E:\\OOAD\\CyberTechShop\\CyberTech\\wwwroot\\admin\\css\\employee-management.css",
+      "PackagePath": "staticwebassets\\admin\\css\\employee-management.css"
+    },
+    {
+      "Id": "E:\\OOAD\\CyberTechShop\\CyberTech\\wwwroot\\admin\\css\\order-management.css",
+      "PackagePath": "staticwebassets\\admin\\css\\order-management.css"
     },
     {
       "Id": "E:\\OOAD\\CyberTechShop\\CyberTech\\wwwroot\\admin\\css\\qr-management.css",
@@ -33,8 +45,20 @@
       "PackagePath": "staticwebassets\\admin\\dashboard.png"
     },
     {
+      "Id": "E:\\OOAD\\CyberTechShop\\CyberTech\\wwwroot\\admin\\js\\customer-management.js",
+      "PackagePath": "staticwebassets\\admin\\js\\customer-management.js"
+    },
+    {
       "Id": "E:\\OOAD\\CyberTechShop\\CyberTech\\wwwroot\\admin\\js\\dashboard.js",
       "PackagePath": "staticwebassets\\admin\\js\\dashboard.js"
+    },
+    {
+      "Id": "E:\\OOAD\\CyberTechShop\\CyberTech\\wwwroot\\admin\\js\\employee-management.js",
+      "PackagePath": "staticwebassets\\admin\\js\\employee-management.js"
+    },
+    {
+      "Id": "E:\\OOAD\\CyberTechShop\\CyberTech\\wwwroot\\admin\\js\\order-management.js",
+      "PackagePath": "staticwebassets\\admin\\js\\order-management.js"
     },
     {
       "Id": "E:\\OOAD\\CyberTechShop\\CyberTech\\wwwroot\\admin\\js\\qr-management.js",
@@ -99,6 +123,10 @@
     {
       "Id": "E:\\OOAD\\CyberTechShop\\CyberTech\\wwwroot\\css\\cart.css",
       "PackagePath": "staticwebassets\\css\\cart.css"
+    },
+    {
+      "Id": "E:\\OOAD\\CyberTechShop\\CyberTech\\wwwroot\\css\\chat-widget.css",
+      "PackagePath": "staticwebassets\\css\\chat-widget.css"
     },
     {
       "Id": "E:\\OOAD\\CyberTechShop\\CyberTech\\wwwroot\\css\\login.css",
@@ -191,6 +219,10 @@
     {
       "Id": "E:\\OOAD\\CyberTechShop\\CyberTech\\wwwroot\\js\\cart.js",
       "PackagePath": "staticwebassets\\js\\cart.js"
+    },
+    {
+      "Id": "E:\\OOAD\\CyberTechShop\\CyberTech\\wwwroot\\js\\chat-widget.js",
+      "PackagePath": "staticwebassets\\js\\chat-widget.js"
     },
     {
       "Id": "E:\\OOAD\\CyberTechShop\\CyberTech\\wwwroot\\js\\countdown.js",

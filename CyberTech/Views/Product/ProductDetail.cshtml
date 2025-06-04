@@ -10,18 +10,76 @@
             color: red;
             border-color: red;
         }
+
+        /* Style cho nút thông báo */
+        .btn-notify-stock {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            width: 100%;
+            max-width: 300px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-notify-stock:not(.subscribed) {
+            background-color: #4CAF50;
+            color: white;
+            border: 2px solid #4CAF50;
+        }
+
+        .btn-notify-stock.subscribed {
+            background-color: #fff;
+            color: #4CAF50;
+            border: 2px solid #4CAF50;
+        }
+
+        .btn-notify-stock:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .btn-notify-stock:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .btn-notify-stock .notify-icon {
+            font-size: 1.1em;
+        }
+
+        .btn-notify-stock .loading-spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        @@keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .btn-notify-stock:after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.3s, height 0.3s;
+        }
+
+        .btn-notify-stock:active:after {
+            width: 200px;
+            height: 200px;
+        }
     </style>
-    <script>
-        var productId = @Model.Product.ProductID;
-        var isInWishlist = '@Model.IsInWishlist.ToString()';
-        console.log(isInWishlist);
-        window.addEventListener('DOMContentLoaded', function() {
-            if (isInWishlist === 'True') {
-                $('.btn-wishlist').addClass('active');
-                $('.btn-wishlist i').removeClass('far').addClass('fas');
-            }
-        });
-    </script>
 }
 
 @Html.AntiForgeryToken()
@@ -67,7 +125,9 @@
                 <div class="stars">
                     @{
                         var avgRating = Model.Product.Reviews?.Any() == true ? Model.Product.Reviews.Average(r => r.Rating) : 0;
+
                         var fullStars = (int)Math.Floor(avgRating);
+
                         var hasHalfStar = avgRating - fullStars >= 0.5;
                     }
                     @for (int i = 0; i < fullStars; i++)
@@ -120,9 +180,33 @@
                     <input type="number" id="quantity" name="quantity" value="1" min="1" max="@Model.Product.Stock" readonly>
                     <button type="button" class="quantity-btn plus" data-action="increase">+</button>
                 </div>
-                <button class="btn-add-cart" data-product-id="@Model.Product.ProductID" @(Model.Product.Stock <= 0 ? "disabled" : "")>
-                    <i class="fas fa-shopping-cart"></i> THÊM VÀO GIỎ
-                </button>
+                @if (Model.Product.Stock > 0)
+                {
+                    <button class="btn-add-cart" data-product-id="@Model.Product.ProductID">
+                        <i class="fas fa-shopping-cart"></i> THÊM VÀO GIỎ
+                    </button>
+                }
+                else
+                {
+                    if (!User.Identity.IsAuthenticated)
+                    {
+                        <button class="btn-notify-stock" onclick="window.location.href='@Url.Action("Login", "Account", new { returnUrl = Context.Request.Path })'">
+                            <i class="fas fa-bell notify-icon"></i>
+                            <span class="notify-text">ĐĂNG NHẬP ĐỂ NHẬN THÔNG BÁO</span>
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="btn-notify-stock @(Model.IsSubscribedToStock ? "subscribed" : "")" 
+                                data-product-id="@Model.Product.ProductID" 
+                                data-is-subscribed="@Model.IsSubscribedToStock">
+                            <i class="fas @(Model.IsSubscribedToStock ? "fa-bell-slash" : "fa-bell") notify-icon"></i>
+                            <span class="notify-text">
+                                @(Model.IsSubscribedToStock ? "HỦY NHẬN THÔNG BÁO" : "NHẬN THÔNG BÁO KHI CÓ HÀNG")
+                            </span>
+                        </button>
+                    }
+                }
                 <button class="btn-wishlist" data-product-id="@Model.Product.ProductID">
                     <i class="@(Model.IsInWishlist ? "fas" : "far") fa-heart"></i>
                 </button>
@@ -295,14 +379,30 @@
             document.getElementById('reviews').scrollIntoView({ behavior: 'smooth' });
         }
 
-        var productId = @Model.Product.ProductID;
-
         $(function() {
+            // Kiểm tra trạng thái wishlist và subscription khi load trang
+            var isInWishlist = '@Model.IsInWishlist.ToString()' === 'True';
+            var isSubscribedToStock = '@Model.IsSubscribedToStock.ToString()' === 'True';
+
+            // Cập nhật trạng thái wishlist
+            if (isInWishlist) {
+                $('.btn-wishlist').addClass('active');
+                $('.btn-wishlist i').removeClass('far').addClass('fas');
+            }
+
+            // Cập nhật trạng thái subscription
+            if (isSubscribedToStock) {
+                const button = $('.btn-notify-stock');
+                button.addClass('subscribed');
+                button.find('.notify-icon').removeClass('fa-bell').addClass('fa-bell-slash');
+                button.find('.notify-text').text('HỦY NHẬN THÔNG BÁO');
+            }
 
             // Toggle wishlist
             $('.btn-wishlist').on('click', function() {
                 var button = $(this);
                 var icon = button.find('i');
+                var productId = button.data('product-id');
                 console.log("productId", productId);                
                 $.ajax({
                     url: '/Account/ToggleWishlist',
@@ -331,19 +431,19 @@
                     }
                 });
             });
-            
+
             // Add to cart functionality
             $('.btn-add-cart').on('click', function() {
                 var button = $(this);
                 if (button.prop('disabled')) return;
-                
+
                 var productId = button.data('product-id');
                 var quantity = parseInt($('#quantity').val());
-                
+
                 // Hiệu ứng loading
                 var originalText = button.html();
                 button.html('<i class="fas fa-spinner fa-spin"></i> Đang thêm...').prop('disabled', true);
-                
+
                 $.ajax({
                     url: '/Cart/AddToCart',
                     type: 'POST',
@@ -354,14 +454,14 @@
                             if (response.cartCount !== undefined) {
                                 window.updateCartCount(response.cartCount);
                             }
-                            
+
                             // Hiệu ứng thành công
                             button.html('<i class="fas fa-check"></i> Đã thêm').addClass('success');
-                            
+
                             setTimeout(function() {
                                 button.html(originalText).removeClass('success').prop('disabled', false);
                             }, 2000);
-                            
+
                             utils.showToast('Đã thêm vào giỏ hàng', 'success');
                         } else {
                             button.html(originalText).prop('disabled', false);
@@ -371,6 +471,63 @@
                     error: function() {
                         button.html(originalText).prop('disabled', false);
                         utils.showToast('Có lỗi xảy ra', 'error');
+                    }
+                });
+            });
+
+            // Stock notification functionality
+            $('.btn-notify-stock').on('click', function() {
+                if (!@User.Identity.IsAuthenticated.ToString().ToLower()) {
+                    window.location.href = '@Url.Action("Login", "Account", new { returnUrl = Context.Request.Path })';
+                    return;
+                }
+
+                var button = $(this);
+                var isSubscribed = button.hasClass('subscribed');
+                var productId = button.data('product-id');
+
+                // Hiệu ứng loading
+                var icon = button.find('.notify-icon');
+                var text = button.find('.notify-text');
+                var originalIcon = isSubscribed ? 'fa-bell-slash' : 'fa-bell';
+                
+                button.prop('disabled', true);
+                icon.removeClass(originalIcon).addClass('fa-spinner fa-spin');
+                text.text('ĐANG XỬ LÝ...');
+
+                $.ajax({
+                    url: '/Product/ToggleStockNotification',
+                    type: 'POST',
+                    data: { productId: productId },
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            if (isSubscribed) {
+                                button.removeClass('subscribed');
+                                icon.removeClass('fa-spinner fa-spin').addClass('fa-bell');
+                                text.text('NHẬN THÔNG BÁO KHI CÓ HÀNG');
+                                utils.showToast('Đã hủy đăng ký nhận thông báo', 'success');
+                            } else {
+                                button.addClass('subscribed');
+                                icon.removeClass('fa-spinner fa-spin').addClass('fa-bell-slash');
+                                text.text('HỦY NHẬN THÔNG BÁO');
+                                utils.showToast('Đã đăng ký nhận thông báo khi có hàng', 'success');
+                            }
+                        } else {
+                            icon.removeClass('fa-spinner fa-spin').addClass(originalIcon);
+                            text.text(isSubscribed ? 'HỦY NHẬN THÔNG BÁO' : 'NHẬN THÔNG BÁO KHI CÓ HÀNG');
+                            utils.showToast(response.message || 'Có lỗi xảy ra', 'error');
+                        }
+                    },
+                    error: function() {
+                        icon.removeClass('fa-spinner fa-spin').addClass(originalIcon);
+                        text.text(isSubscribed ? 'HỦY NHẬN THÔNG BÁO' : 'NHẬN THÔNG BÁO KHI CÓ HÀNG');
+                        utils.showToast('Có lỗi xảy ra', 'error');
+                    },
+                    complete: function() {
+                        button.prop('disabled', false);
                     }
                 });
             });

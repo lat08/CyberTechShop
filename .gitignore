@@ -1,0 +1,13 @@
+CyberTech/obj/Debug/net8.0/refint/CyberTechShop.dll
+*.dll
+*.exe
+*.cache
+*.dll
+*.editorconfig
+*.dll
+/CyberTech/obj/Debug
+*.exe
+*.cs
+CyberTech/obj/CyberTechShop.csproj.nuget.dgspec.json
+CyberTech/obj/Debug/net8.0/CyberTechShop.dll
+CyberTech/bin/Debug/net8.0/appsettings.json

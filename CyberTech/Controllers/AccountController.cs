@@ -481,6 +481,7 @@ namespace CyberTech.Controllers
         [HttpGet]
         public IActionResult AccessDenied() => View();
 
+
         private async Task SetCommonViewBagProperties(User user)
         {
             ViewBag.UserProfileImage = user.ProfileImageURL ?? "/images/default-avatar.png";
@@ -815,10 +816,16 @@ namespace CyberTech.Controllers
                     return Unauthorized("Invalid user identifier.");
                 }
 
-                var user = await _userService.GetUserByEmailAsync(emailClaim.Value);
+                // Tải user với AsTracking() để đảm bảo Entity Framework theo dõi thay đổi
+                var user = await _context.Users
+                    .AsTracking()
+                    .FirstOrDefaultAsync(u => u.Email == emailClaim.Value);
+
                 if (user == null) return Json(new { success = false, message = "Không tìm thấy người dùng" });
 
+                // Tải order với AsTracking() để đảm bảo Entity Framework theo dõi thay đổi
                 var order = await _context.Orders
+                    .AsTracking()
                     .Include(o => o.Payments)
                     .Include(o => o.OrderItems)
                         .ThenInclude(oi => oi.Product)
@@ -826,21 +833,29 @@ namespace CyberTech.Controllers
 
                 if (order == null) return Json(new { success = false, message = "Không tìm thấy đơn hàng" });
 
-                // Check if there's a successful payment
-                var hasSuccessfulPayment = order.Payments?.Any(p => p.PaymentStatus == "Completed") ?? false;
-                if (hasSuccessfulPayment)
+                var payment = order.Payments?.FirstOrDefault();
+                var hasSuccessfulPayment = false;
+
+                if (payment != null)
                 {
-                    return Json(new { success = false, message = "Không thể hủy đơn hàng đã thanh toán thành công" });
+                    // Với cả VNPay và COD, cần xử lý hủy đơn hàng và cập nhật TotalSpent, OrderCount
+                    // Bất kể trạng thái thanh toán là "Pending" hay "Completed"
+                    hasSuccessfulPayment = payment.PaymentStatus == "Pending" || payment.PaymentStatus == "Completed";
+
+                    _logger.LogInformation("Payment method: {PaymentMethod}, Payment status: {PaymentStatus}, hasSuccessfulPayment: {HasSuccessfulPayment}",
+                        payment.PaymentMethod, payment.PaymentStatus, hasSuccessfulPayment);
                 }
 
                 var timeSinceOrder = DateTime.Now - order.CreatedAt;
-                if ((order.Status != "Pending" && order.Status != "Processing") || timeSinceOrder.TotalHours > 5)
+
+                // Hủy được trong 1 giờ kể từ khi đặt hàng với trạng thái chờ xử lý hoặc đang xử lý
+                if ((order.Status != "Pending" && order.Status != "Processing") || timeSinceOrder.TotalHours > 1)
                 {
                     return Json(new
                     {
                         success = false,
-                        message = timeSinceOrder.TotalHours > 5
-                            ? "Không thể hủy đơn hàng sau 5 giờ kể từ khi đặt hàng"
+                        message = timeSinceOrder.TotalHours > 1
+                            ? "Không thể hủy đơn hàng sau 1 giờ kể từ khi đặt hàng"
                             : "Chỉ có thể hủy đơn hàng đang ở trạng thái chờ xử lý hoặc đang xử lý"
                     });
                 }
@@ -851,12 +866,13 @@ namespace CyberTech.Controllers
                     // Update order status
                     order.Status = "Cancelled";
 
-                    // If payment was pending, mark it as failed
-                    var pendingPayment = order.Payments?.FirstOrDefault(p => p.PaymentStatus == "Pending");
-                    if (pendingPayment != null)
+                    // If payment was pending or completed, mark it as failed
+                    var pendingOrCompletedPayment = order.Payments?.FirstOrDefault(p => p.PaymentStatus == "Pending" || p.PaymentStatus == "Completed");
+                    if (pendingOrCompletedPayment != null)
                     {
-                        pendingPayment.PaymentStatus = "Failed";
-                        pendingPayment.PaymentDate = DateTime.Now;
+                        pendingOrCompletedPayment.PaymentStatus = "Failed";
+                        pendingOrCompletedPayment.PaymentDate = DateTime.Now;
+                        _logger.LogInformation("Payment {PaymentId} for order {OrderId} marked as Failed", pendingOrCompletedPayment.PaymentID, order.OrderID);
                     }
 
                     // Restore product quantities
@@ -889,11 +905,17 @@ namespace CyberTech.Controllers
                         }
                     }
 
-                    // Adjust user's TotalSpent and OrderCount if necessary
-                    if (hasSuccessfulPayment && user.TotalSpent >= order.FinalPrice)
+                    _logger.LogInformation("[Before] User {UserId} TotalSpent: {TotalSpent}, OrderCount: {OrderCount}", user.UserID, user.TotalSpent, user.OrderCount);
+                    _logger.LogDebug("hasSuccessfulPayment: {hasSuccessfulPayment}", hasSuccessfulPayment);
+
+                    if (hasSuccessfulPayment)
                     {
-                        user.TotalSpent -= order.FinalPrice;
+                        // Ensure TotalSpent doesn't go negative
+                        user.TotalSpent = Math.Max(0, user.TotalSpent - order.FinalPrice);
                         user.OrderCount = Math.Max(0, user.OrderCount - 1);
+
+                        // Log sau khi thay đổi giá trị
+                        _logger.LogInformation("[After] User {UserId} TotalSpent: {TotalSpent}, OrderCount: {OrderCount}", user.UserID, user.TotalSpent, user.OrderCount);
 
                         // Recalculate user's rank based on new TotalSpent
                         var newRank = await _context.Ranks
@@ -906,10 +928,26 @@ namespace CyberTech.Controllers
                             user.RankId = newRank.RankId;
                             _logger.LogInformation("User {UserId} rank updated to {RankId} after order cancellation", user.UserID, newRank.RankId);
                         }
+
+                        // Đảm bảo thay đổi được lưu vào cơ sở dữ liệu
+                        _context.Users.Update(user);
+                        _logger.LogInformation("Updating user in database: UserId={UserId}, TotalSpent={TotalSpent}, OrderCount={OrderCount}",
+                            user.UserID, user.TotalSpent, user.OrderCount);
                     }
 
-                    await _context.SaveChangesAsync();
+                    try
+                    {
+                        await _context.SaveChangesAsync();
+                        _logger.LogInformation("Changes saved to database successfully");
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error saving changes to database");
+                        throw;
+                    }
+
                     await transaction.CommitAsync();
+                    _logger.LogInformation("Transaction committed successfully");
 
                     _logger.LogInformation("Successfully cancelled order {OrderId} and restored product quantities", order.OrderID);
                     return Json(new { success = true, message = "Hủy đơn hàng thành công" });

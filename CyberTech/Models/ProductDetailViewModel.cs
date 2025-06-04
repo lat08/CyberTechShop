@@ -8,6 +8,7 @@ namespace CyberTech.Models
         public required Product Product { get; set; }
         public required List<Product> RelatedProducts { get; set; }
         public bool IsInWishlist { get; set; } = false;
+        public bool IsSubscribedToStock { get; set; } = false;
     }
 
     public class SubSubcategoryViewModel

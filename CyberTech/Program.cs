@@ -45,6 +45,10 @@ builder.Services.AddScoped<IVoucherTokenService, VoucherTokenService>();
 builder.Services.AddScoped<VNPayService>();
 builder.Services.AddScoped<IRankService, RankService>();
 builder.Services.AddScoped<IVoucherService, VoucherService>();
+
+// Add background services
+builder.Services.AddHostedService<StockNotificationBackgroundService>();
+
 // Configure Logging
 builder.Services.AddLogging(logging =>
 {
