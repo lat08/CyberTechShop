@@ -8,6 +8,11 @@ namespace CyberTech.Models
         public required Product Product { get; set; }
         public required List<Product> RelatedProducts { get; set; }
         public bool IsInWishlist { get; set; } = false;
+        
+        // Thêm các thuộc tính cho đánh giá
+        public bool CanReview { get; set; } = false;
+        public bool HasUserReviewed { get; set; } = false;
+        public Review? UserReview { get; set; }
     }
 
     public class SubSubcategoryViewModel

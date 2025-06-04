@@ -14,34 +14,7 @@
     <link rel="stylesheet" href="~/css/responsive.css">
     <link rel="stylesheet" href="~/css/site.css">
     <link rel="stylesheet" href="~/css/account.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        /* Cart Badge Styles */
-        .cart-badge {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background-color: #dc3545;
-            color: white;
-            border-radius: 50%;
-            width: 22px;
-            height: 22px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: bold;
-            transition: transform 0.3s ease;
-        }
-        
-        .action-item {
-            position: relative;
-        }
-        
-        .cart-count.updated {
-            transform: scale(1.3);
-        }
-    </style>
+    <link rel="stylesheet" href="~/css/cart.css">
     @RenderSection("Styles", required: false)
 </head>
 <body>
@@ -64,7 +37,7 @@
                         <div class="search-container">
                             <input type="text" name="SearchQuery" id="searchInput" placeholder="Bạn cần tìm gì?" autocomplete="off">
                             <button type="submit" class="search-btn"><i class="fas fa-search"></i></button>
-                            
+
                             <!-- Search Suggestions Dropdown -->
                             <div class="search-suggestions" id="searchSuggestions">
                                 <div class="suggestions-header">
@@ -97,7 +70,6 @@
                         <div class="action-content">
                             <span><strong>Giỏ Hàng</strong></span>
                         </div>
-                        <span class="cart-badge cart-count">0</span>
                     </a>
                     <div class="action-item user-dropdown">
                         @if (User.Identity.IsAuthenticated)
@@ -133,19 +105,6 @@
                                         <a class="dropdown-item" href="@Url.Action("Addresses", "Account")">
                                             <i class="fas fa-map-marker-alt"></i>
                                             Sổ địa chỉ
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" href="@Url.Action("Vouchers", "Account")">
-                                            <i class="fas fa-ticket-alt"></i>
-                                            Kho voucher
-                                            @{
-                                                var voucherCount = Context.Session.GetString("VoucherCount");
-                                                if (!string.IsNullOrEmpty(voucherCount) && int.Parse(voucherCount) > 0)
-                                                {
-                                                    <span class="badge bg-danger rounded-pill ms-2">@voucherCount</span>
-                                                }
-                                            }
                                         </a>
                                     </li>
                                     <li>
@@ -205,28 +164,28 @@
                 <div class="footer-column">
                     <h3>Về CybotEcom</h3>
                     <ul>
-                        <li><a href="#">Giới thiệu</a></li>
-                        <li><a href="#">Tuyển dụng</a></li>
-                        <li><a href="#">Tin tức</a></li>
-                        <li><a href="#">Liên hệ</a></li>
+                        <li><a href="@Url.Action("About", "Information")">Giới thiệu</a></li>
+                        <li><a href="@Url.Action("Careers", "Information")">Tuyển dụng</a></li>
+                        <li><a href="@Url.Action("News", "Information")">Tin tức</a></li>
+                        <li><a href="@Url.Action("Contact", "Information")">Liên hệ</a></li>
                     </ul>
                 </div>
                 <div class="footer-column">
                     <h3>Chính sách</h3>
                     <ul>
-                        <li><a href="#">Chính sách bảo hành</a></li>
-                        <li><a href="#">Chính sách thanh toán</a></li>
-                        <li><a href="#">Chính sách vận chuyển</a></li>
-                        <li><a href="#">Chính sách bảo mật</a></li>
+                        <li><a href="@Url.Action("Warranty", "Information")">Chính sách bảo hành</a></li>
+                        <li><a href="@Url.Action("Payment", "Information")">Chính sách thanh toán</a></li>
+                        <li><a href="@Url.Action("Shipping", "Information")">Chính sách vận chuyển</a></li>
+                        <li><a href="@Url.Action("Privacy", "Information")">Chính sách bảo mật</a></li>
                     </ul>
                 </div>
                 <div class="footer-column">
                     <h3>Hỗ trợ khách hàng</h3>
                     <ul>
-                        <li><a href="#">Hướng dẫn mua hàng</a></li>
-                        <li><a href="#">Hướng dẫn thanh toán</a></li>
-                        <li><a href="#">Hướng dẫn trả góp</a></li>
-                        <li><a href="#">FAQ</a></li>
+                        <li><a href="@Url.Action("ShoppingGuide", "Information")">Hướng dẫn mua hàng</a></li>
+                        <li><a href="@Url.Action("PaymentGuide", "Information")">Hướng dẫn thanh toán</a></li>
+                        <li><a href="@Url.Action("InstallmentGuide", "Information")">Hướng dẫn trả góp</a></li>
+                        <li><a href="@Url.Action("FAQ", "Information")">FAQ</a></li>
                     </ul>
                 </div>
                 <div class="footer-column">
@@ -249,70 +208,202 @@
     </footer>
 
     <!-- Scripts -->
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- jQuery (phải load trước Bootstrap) -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
     <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/main.js"></script>
     <script src="~/js/utils.js"></script>
-    <script>
-        // Fetch initial cart count
-        $(document).ready(function() {
-            // Function to update cart count
-            window.updateCartCount = function(count) {
-                const cartCountElements = document.querySelectorAll('.cart-count');
-                cartCountElements.forEach(element => {
-                    element.textContent = count;
-                    element.classList.add('updated');
-                    setTimeout(() => element.classList.remove('updated'), 1000);
-                });
-            };
 
-            // Function to update voucher count
-            window.updateVoucherCount = function(count) {
-                const voucherBadge = document.querySelector('.dropdown-item[href*="Vouchers"] .badge');
-                if (count > 0) {
-                    if (voucherBadge) {
-                        voucherBadge.textContent = count;
-                    } else {
-                        const voucherLink = document.querySelector('.dropdown-item[href*="Vouchers"]');
-                        if (voucherLink) {
-                            const badge = document.createElement('span');
-                            badge.className = 'badge bg-danger rounded-pill ms-2';
-                            badge.textContent = count;
-                            voucherLink.appendChild(badge);
-                        }
-                    }
-                } else if (voucherBadge) {
-                    voucherBadge.remove();
-                }
-            };
-            
-            // Fetch initial cart count
-            $.ajax({
-                url: '/Cart/GetCartCount',
-                type: 'GET',
-                success: function(response) {
-                    if (response.success) {
-                        updateCartCount(response.count);
-                    }
+    <!-- Search Functionality -->
+    <script>
+        // Search functionality
+        let searchTimeout;
+        const searchInput = document.getElementById('searchInput');
+        const searchSuggestions = document.getElementById('searchSuggestions');
+        const searchForm = document.getElementById('searchForm');
+
+        // Handle search input
+        if (searchInput) {
+            searchInput.addEventListener('input', function () {
+                const query = this.value.trim();
+
+                clearTimeout(searchTimeout);
+
+                if (query.length >= 2) {
+                    searchTimeout = setTimeout(() => {
+                        fetchSearchSuggestions(query);
+                    }, 300);
+                } else {
+                    hideSuggestions();
                 }
             });
 
-            // Fetch initial voucher count
-            if (document.querySelector('.dropdown-item[href*="Vouchers"]')) {
-                $.ajax({
-                    url: '/Account/GetActiveVoucherCount',
-                    type: 'GET',
-                    success: function(response) {
-                        if (response.success) {
-                            updateVoucherCount(response.count);
-                        }
-                    }
-                });
+            // Handle focus
+            searchInput.addEventListener('focus', function () {
+                const query = this.value.trim();
+                if (query.length >= 2) {
+                    fetchSearchSuggestions(query);
+                }
+            });
+
+            // Handle blur with delay to allow clicking on suggestions
+            searchInput.addEventListener('blur', function () {
+                setTimeout(() => {
+                    hideSuggestions();
+                }, 200);
+            });
+        }
+
+        // Fetch search suggestions
+        async function fetchSearchSuggestions(query) {
+            try {
+                showLoadingSuggestions();
+
+                const response = await fetch(`/Product/SearchSuggestions?query=${encodeURIComponent(query)}&limit=15`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                if (result.success && result.data && result.data.length > 0) {
+                    displaySuggestions(result.data);
+                } else {
+                    showEmptySuggestions();
+                }
+            } catch (error) {
+                console.error('Error fetching search suggestions:', error);
+                showEmptySuggestions();
+            }
+        }
+
+        // Show loading state
+        function showLoadingSuggestions() {
+            const suggestionsContent = document.querySelector('.suggestions-content');
+            if (suggestionsContent) {
+                suggestionsContent.innerHTML = '<div class="suggestions-loading"><i class="fas fa-spinner fa-spin"></i> Đang tìm kiếm...</div>';
+                searchSuggestions.classList.add('show');
+            }
+        }
+
+        // Show empty state
+        function showEmptySuggestions() {
+            const suggestionsContent = document.querySelector('.suggestions-content');
+            if (suggestionsContent) {
+                suggestionsContent.innerHTML = '<div class="suggestions-empty"><i class="fas fa-search"></i> Không tìm thấy sản phẩm phù hợp</div>';
+                searchSuggestions.classList.add('show');
+            }
+        }
+
+        // Display suggestions
+        function displaySuggestions(suggestions) {
+            const suggestionsContent = document.querySelector('.suggestions-content');
+            if (!suggestionsContent) return;
+
+            let html = '';
+            suggestions.forEach(item => {
+                // Use simple property names from API
+                const productId = item.id;
+                const productName = item.name || 'Sản phẩm';
+                const price = item.price || 0;
+                const currentPrice = item.currentPrice || price;
+                const salePercentage = item.salePercentage;
+                const imageUrl = item.image || '/images/no-image.png';
+                const hasSale = item.hasSale || false;
+
+                const productUrl = `/Product/ProductDetail/${productId}`;
+
+                // Price display theo format mới
+                let priceHtml = '';
+                if (hasSale) {
+                    // Có sale: giá gốc gạch ngang + giá sale lớn hơn
+                    const discountPercent = salePercentage > 0
+                        ? salePercentage
+                        : Math.round(((price - currentPrice) / price) * 100);
+
+                    priceHtml = `
+                                <div class="suggestion-price-container">
+                                    <span style="color: #333; font-size: 12px; text-decoration: line-through; margin-bottom: 2px; display: block;">${formatCurrency(price)}</span>
+                                    <div style="display: flex; align-items: center; gap: 6px;">
+                                        <span style="color: #dc3545; font-weight: 700; font-size: 14px;">${formatCurrency(currentPrice)}</span>
+                                        <span style="background: #dc3545; color: white; padding: 1px 4px; border-radius: 3px; font-size: 9px; font-weight: 600;">-${discountPercent}%</span>
+                                    </div>
+                                </div>
+                            `;
+                } else {
+                    // Không sale: chỉ giá đen
+                    priceHtml = `<span style="color: #333; font-weight: 600; font-size: 14px;">${formatCurrency(price)}</span>`;
+                }
+
+                html += `
+                            <div class="suggestion-item" onclick="goToProduct('${productUrl}')">
+                                <img src="${imageUrl}" alt="${productName}" class="suggestion-image" onerror="this.src='/images/no-image.png'">
+                                <div class="suggestion-details">
+                                    <div class="suggestion-name">${productName}</div>
+                                    <div class="suggestion-price">
+                                        ${priceHtml}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+            });
+
+            suggestionsContent.innerHTML = html;
+            searchSuggestions.classList.add('show');
+        }
+
+        // Hide suggestions
+        function hideSuggestions() {
+            if (searchSuggestions) {
+                searchSuggestions.classList.remove('show');
+            }
+        }
+
+        // Go to product page
+        function goToProduct(url) {
+            window.location.href = url;
+        }
+
+        // Format currency
+        function formatCurrency(amount) {
+            if (typeof amount !== 'number') {
+                amount = parseFloat(amount) || 0;
+            }
+            return new Intl.NumberFormat('vi-VN').format(amount) + 'đ';
+        }
+
+        // Handle form submission
+        if (searchForm) {
+            searchForm.addEventListener('submit', function (e) {
+                const query = searchInput.value.trim();
+                if (!query) {
+                    e.preventDefault();
+                    return false;
+                }
+                // Form will submit normally to Search action
+            });
+        }
+
+        // Close suggestions when clicking outside
+        document.addEventListener('click', function (e) {
+            if (!e.target.closest('.search-container')) {
+                hideSuggestions();
             }
         });
+
+        // Handle keyboard navigation
+        if (searchInput) {
+            searchInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    hideSuggestions();
+                    this.blur();
+                }
+            });
+        }
     </script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

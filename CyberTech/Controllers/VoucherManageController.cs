@@ -135,7 +135,7 @@ namespace CyberTech.Controllers
                 if (result)
                 {
                     // Send email notification
-                    string subject = "Voucher mới từ Happy Kitchen";
+                    string subject = "Voucher mới từ CyberTech";
                     string body = $"<p>Xin chào {user.Name},</p><p>Bạn đã nhận được một voucher mới!</p><p>Mã: <strong>{voucher.Code}</strong></p><p>Giá trị: {(voucher.DiscountType == "PERCENT" ? voucher.DiscountValue + "%" : voucher.DiscountValue.ToString("C", new System.Globalization.CultureInfo("vi-VN")))}</p><p>Hiệu lực đến: {voucher.ValidTo.ToString("dd/MM/yyyy")}</p><p>Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi!</p>";
                     await _emailService.SendEmailAsync(user.Email, subject, body);
 
@@ -183,7 +183,7 @@ namespace CyberTech.Controllers
                         try
                         {
                             // Send email notification
-                            string subject = "Voucher mới từ Happy Kitchen";
+                            string subject = "Voucher mới từ CyberTech";
                             string body = $"<p>Xin chào {user.Name},</p><p>Bạn đã nhận được một voucher mới!</p><p>Mã: <strong>{voucher.Code}</strong></p><p>Giá trị: {(voucher.DiscountType == "PERCENT" ? voucher.DiscountValue + "%" : voucher.DiscountValue.ToString("C", new System.Globalization.CultureInfo("vi-VN")))}</p><p>Hiệu lực đến: {voucher.ValidTo.ToString("dd/MM/yyyy")}</p><p>Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi!</p>";
                             await _emailService.SendEmailAsync(user.Email, subject, body);
                             successCount++;

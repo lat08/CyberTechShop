@@ -388,6 +388,7 @@ namespace CyberTech.Controllers
                     .ThenInclude(pav => pav.AttributeValue)
                         .ThenInclude(av => av.ProductAttribute)
                 .Include(p => p.Reviews)
+                    .ThenInclude(r => r.User)
                 .Include(p => p.SubSubcategory)
                     .ThenInclude(ss => ss.Subcategory)
                         .ThenInclude(s => s.Category)
@@ -413,6 +414,10 @@ namespace CyberTech.Controllers
                 .ToListAsync();
 
             bool isInWishlist = false;
+            bool canReview = false;
+            bool hasUserReviewed = false;
+            Review? userReview = null;
+            
             if (User.Identity.IsAuthenticated)
             {
                 var emailClaim = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Email);
@@ -421,8 +426,25 @@ namespace CyberTech.Controllers
                     var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == emailClaim.Value);
                     if (user != null)
                     {
+                        // Kiểm tra wishlist
                         isInWishlist = await _context.WishlistItems
                             .AnyAsync(wi => wi.UserID == user.UserID && wi.ProductID == id);
+
+                        // Kiểm tra user đã mua sản phẩm này chưa
+                        var hasPurchased = await _context.OrderItems
+                            .Include(oi => oi.Order)
+                                .ThenInclude(o => o.Payments)
+                            .AnyAsync(oi => oi.ProductID == id && 
+                                           oi.Order.UserID == user.UserID && 
+                                           oi.Order.Status == "Delivered" &&
+                                           oi.Order.Payments.Any(p => p.PaymentStatus == "Completed"));
+
+                        // Kiểm tra user đã đánh giá chưa
+                        userReview = await _context.Reviews
+                            .FirstOrDefaultAsync(r => r.UserID == user.UserID && r.ProductID == id);
+
+                        canReview = hasPurchased && userReview == null;
+                        hasUserReviewed = userReview != null;
                     }
                 }
             }
@@ -431,7 +453,10 @@ namespace CyberTech.Controllers
             {
                 Product = product,
                 RelatedProducts = relatedProducts,
-                IsInWishlist = isInWishlist
+                IsInWishlist = isInWishlist,
+                CanReview = canReview,
+                HasUserReviewed = hasUserReviewed,
+                UserReview = userReview
             };
 
             return View(viewModel);
@@ -759,6 +784,167 @@ namespace CyberTech.Controllers
             }
 
             return categoryAttributes;
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddReview(int productId, int rating, string comment)
+        {
+            try
+            {
+                if (!User.Identity.IsAuthenticated)
+                {
+                    return Json(new { success = false, message = "Vui lòng đăng nhập để đánh giá" });
+                }
+
+                // Validate rating
+                if (rating < 1 || rating > 5)
+                {
+                    return Json(new { success = false, message = "Đánh giá phải từ 1 đến 5 sao" });
+                }
+
+                // Get current user
+                var emailClaim = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Email);
+                if (emailClaim == null)
+                {
+                    return Json(new { success = false, message = "Không thể xác thực người dùng" });
+                }
+
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == emailClaim.Value);
+                if (user == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy thông tin người dùng" });
+                }
+
+                // Kiểm tra user đã mua sản phẩm này chưa
+                var hasPurchased = await _context.OrderItems
+                    .Include(oi => oi.Order)
+                        .ThenInclude(o => o.Payments)
+                    .AnyAsync(oi => oi.ProductID == productId && 
+                                   oi.Order.UserID == user.UserID && 
+                                   oi.Order.Status == "Delivered" &&
+                                   oi.Order.Payments.Any(p => p.PaymentStatus == "Completed"));
+
+                if (!hasPurchased)
+                {
+                    return Json(new { success = false, message = "Bạn chỉ có thể đánh giá sản phẩm đã mua" });
+                }
+
+                // Kiểm tra user đã đánh giá chưa
+                var existingReview = await _context.Reviews
+                    .FirstOrDefaultAsync(r => r.UserID == user.UserID && r.ProductID == productId);
+
+                if (existingReview != null)
+                {
+                    return Json(new { success = false, message = "Bạn đã đánh giá sản phẩm này rồi" });
+                }
+
+                // Tạo đánh giá mới
+                var review = new Review
+                {
+                    UserID = user.UserID,
+                    ProductID = productId,
+                    Rating = rating,
+                    Comment = comment?.Trim(),
+                    CreatedAt = DateTime.Now
+                };
+
+                _context.Reviews.Add(review);
+                await _context.SaveChangesAsync();
+
+                return Json(new { 
+                    success = true, 
+                    message = "Đánh giá của bạn đã được gửi thành công!",
+                    review = new {
+                        userName = user.Name,
+                        rating = review.Rating,
+                        comment = review.Comment,
+                        createdAt = review.CreatedAt.ToString("dd/MM/yyyy")
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Có lỗi xảy ra: " + ex.Message });
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditReview(int productId, int rating, string comment)
+        {
+            try
+            {
+                if (!User.Identity.IsAuthenticated)
+                {
+                    return Json(new { success = false, message = "Vui lòng đăng nhập để sửa đánh giá" });
+                }
+
+                // Validate rating
+                if (rating < 1 || rating > 5)
+                {
+                    return Json(new { success = false, message = "Đánh giá phải từ 1 đến 5 sao" });
+                }
+
+                // Get current user
+                var emailClaim = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Email);
+                if (emailClaim == null)
+                {
+                    return Json(new { success = false, message = "Không thể xác thực người dùng" });
+                }
+
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == emailClaim.Value);
+                if (user == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy thông tin người dùng" });
+                }
+
+                // Kiểm tra user đã mua sản phẩm này chưa
+                var hasPurchased = await _context.OrderItems
+                    .Include(oi => oi.Order)
+                        .ThenInclude(o => o.Payments)
+                    .AnyAsync(oi => oi.ProductID == productId && 
+                                   oi.Order.UserID == user.UserID && 
+                                   oi.Order.Status == "Delivered" &&
+                                   oi.Order.Payments.Any(p => p.PaymentStatus == "Completed"));
+
+                if (!hasPurchased)
+                {
+                    return Json(new { success = false, message = "Bạn chỉ có thể sửa đánh giá sản phẩm đã mua" });
+                }
+
+                // Tìm đánh giá hiện tại
+                var existingReview = await _context.Reviews
+                    .FirstOrDefaultAsync(r => r.UserID == user.UserID && r.ProductID == productId);
+
+                if (existingReview == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy đánh giá để sửa" });
+                }
+
+                // Cập nhật đánh giá (tính như đánh giá mới)
+                existingReview.Rating = rating;
+                existingReview.Comment = comment?.Trim();
+                existingReview.CreatedAt = DateTime.Now; // Cập nhật thời gian mới
+
+                _context.Reviews.Update(existingReview);
+                await _context.SaveChangesAsync();
+
+                return Json(new { 
+                    success = true, 
+                    message = "Đánh giá của bạn đã được cập nhật thành công!",
+                    review = new {
+                        userName = user.Name,
+                        rating = existingReview.Rating,
+                        comment = existingReview.Comment,
+                        createdAt = existingReview.CreatedAt.ToString("dd/MM/yyyy")
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Có lỗi xảy ra: " + ex.Message });
+            }
         }
     }
 }

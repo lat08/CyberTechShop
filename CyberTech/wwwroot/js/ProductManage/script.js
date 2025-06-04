@@ -119,25 +119,120 @@ function renderProducts(products) {
     const grid = $('#productsGrid');
     grid.empty();
     if (!products || products.length === 0) {
-        grid.append('<div class="col">Không có sản phẩm nào.</div>');
+        grid.append('<div class="col-12"><div class="empty-state"><i class="fas fa-box-open"></i><p>Không có sản phẩm nào.</p></div></div>');
         return;
     }
     products.forEach(product => {
+        // Calculate discount percentage and pricing
+        const isOnSale = product.isOnSale && product.originalPrice && product.price < product.originalPrice;
+        const discountPercent = isOnSale ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) : 0;
+        
+        // Pricing HTML
+        let pricingHTML = '';
+        if (isOnSale) {
+            pricingHTML = `
+                <div class="product-pricing-section">
+                    <div class="product-price-container on-sale">
+                        <div>
+                            <div class="product-price-original">${product.originalPrice.toLocaleString()} ₫</div>
+                            <div class="product-price-current">${product.price.toLocaleString()} ₫</div>
+                        </div>
+                    </div>
+                    <div class="product-discount-badge">-${discountPercent}%</div>
+                </div>
+            `;
+        } else {
+            pricingHTML = `
+                <div class="product-pricing-section">
+                    <div class="product-price-container">
+                        <div class="product-price-regular">${product.price.toLocaleString()} ₫</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Attributes HTML
+        /*let attributesHTML = '';
+        if (product.attributes && product.attributes.length > 0) {
+            const visibleAttributes = product.attributes.slice(0, 3);
+            attributesHTML = `
+                <div class="product-attributes-section">
+                    <div class="product-attributes-title">
+                        <i class="fas fa-cogs"></i> Thông số
+                    </div>
+                    <div class="product-attributes-grid">
+                        ${visibleAttributes.map(attr => `
+                            <div class="product-attribute-item">
+                                <span class="product-attribute-name">${attr.name}</span>
+                                <span class="product-attribute-value">${attr.value}</span>
+                            </div>
+                        `).join('')}
+                        ${product.attributes.length > 3 ? `
+                            <div class="product-attribute-item">
+                                <span class="product-attribute-name">Xem thêm</span>
+                                <span class="product-attribute-value">+${product.attributes.length - 3}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }*/
+        
         const card = $(`
             <div class="col">
-                <div class="card h-100">
-                    <img src="${product.imageUrl || '/images/placeholder.jpg'}" class="card-img-top" alt="${product.name}">
-                    <div class="card-body">
-                        <h5 class="card-title">${product.name}</h5>
-                        <p class="card-text">${product.price.toLocaleString()} ₫</p>
-                        <p class="card-text">${product.stock > 0 ? 'Còn hàng' : 'Hết hàng'}</p>
-                        <ul>
-                            ${product.attributes.map(attr => `<li>${attr.name}: ${attr.value}</li>`).join('')}
-                        </ul>
+                <div class="card product-card">
+                    <div class="product-image-container">
+                        <img src="${product.imageUrl || '/images/placeholder.jpg'}" class="product-image" alt="${product.name}">
+                        <div class="product-status-badge ${product.stock > 0 ? 'status-active' : 'status-inactive'}">
+                            ${product.stock > 0 ? 'Còn hàng' : 'Hết hàng'}
+                        </div>
                     </div>
-                    <div class="card-footer">
-                        <button class="btn btn-primary edit-product" data-id="${product.id}">Sửa</button>
-                        <button class="btn btn-danger delete-product" data-id="${product.id}" data-name="${product.name}">Xóa</button>
+                    
+                    <div class="product-card-header">
+                        <div class="product-card-title">${product.name}</div>
+                        <div class="product-card-category">
+                            <i class="fas fa-tag"></i> ${product.categoryName || 'Danh mục'}
+                        </div>
+                    </div>
+                    
+                    <div class="product-card-body">
+                        <!-- Enhanced Pricing Section -->
+                        ${pricingHTML}
+                        
+                        <!-- Brand Section -->
+                        <div class="product-card-info">
+                            <div class="product-card-info-label">
+                                <i class="fas fa-star"></i> Thương hiệu
+                            </div>
+                            <div class="product-card-info-value">
+                                <span class="product-brand">${product.brand || 'Không có'}</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Stock Section -->
+                        <div class="product-card-info">
+                            <div class="product-card-info-label">
+                                <i class="fas fa-warehouse"></i> Tồn kho
+                            </div>
+                            <div class="product-card-info-value">
+                                <span class="product-stock-value ${product.stock > 0 ? 'in-stock' : 'out-of-stock'}">
+                                    <i class="fas fa-${product.stock > 0 ? 'check-circle' : 'times-circle'}"></i>
+                                    ${product.stock} sản phẩm
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="product-card-footer">
+                        <button class="btn btn-action btn-view view-product" data-id="${product.id}">
+                            <i class="fas fa-eye me-1"></i> Xem
+                        </button>
+                        <button class="btn btn-action btn-edit edit-product" data-id="${product.id}">
+                            <i class="fas fa-edit me-1"></i> Sửa
+                        </button>
+                        <button class="btn btn-action btn-delete delete-product" data-id="${product.id}" data-name="${product.name}">
+                            <i class="fas fa-trash me-1"></i> Xóa
+                        </button>
                     </div>
                 </div>
             </div>
@@ -560,6 +655,7 @@ $('#productStatus').change(function () {
 let selectedImages = [];
 let primaryImageIndex = -1;
 
+// Add Product Image Upload
 $('#uploadImageBtn').click(function () {
     $('#productImage').click();
 });
@@ -567,52 +663,127 @@ $('#uploadImageBtn').click(function () {
 $('#productImage').change(function (e) {
     const files = Array.from(e.target.files);
     if (files.length > 0) {
-        selectedImages = selectedImages.concat(files);
-        updateImageTable();
+        // Validate file types and sizes
+        const validFiles = [];
+        for (let file of files) {
+            if (!file.type.startsWith('image/')) {
+                showToast(`File "${file.name}" không phải là ảnh`, 'error');
+                continue;
+            }
+            if (file.size > 5 * 1024 * 1024) {
+                showToast(`Ảnh "${file.name}" vượt quá 5MB`, 'error');
+                continue;
+            }
+            validFiles.push(file);
+        }
+        
+        if (validFiles.length > 0) {
+            selectedImages = selectedImages.concat(validFiles);
+            updateImagePreview();
+        }
     }
 });
 
-function updateImageTable() {
-    const tbody = $('#imageTableBody');
-    tbody.empty();
+// Drag and drop for Add Product
+$('#uploadArea').on('dragover dragenter', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    $(this).addClass('drag-over');
+});
 
+$('#uploadArea').on('dragleave dragend', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    $(this).removeClass('drag-over');
+});
+
+$('#uploadArea').on('drop', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    $(this).removeClass('drag-over');
+    
+    const files = Array.from(e.originalEvent.dataTransfer.files);
+    if (files.length > 0) {
+        const validFiles = [];
+        for (let file of files) {
+            if (!file.type.startsWith('image/')) {
+                showToast(`File "${file.name}" không phải là ảnh`, 'error');
+                continue;
+            }
+            if (file.size > 5 * 1024 * 1024) {
+                showToast(`Ảnh "${file.name}" vượt quá 5MB`, 'error');
+                continue;
+            }
+            validFiles.push(file);
+        }
+        
+        if (validFiles.length > 0) {
+            selectedImages = selectedImages.concat(validFiles);
+            updateImagePreview();
+        }
+    }
+});
+
+function updateImagePreview() {
+    const container = $('#imagePreviewContainer');
+    const grid = $('#imagePreviewGrid');
+    
     if (selectedImages.length === 0) {
-        tbody.append('<tr><td colspan="4" class="text-center">Chưa có ảnh nào được chọn</td></tr>');
+        container.hide();
         return;
     }
-
+    
+    container.show();
+    grid.empty();
+    
     selectedImages.forEach((file, index) => {
-        const row = $(`
-            <tr>
-                <td>${file.name}</td>
-                <td>
-                    <div class="form-check">
-                        <input class="form-check-input primary-image-radio" type="radio" 
-                            name="primaryImage" value="${index}" 
-                            ${index === primaryImageIndex ? 'checked' : ''}>
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const imageItem = $(`
+                <div class="col-6 col-md-4">
+                    <div class="image-preview-item position-relative">
+                        <img src="${e.target.result}" class="img-fluid rounded" style="height: 120px; object-fit: cover; width: 100%;" alt="Preview">
+                        <div class="image-overlay">
+                            <button type="button" class="btn btn-sm btn-danger remove-image" data-index="${index}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-info view-image" data-index="${index}">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="form-check position-absolute top-0 start-0 m-2">
+                            <input class="form-check-input primary-image-radio" type="radio" 
+                                name="primaryImage" value="${index}" 
+                                ${index === primaryImageIndex ? 'checked' : ''}
+                                ${index === 0 && primaryImageIndex === -1 ? 'checked' : ''}>
+                            <label class="form-check-label text-white">
+                                <small>Ảnh chính</small>
+                            </label>
+                        </div>
+                        <div class="image-name small text-center p-1 bg-dark bg-opacity-75 text-white">
+                            ${file.name}
+                        </div>
                     </div>
-                </td>
-                <td>
-                    <button type="button" class="btn btn-sm btn-info watch-image" data-index="${index}">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                </td>
-                <td>
-                    <button type="button" class="btn btn-sm btn-danger remove-image" data-index="${index}">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </td>
-            </tr>
-        `);
-        tbody.append(row);
+                </div>
+            `);
+            grid.append(imageItem);
+        };
+        reader.readAsDataURL(file);
     });
+    
+    // Set first image as primary if none selected
+    if (primaryImageIndex === -1 && selectedImages.length > 0) {
+        primaryImageIndex = 0;
+    }
 }
 
+// Handle primary image selection
 $(document).on('change', '.primary-image-radio', function () {
     primaryImageIndex = parseInt($(this).val());
 });
 
-$(document).on('click', '.watch-image', function () {
+// Handle image viewing
+$(document).on('click', '.view-image', function () {
     const index = $(this).data('index');
     const file = selectedImages[index];
     const reader = new FileReader();
@@ -620,10 +791,10 @@ $(document).on('click', '.watch-image', function () {
     reader.onload = function (e) {
         const modal = $(`
             <div class="modal fade" id="imagePreviewModal" tabindex="-1">
-                <div class="modal-dialog modal-lg">
+                <div class="modal-dialog modal-lg modal-dialog-centered">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title">Xem trước ảnh</h5>
+                            <h5 class="modal-title">Xem trước ảnh: ${file.name}</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body text-center">
@@ -633,290 +804,98 @@ $(document).on('click', '.watch-image', function () {
                 </div>
             </div>
         `);
+        $('body').append(modal);
         modal.modal('show');
+        modal.on('hidden.bs.modal', function() {
+            $(this).remove();
+        });
     };
     reader.readAsDataURL(file);
 });
 
+// Handle image removal
 $(document).on('click', '.remove-image', function () {
     const index = $(this).data('index');
     selectedImages.splice(index, 1);
+    
+    // Adjust primary image index
     if (primaryImageIndex === index) {
-        primaryImageIndex = -1;
+        primaryImageIndex = selectedImages.length > 0 ? 0 : -1;
     } else if (primaryImageIndex > index) {
         primaryImageIndex--;
     }
-    updateImageTable();
+    
+    updateImagePreview();
 });
 
-// Handle form submission
-$('#saveProductBtn').click(function () {
-    if (!validateProductForm()) {
-        return;
-    }
-
-    const formData = new FormData();
-
-    // Thông tin cơ bản
-    formData.append('Name', $('#productName').val());
-    formData.append('Description', $('#productDescription').val() || '');
-    formData.append('Price', $('#productPrice').val());
-    formData.append('Stock', $('#productStock').val() || '0');
-    formData.append('SubSubcategoryID', $('#productSubSubcategory').val());
-    formData.append('Brand', $('#productBrand').val() || '');
-
-    // Trạng thái sản phẩm
-    const status = $('#productStatus').val();
-    const isActive = status === 'active';
-    formData.append('IsActive', isActive);
-
-    console.log('Submitting form with SubSubcategoryID:', $('#productSubSubcategory').val());
-    console.log('Product status:', status, 'IsActive:', isActive);
-
-    // Thuộc tính sản phẩm
-    const attributes = [];
-    $('#productAttributes .attribute-item').each(function () {
-        const name = $(this).find('input[name*="name"]').val();
-        const value = $(this).find('input[name*="value"]').val();
-        if (name && value) {
-            attributes.push({ name: name, value: value });
+// Handle status change for Add Product
+$('#productStatus').change(function() {
+    const status = $(this).val();
+    const stockInput = $('#productStock');
+    
+    if (status === 'Active') {
+        stockInput.prop('disabled', false);
+        if (stockInput.val() == '0') {
+            stockInput.val('1');
         }
-    });
-    if (attributes.length > 0) {
-        formData.append('Attributes', JSON.stringify(attributes));
+    } else {
+        stockInput.prop('disabled', true).val('0');
     }
-
-    // Hình ảnh
-    selectedImages.forEach((file, index) => {
-        formData.append('images', file);
-    });
-
-    // Đánh dấu ảnh chính
-    if (primaryImageIndex >= 0) {
-        formData.append('PrimaryImageIndex', primaryImageIndex);
-    }
-
-    // Show loading
-    $('#saveProductBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Đang xử lý...');
-
-    // Submit form
-    $.ajax({
-        url: '/ProductManage/AddProduct',
-        type: 'POST',
-        data: formData,
-        processData: false,
-        contentType: false,
-        success: function (response) {
-            console.log('Product added successfully:', response);
-            $('#addProductModal').modal('hide');
-            loadProducts();
-            showToast('Thêm sản phẩm thành công!', 'success');
-            resetProductForm();
-        },
-        error: function (xhr, status, error) {
-            console.error('Error adding product:', error);
-            console.error('Response:', xhr.responseText);
-            console.error('Status:', xhr.status);
-
-            let errorMessage = 'Lỗi khi thêm sản phẩm';
-
-            if (xhr.status === 400) {
-                try {
-                    const response = JSON.parse(xhr.responseText);
-                    if (response.errors) {
-                        const errors = Object.values(response.errors).flat();
-                        errorMessage = errors.join('. ');
-                    } else if (response.message) {
-                        errorMessage = response.message;
-                    } else if (typeof response === 'string') {
-                        errorMessage = response;
-                    }
-                } catch (e) {
-                    errorMessage = xhr.responseText || 'Dữ liệu không hợp lệ';
-                }
-            } else if (xhr.status === 500) {
-                errorMessage = 'Lỗi server. Vui lòng thử lại sau.';
-            } else if (xhr.responseText) {
-                errorMessage = xhr.responseText;
-            }
-
-            showToast(errorMessage, 'error');
-        },
-        complete: function () {
-            $('#saveProductBtn').prop('disabled', false).html('Thêm Sản phẩm');
-        }
-    });
 });
 
-// Cập nhật hàm validate
-function validateProductForm() {
-    // Kiểm tra tên sản phẩm
-    const productName = $('#productName').val().trim();
-    if (!productName) {
-        showToast('Vui lòng nhập tên sản phẩm', 'error');
-        $('#productName').focus();
-        return false;
+// Handle sale toggle for Add Product
+$('#enableSale').change(function() {
+    const isEnabled = $(this).is(':checked');
+    $('#saleOptions').toggle(isEnabled);
+    
+    if (!isEnabled) {
+        $('#productSalePrice').val('');
+        $('#productSalePercent').val('');
+        $('#effectivePricePreview').addClass('d-none');
     }
-    if (productName.length < 3) {
-        showToast('Tên sản phẩm phải có ít nhất 3 ký tự', 'error');
-        $('#productName').focus();
-        return false;
+});
+
+// Handle sale type change for Add Product
+$('input[name="saleType"]').change(function() {
+    const saleType = $(this).val();
+    
+    if (saleType === 'price') {
+        $('#salePriceContainer').show();
+        $('#salePercentContainer').hide();
+        $('#productSalePercent').val('');
+    } else {
+        $('#salePriceContainer').hide();
+        $('#salePercentContainer').show();
+        $('#productSalePrice').val('');
     }
+    updatePricePreview();
+});
 
-    // Kiểm tra danh mục
-    if (!$('#productCategory').val()) {
-        showToast('Vui lòng chọn danh mục chính', 'error');
-        $('#productCategory').focus();
-        return false;
+// Update price preview for Add Product
+function updatePricePreview() {
+    const originalPrice = parseFloat($('#productPrice').val()) || 0;
+    const saleType = $('input[name="saleType"]:checked').val();
+    let finalPrice = 0;
+    
+    if (saleType === 'price') {
+        finalPrice = parseFloat($('#productSalePrice').val()) || 0;
+    } else if (saleType === 'percent') {
+        const percent = parseFloat($('#productSalePercent').val()) || 0;
+        finalPrice = originalPrice * (1 - percent / 100);
     }
-    if (!$('#productSubcategory').val()) {
-        showToast('Vui lòng chọn danh mục phụ', 'error');
-        $('#productSubcategory').focus();
-        return false;
+    
+    if (finalPrice > 0 && finalPrice < originalPrice) {
+        $('#previewPrice').text(finalPrice.toLocaleString() + ' ₫');
+        $('#effectivePricePreview').removeClass('d-none');
+    } else {
+        $('#effectivePricePreview').addClass('d-none');
     }
-    if (!$('#productSubSubcategory').val()) {
-        showToast('Vui lòng chọn danh mục chi tiết', 'error');
-        $('#productSubSubcategory').focus();
-        return false;
-    }
-
-    // Kiểm tra giá
-    const price = parseFloat($('#productPrice').val());
-    if (!price || price <= 0) {
-        showToast('Vui lòng nhập giá sản phẩm hợp lệ (lớn hơn 0)', 'error');
-        $('#productPrice').focus();
-        return false;
-    }
-    if (price > 999999999) {
-        showToast('Giá sản phẩm không được vượt quá 999,999,999 đ', 'error');
-        $('#productPrice').focus();
-        return false;
-    }
-
-    // Kiểm tra trạng thái và số lượng
-    const status = $('#productStatus').val();
-    const stock = parseInt($('#productStock').val()) || 0;
-
-    if (!status) {
-        showToast('Vui lòng chọn trạng thái sản phẩm', 'error');
-        $('#productStatus').focus();
-        return false;
-    }
-
-    if (status === 'active' && stock <= 0) {
-        showToast('Sản phẩm còn hàng phải có số lượng lớn hơn 0', 'error');
-        $('#productStock').focus();
-        return false;
-    }
-
-    if (stock < 0) {
-        showToast('Số lượng không được âm', 'error');
-        $('#productStock').focus();
-        return false;
-    }
-
-    // Kiểm tra hình ảnh
-    if (selectedImages.length === 0) {
-        showToast('Vui lòng chọn ít nhất một ảnh sản phẩm', 'error');
-        $('#uploadImageBtn').focus();
-        return false;
-    }
-
-    if (selectedImages.length > 10) {
-        showToast('Chỉ được tải lên tối đa 10 ảnh', 'error');
-        return false;
-    }
-
-    if (primaryImageIndex === -1 && selectedImages.length > 0) {
-        // Tự động chọn ảnh đầu tiên làm ảnh chính
-        primaryImageIndex = 0;
-        $('input[name="primaryImage"][value="0"]').prop('checked', true);
-        showToast('Đã tự động chọn ảnh đầu tiên làm ảnh chính', 'info');
-    }
-
-    // Kiểm tra kích thước file ảnh
-    for (let i = 0; i < selectedImages.length; i++) {
-        const file = selectedImages[i];
-        if (file.size > 5 * 1024 * 1024) { // 5MB
-            showToast(`Ảnh "${file.name}" vượt quá 5MB. Vui lòng chọn ảnh nhỏ hơn.`, 'error');
-            return false;
-        }
-    }
-
-    // Kiểm tra thuộc tính (nếu có)
-    const attributeItems = $('#productAttributes .attribute-item');
-    let hasInvalidAttribute = false;
-
-    attributeItems.each(function () {
-        const name = $(this).find('input[name*="name"]').val().trim();
-        const value = $(this).find('input[name*="value"]').val().trim();
-
-        if ((name && !value) || (!name && value)) {
-            showToast('Thuộc tính phải có đầy đủ tên và giá trị', 'error');
-            hasInvalidAttribute = true;
-            return false;
-        }
-    });
-
-    if (hasInvalidAttribute) {
-        return false;
-    }
-
-    return true;
 }
 
-function resetProductForm() {
-    $('#addProductForm')[0].reset();
+// Bind price change events for Add Product
+$('#productPrice, #productSalePrice, #productSalePercent').on('input', updatePricePreview);
 
-    // Reset trạng thái các field
-    $('#productStock').prop('disabled', true).val('0');
-    $('#productSubcategory').prop('disabled', true).empty().append('<option value="" selected disabled>Chọn danh mục phụ</option>');
-    $('#productSubSubcategory').prop('disabled', true).empty().append('<option value="" selected disabled>Chọn danh mục chi tiết</option>');
-
-    // Reset thuộc tính
-    $('#productAttributes').empty();
-
-    // Reset hình ảnh
-    selectedImages = [];
-    primaryImageIndex = -1;
-    updateImageTable();
-
-    // Reset file input
-    $('#productImage').val('');
-
-    // Reload categories
-    loadCategoriesForAddProduct();
-
-    console.log('Product form reset successfully');
-}
-
-// Handle add attribute button
-$('#addAttributeBtn').click(function () {
-    const attributeHtml = `
-        <div class="attribute-item mb-2">
-            <div class="input-group">
-                <input type="text" class="form-control" placeholder="Tên thuộc tính (VD: Màu sắc)" name="attributes[].name">
-                <input type="text" class="form-control" placeholder="Giá trị (VD: Đỏ)" name="attributes[].value">
-                <button type="button" class="btn btn-outline-danger remove-attribute" title="Xóa thuộc tính">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </div>
-        </div>
-    `;
-    $('#productAttributes').append(attributeHtml);
-});
-
-// Handle remove attribute
-$(document).on('click', '.remove-attribute', function () {
-    $(this).closest('.attribute-item').remove();
-});
-
-// Edit Product Variables
-let editSelectedImages = [];
-let editPrimaryImageIndex = -1;
-let editExistingImages = [];
-let editDeletedImageIds = [];
-
+// Edit Product Variables và handlers
 // Handle edit product click
 $(document).on('click', '.edit-product', function () {
     const productId = $(this).data('id');
@@ -955,13 +934,25 @@ function populateEditForm(product) {
     $('#editProductPrice').val(product.price);
     $('#editProductStock').val(product.stock);
     $('#editProductBrand').val(product.brand);
-    $('#editProductStatus').val(product.isActive ? 'active' : 'inactive');
+    $('#editProductStatus').val(product.isActive ? 'Active' : 'Inactive');
 
     // Handle stock field based on status
     if (product.isActive) {
         $('#editProductStock').prop('disabled', false);
     } else {
         $('#editProductStock').prop('disabled', true).val('0');
+    }
+
+    // Handle sale information
+    if (product.salePrice && product.salePrice < product.price) {
+        $('#editEnableSale').prop('checked', true);
+        $('#editSaleOptions').show();
+        $('#editProductSalePrice').val(product.salePrice);
+        $('#editEffectivePricePreview').removeClass('d-none');
+        $('#editPreviewPrice').text(product.salePrice.toLocaleString() + ' ₫');
+    } else {
+        $('#editEnableSale').prop('checked', false);
+        $('#editSaleOptions').hide();
     }
 
     // Reset and load categories
@@ -972,7 +963,7 @@ function populateEditForm(product) {
     editPrimaryImageIndex = -1;
     editExistingImages = product.images || [];
     editDeletedImageIds = [];
-    updateEditImageTable();
+    updateEditCurrentImages();
 
     // Load attributes
     loadAttributesForEdit(product.attributes || []);
@@ -1070,70 +1061,47 @@ function loadAttributesForEdit(attributes) {
     });
 }
 
-// Update edit image table
-function updateEditImageTable() {
-    const tbody = $('#editImageTableBody');
-    tbody.empty();
+// Update edit current images
+function updateEditCurrentImages() {
+    const container = $('#editCurrentImages');
+    container.empty();
 
-    // Show existing images first
+    if (editExistingImages.length === 0) {
+        container.append('<div class="col-12"><p class="text-muted text-center">Không có ảnh hiện tại</p></div>');
+        return;
+    }
+
     editExistingImages.forEach((image, index) => {
         if (!editDeletedImageIds.includes(image.id)) {
-            const row = $(`
-                <tr data-image-type="existing" data-image-id="${image.id}">
-                    <td>${image.fileName}</td>
-                    <td>
-                        <div class="form-check">
+            const imageItem = $(`
+                <div class="col-6 col-md-4">
+                    <div class="image-preview-item position-relative current-image" data-image-id="${image.id}">
+                        <img src="${image.url}" class="img-fluid rounded" style="height: 120px; object-fit: cover; width: 100%;" alt="Current Image">
+                        <div class="image-overlay">
+                            <button type="button" class="btn btn-sm btn-danger delete-current-image" data-image-id="${image.id}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-info view-current-image" data-image-url="${image.url}">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="form-check position-absolute top-0 start-0 m-2">
                             <input class="form-check-input edit-primary-image-radio" type="radio" 
                                 name="editPrimaryImage" value="existing-${index}" 
                                 ${image.isPrimary ? 'checked' : ''}>
+                            <label class="form-check-label text-white">
+                                <small>Ảnh chính</small>
+                            </label>
                         </div>
-                    </td>
-                    <td>
-                        <button type="button" class="btn btn-sm btn-info watch-edit-image" data-url="${image.url}">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                    </td>
-                    <td>
-                        <button type="button" class="btn btn-sm btn-danger remove-existing-image" data-image-id="${image.id}">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                </tr>
+                        <div class="image-name small text-center p-1 bg-dark bg-opacity-75 text-white">
+                            ${image.fileName || 'Ảnh hiện tại'}
+                        </div>
+                    </div>
+                </div>
             `);
-            tbody.append(row);
+            container.append(imageItem);
         }
     });
-
-    // Show new images
-    editSelectedImages.forEach((file, index) => {
-        const newIndex = editExistingImages.length + index;
-        const row = $(`
-            <tr data-image-type="new" data-image-index="${index}">
-                <td>${file.name}</td>
-                <td>
-                    <div class="form-check">
-                        <input class="form-check-input edit-primary-image-radio" type="radio" 
-                            name="editPrimaryImage" value="new-${index}">
-                    </div>
-                </td>
-                <td>
-                    <button type="button" class="btn btn-sm btn-info watch-new-edit-image" data-index="${index}">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                </td>
-                <td>
-                    <button type="button" class="btn btn-sm btn-danger remove-new-edit-image" data-index="${index}">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </td>
-            </tr>
-        `);
-        tbody.append(row);
-    });
-
-    if (editExistingImages.filter(img => !editDeletedImageIds.includes(img.id)).length === 0 && editSelectedImages.length === 0) {
-        tbody.append('<tr><td colspan="4" class="text-center">Chưa có ảnh nào</td></tr>');
-    }
 }
 
 // Handle edit category change
@@ -1149,29 +1117,6 @@ $('#editProductCategory').change(function () {
 $('#editProductSubcategory').change(function () {
     const subcategoryId = $(this).val();
     loadSubSubcategoriesForEdit(subcategoryId, null);
-});
-
-// Handle edit product status change
-$('#editProductStatus').change(function () {
-    const stockInput = $('#editProductStock');
-    if ($(this).val() === 'active') {
-        stockInput.prop('disabled', false).val('');
-    } else {
-        stockInput.prop('disabled', true).val('0');
-    }
-});
-
-// Handle edit image upload
-$('#editUploadImageBtn').click(function () {
-    $('#editProductImage').click();
-});
-
-$('#editProductImage').change(function (e) {
-    const files = Array.from(e.target.files);
-    if (files.length > 0) {
-        editSelectedImages = editSelectedImages.concat(files);
-        updateEditImageTable();
-    }
 });
 
 // Handle edit attribute buttons
@@ -1190,71 +1135,17 @@ $('#editAddAttributeBtn').click(function () {
     $('#editProductAttributes').append(attributeHtml);
 });
 
-// Event handlers for edit image table
-$(document).on('click', '.remove-existing-image', function () {
+// Handle existing image actions
+$(document).on('click', '.delete-current-image', function () {
     const imageId = $(this).data('image-id');
     editDeletedImageIds.push(imageId);
-    updateEditImageTable();
+    updateEditCurrentImages();
 });
 
-$(document).on('click', '.remove-new-edit-image', function () {
-    const index = $(this).data('index');
-    editSelectedImages.splice(index, 1);
-    updateEditImageTable();
+$(document).on('click', '.view-current-image', function () {
+    const imageUrl = $(this).data('image-url');
+    showImagePreview(imageUrl, 'Ảnh hiện tại');
 });
-
-$(document).on('click', '.watch-edit-image', function () {
-    const url = $(this).data('url');
-    showImagePreview(url);
-});
-
-$(document).on('click', '.watch-new-edit-image', function () {
-    const index = $(this).data('index');
-    const file = editSelectedImages[index];
-    const reader = new FileReader();
-
-    reader.onload = function (e) {
-        showImagePreview(e.target.result);
-    };
-    reader.readAsDataURL(file);
-});
-
-$(document).on('change', '.edit-primary-image-radio', function () {
-    const value = $(this).val();
-    console.log('Primary image changed to:', value);
-    // Store the selection for later use
-    editPrimaryImageIndex = value;
-});
-
-// Show image preview modal
-function showImagePreview(imageSrc) {
-    const modal = $(`
-        <div class="modal fade" id="editImagePreviewModal" tabindex="-1">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Xem trước ảnh</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body text-center">
-                        <img src="${imageSrc}" class="img-fluid" alt="Preview">
-                    </div>
-                </div>
-            </div>
-        </div>
-    `);
-
-    // Remove existing preview modal
-    $('#editImagePreviewModal').remove();
-
-    $('body').append(modal);
-    modal.modal('show');
-
-    // Auto remove when hidden
-    modal.on('hidden.bs.modal', function () {
-        $(this).remove();
-    });
-}
 
 // Handle edit modal events
 $('#editProductModal').on('show.bs.modal', function () {
@@ -1273,11 +1164,15 @@ function resetEditForm() {
     $('#editProductSubcategory').prop('disabled', true);
     $('#editProductSubSubcategory').prop('disabled', true);
     $('#editProductAttributes').empty();
+    $('#editEnableSale').prop('checked', false);
+    $('#editSaleOptions').hide();
+    $('#editEffectivePricePreview').addClass('d-none');
     editSelectedImages = [];
     editPrimaryImageIndex = -1;
     editExistingImages = [];
     editDeletedImageIds = [];
-    updateEditImageTable();
+    updateEditCurrentImages();
+    updateEditImagePreview();
 }
 
 // Handle update product button click
@@ -1299,8 +1194,26 @@ $('#updateProductBtn').click(function () {
 
     // Status
     const status = $('#editProductStatus').val();
-    const isActive = status === 'active';
+    const isActive = status === 'Active';
     formData.append('IsActive', isActive);
+
+    // Sale information
+    if ($('#editEnableSale').is(':checked')) {
+        const saleType = $('input[name="editSaleType"]:checked').val();
+        if (saleType === 'price') {
+            const salePrice = parseFloat($('#editProductSalePrice').val());
+            if (salePrice > 0) {
+                formData.append('SalePrice', salePrice);
+            }
+        } else if (saleType === 'percent') {
+            const originalPrice = parseFloat($('#editProductPrice').val());
+            const percent = parseFloat($('#editProductSalePercent').val());
+            if (percent > 0 && percent <= 100) {
+                const salePrice = originalPrice * (1 - percent / 100);
+                formData.append('SalePrice', salePrice);
+            }
+        }
+    }
 
     // Deleted image IDs
     if (editDeletedImageIds.length > 0) {
@@ -1312,7 +1225,7 @@ $('#updateProductBtn').click(function () {
         formData.append('images', file);
     });
 
-    // Primary image index (need to calculate correctly)
+    // Primary image index
     if (editPrimaryImageIndex && editPrimaryImageIndex !== -1) {
         if (editPrimaryImageIndex.startsWith('existing-')) {
             const existingIndex = parseInt(editPrimaryImageIndex.split('-')[1]);
@@ -1382,7 +1295,7 @@ $('#updateProductBtn').click(function () {
             showToast(errorMessage, 'error');
         },
         complete: function () {
-            $('#updateProductBtn').prop('disabled', false).html('Cập nhật Sản phẩm');
+            $('#updateProductBtn').prop('disabled', false).html('<i class="fas fa-save me-2"></i>Cập nhật sản phẩm');
         }
     });
 });
@@ -1432,6 +1345,31 @@ function validateEditProductForm() {
         return false;
     }
 
+    // Check sale information
+    if ($('#editEnableSale').is(':checked')) {
+        const saleType = $('input[name="editSaleType"]:checked').val();
+        if (saleType === 'price') {
+            const salePrice = parseFloat($('#editProductSalePrice').val());
+            if (!salePrice || salePrice <= 0) {
+                showToast('Vui lòng nhập giá khuyến mãi hợp lệ', 'error');
+                $('#editProductSalePrice').focus();
+                return false;
+            }
+            if (salePrice >= price) {
+                showToast('Giá khuyến mãi phải nhỏ hơn giá gốc', 'error');
+                $('#editProductSalePrice').focus();
+                return false;
+            }
+        } else if (saleType === 'percent') {
+            const percent = parseFloat($('#editProductSalePercent').val());
+            if (!percent || percent <= 0 || percent > 100) {
+                showToast('Vui lòng nhập phần trăm giảm từ 1-100', 'error');
+                $('#editProductSalePercent').focus();
+                return false;
+            }
+        }
+    }
+
     // Check status and stock
     const status = $('#editProductStatus').val();
     const stock = parseInt($('#editProductStock').val()) || 0;
@@ -1442,8 +1380,8 @@ function validateEditProductForm() {
         return false;
     }
 
-    if (status === 'active' && stock <= 0) {
-        showToast('Sản phẩm còn hàng phải có số lượng lớn hơn 0', 'error');
+    if (status === 'Active' && stock <= 0) {
+        showToast('Sản phẩm hoạt động phải có số lượng lớn hơn 0', 'error');
         $('#editProductStock').focus();
         return false;
     }
@@ -1499,6 +1437,118 @@ function validateEditProductForm() {
     return true;
 }
 
+// Handle view product click
+$(document).on('click', '.view-product', function () {
+    const productId = $(this).data('id');
+    console.log('View product clicked, ID:', productId);
+    loadProductForView(productId);
+});
+
+// Load product data for viewing
+function loadProductForView(productId) {
+    console.log('Loading product for view:', productId);
+
+    $.ajax({
+        url: '/ProductManage/GetProduct',
+        method: 'GET',
+        data: { id: productId },
+        success: function (product) {
+            console.log('Product data loaded for view:', product);
+            populateViewModal(product);
+            $('#viewProductModal').modal('show');
+        },
+        error: function (xhr, status, error) {
+            console.error('Error loading product for view:', error);
+            showToast('Không thể tải thông tin sản phẩm', 'error');
+        }
+    });
+}
+
+// Populate view modal with product data
+function populateViewModal(product) {
+    console.log('Populating view modal with:', product);
+
+    // Basic info
+    $('#viewProductName').text(product.name);
+    $('#viewCategoryPath').text(product.categoryName || 'Danh mục');
+    $('#viewBrand').text(product.brand || 'Không có');
+    $('#viewStock').text(`${product.stock} sản phẩm`);
+    $('#viewStatus').html(`<span class="badge ${product.isActive ? 'bg-success' : 'bg-danger'}">${product.isActive ? 'Còn hàng' : 'Hết hàng'}</span>`);
+    $('#viewDescription').html(product.description || '<em class="text-muted">Không có mô tả</em>');
+
+    // Store product ID for edit button
+    $('#editFromViewBtn').data('product-id', product.id);
+
+    // Pricing section
+    const isOnSale = product.isActive && product.salePrice && product.salePrice < product.price;
+    const discountPercent = isOnSale ? Math.round(((product.price - product.salePrice) / product.price) * 100) : 0;
+    
+    let pricingHTML = '';
+    if (isOnSale) {
+        pricingHTML = `
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="text-decoration-line-through text-muted mb-1" style="font-size: 1.1rem;">${product.price.toLocaleString()} ₫</div>
+                    <div class="fs-2 fw-bold text-danger">${product.salePrice.toLocaleString()} ₫</div>
+                </div>
+                <div>
+                    <span class="badge bg-warning text-dark fs-6">Giảm ${discountPercent}%</span>
+                </div>
+            </div>
+        `;
+    } else {
+        pricingHTML = `<div class="fs-2 fw-bold text-dark">${product.price.toLocaleString()} ₫</div>`;
+    }
+    $('#viewPricingSection').html(pricingHTML);
+
+    // Images
+    if (product.images && product.images.length > 0) {
+        const primaryImage = product.images.find(img => img.isPrimary) || product.images[0];
+        $('#viewMainImage').attr('src', primaryImage.url).attr('alt', product.name);
+
+        // Thumbnails
+        const thumbnailsHTML = product.images.map((image, index) => `
+            <div class="thumbnail-item ${image.isPrimary ? 'active' : ''}" data-image-url="${image.url}">
+                <img src="${image.url}" alt="Ảnh ${index + 1}">
+            </div>
+        `).join('');
+        $('#viewImageThumbnails').html(thumbnailsHTML);
+    } else {
+        $('#viewMainImage').attr('src', '/images/placeholder.jpg').attr('alt', 'Không có ảnh');
+        $('#viewImageThumbnails').empty();
+    }
+
+    // Attributes
+    if (product.attributes && product.attributes.length > 0) {
+        const attributesHTML = product.attributes.map(attr => `
+            <div class="attribute-grid-item">
+                <span class="attribute-grid-name">${attr.name}</span>
+                <span class="attribute-grid-value">${attr.value}</span>
+            </div>
+        `).join('');
+        $('#viewAttributes').html(attributesHTML);
+        $('#viewAttributesSection').show();
+    } else {
+        $('#viewAttributes').html('<p class="text-muted">Không có thông số kỹ thuật</p>');
+        $('#viewAttributesSection').show();
+    }
+}
+
+// Handle thumbnail click in view modal
+$(document).on('click', '.thumbnail-item', function () {
+    const imageUrl = $(this).data('image-url');
+    $('#viewMainImage').attr('src', imageUrl);
+    $('.thumbnail-item').removeClass('active');
+    $(this).addClass('active');
+});
+
+// Handle edit from view modal
+$('#editFromViewBtn').click(function () {
+    const productId = $(this).data('product-id');
+    $('#viewProductModal').modal('hide');
+    loadProductForEdit(productId);
+});
+
 // Initial load
 $(document).ready(function () {
     console.log('Document ready');
@@ -1542,3 +1592,316 @@ function showToast(message, type = 'info') {
         $(this).remove();
     });
 }
+
+// Handle form submission
+$('#saveProductBtn').click(function () {
+    if (!validateProductForm()) {
+        return;
+    }
+
+    const formData = new FormData();
+
+    // Thông tin cơ bản
+    formData.append('Name', $('#productName').val());
+    formData.append('Description', $('#productDescription').val() || '');
+    formData.append('Price', $('#productPrice').val());
+    formData.append('Stock', $('#productStock').val() || '0');
+    formData.append('SubSubcategoryID', $('#productSubSubcategory').val());
+    formData.append('Brand', $('#productBrand').val() || '');
+
+    // Trạng thái sản phẩm
+    const status = $('#productStatus').val();
+    const isActive = status === 'Active';
+    formData.append('IsActive', isActive);
+
+    // Thông tin khuyến mãi
+    if ($('#enableSale').is(':checked')) {
+        const saleType = $('input[name="saleType"]:checked').val();
+        if (saleType === 'price') {
+            const salePrice = parseFloat($('#productSalePrice').val());
+            if (salePrice > 0) {
+                formData.append('SalePrice', salePrice);
+            }
+        } else if (saleType === 'percent') {
+            const originalPrice = parseFloat($('#productPrice').val());
+            const percent = parseFloat($('#productSalePercent').val());
+            if (percent > 0 && percent <= 100) {
+                const salePrice = originalPrice * (1 - percent / 100);
+                formData.append('SalePrice', salePrice);
+            }
+        }
+    }
+
+    console.log('Submitting form with SubSubcategoryID:', $('#productSubSubcategory').val());
+    console.log('Product status:', status, 'IsActive:', isActive);
+
+    // Thuộc tính sản phẩm
+    const attributes = [];
+    $('#productAttributes .attribute-item').each(function () {
+        const name = $(this).find('input[name*="name"]').val();
+        const value = $(this).find('input[name*="value"]').val();
+        if (name && value) {
+            attributes.push({ name: name, value: value });
+        }
+    });
+    if (attributes.length > 0) {
+        formData.append('Attributes', JSON.stringify(attributes));
+    }
+
+    // Hình ảnh
+    selectedImages.forEach((file, index) => {
+        formData.append('images', file);
+    });
+
+    // Đánh dấu ảnh chính
+    if (primaryImageIndex >= 0) {
+        formData.append('PrimaryImageIndex', primaryImageIndex);
+    }
+
+    // Show loading
+    $('#saveProductBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Đang xử lý...');
+
+    // Submit form
+    $.ajax({
+        url: '/ProductManage/AddProduct',
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function (response) {
+            console.log('Product added successfully:', response);
+            $('#addProductModal').modal('hide');
+            loadProducts();
+            showToast('Thêm sản phẩm thành công!', 'success');
+            resetProductForm();
+        },
+        error: function (xhr, status, error) {
+            console.error('Error adding product:', error);
+            console.error('Response:', xhr.responseText);
+            console.error('Status:', xhr.status);
+
+            let errorMessage = 'Lỗi khi thêm sản phẩm';
+
+            if (xhr.status === 400) {
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.errors) {
+                        const errors = Object.values(response.errors).flat();
+                        errorMessage = errors.join('. ');
+                    } else if (response.message) {
+                        errorMessage = response.message;
+                    } else if (typeof response === 'string') {
+                        errorMessage = response;
+                    }
+                } catch (e) {
+                    errorMessage = xhr.responseText || 'Dữ liệu không hợp lệ';
+                }
+            } else if (xhr.status === 500) {
+                errorMessage = 'Lỗi server. Vui lòng thử lại sau.';
+            } else if (xhr.responseText) {
+                errorMessage = xhr.responseText;
+            }
+
+            showToast(errorMessage, 'error');
+        },
+        complete: function () {
+            $('#saveProductBtn').prop('disabled', false).html('<i class="fas fa-save me-2"></i>Lưu sản phẩm');
+        }
+    });
+});
+
+// Cập nhật hàm validate
+function validateProductForm() {
+    // Kiểm tra tên sản phẩm
+    const productName = $('#productName').val().trim();
+    if (!productName) {
+        showToast('Vui lòng nhập tên sản phẩm', 'error');
+        $('#productName').focus();
+        return false;
+    }
+    if (productName.length < 3) {
+        showToast('Tên sản phẩm phải có ít nhất 3 ký tự', 'error');
+        $('#productName').focus();
+        return false;
+    }
+
+    // Kiểm tra danh mục
+    if (!$('#productCategory').val()) {
+        showToast('Vui lòng chọn danh mục chính', 'error');
+        $('#productCategory').focus();
+        return false;
+    }
+    if (!$('#productSubcategory').val()) {
+        showToast('Vui lòng chọn danh mục phụ', 'error');
+        $('#productSubcategory').focus();
+        return false;
+    }
+    if (!$('#productSubSubcategory').val()) {
+        showToast('Vui lòng chọn danh mục chi tiết', 'error');
+        $('#productSubSubcategory').focus();
+        return false;
+    }
+
+    // Kiểm tra giá
+    const price = parseFloat($('#productPrice').val());
+    if (!price || price <= 0) {
+        showToast('Vui lòng nhập giá sản phẩm hợp lệ (lớn hơn 0)', 'error');
+        $('#productPrice').focus();
+        return false;
+    }
+    if (price > 999999999) {
+        showToast('Giá sản phẩm không được vượt quá 999,999,999 đ', 'error');
+        $('#productPrice').focus();
+        return false;
+    }
+
+    // Kiểm tra khuyến mãi
+    if ($('#enableSale').is(':checked')) {
+        const saleType = $('input[name="saleType"]:checked').val();
+        if (saleType === 'price') {
+            const salePrice = parseFloat($('#productSalePrice').val());
+            if (!salePrice || salePrice <= 0) {
+                showToast('Vui lòng nhập giá khuyến mãi hợp lệ', 'error');
+                $('#productSalePrice').focus();
+                return false;
+            }
+            if (salePrice >= price) {
+                showToast('Giá khuyến mãi phải nhỏ hơn giá gốc', 'error');
+                $('#productSalePrice').focus();
+                return false;
+            }
+        } else if (saleType === 'percent') {
+            const percent = parseFloat($('#productSalePercent').val());
+            if (!percent || percent <= 0 || percent > 100) {
+                showToast('Vui lòng nhập phần trăm giảm từ 1-100', 'error');
+                $('#productSalePercent').focus();
+                return false;
+            }
+        }
+    }
+
+    // Kiểm tra trạng thái và số lượng
+    const status = $('#productStatus').val();
+    const stock = parseInt($('#productStock').val()) || 0;
+
+    if (!status) {
+        showToast('Vui lòng chọn trạng thái sản phẩm', 'error');
+        $('#productStatus').focus();
+        return false;
+    }
+
+    if (status === 'Active' && stock <= 0) {
+        showToast('Sản phẩm hoạt động phải có số lượng lớn hơn 0', 'error');
+        $('#productStock').focus();
+        return false;
+    }
+
+    if (stock < 0) {
+        showToast('Số lượng không được âm', 'error');
+        $('#productStock').focus();
+        return false;
+    }
+
+    // Kiểm tra hình ảnh
+    if (selectedImages.length === 0) {
+        showToast('Vui lòng chọn ít nhất một ảnh sản phẩm', 'error');
+        $('#uploadImageBtn').focus();
+        return false;
+    }
+
+    if (selectedImages.length > 10) {
+        showToast('Chỉ được tải lên tối đa 10 ảnh', 'error');
+        return false;
+    }
+
+    if (primaryImageIndex === -1 && selectedImages.length > 0) {
+        // Tự động chọn ảnh đầu tiên làm ảnh chính
+        primaryImageIndex = 0;
+        $('input[name="primaryImage"][value="0"]').prop('checked', true);
+        showToast('Đã tự động chọn ảnh đầu tiên làm ảnh chính', 'info');
+    }
+
+    // Kiểm tra kích thước file ảnh
+    for (let i = 0; i < selectedImages.length; i++) {
+        const file = selectedImages[i];
+        if (file.size > 5 * 1024 * 1024) { // 5MB
+            showToast(`Ảnh "${file.name}" vượt quá 5MB. Vui lòng chọn ảnh nhỏ hơn.`, 'error');
+            return false;
+        }
+    }
+
+    // Kiểm tra thuộc tính (nếu có)
+    const attributeItems = $('#productAttributes .attribute-item');
+    let hasInvalidAttribute = false;
+
+    attributeItems.each(function () {
+        const name = $(this).find('input[name*="name"]').val().trim();
+        const value = $(this).find('input[name*="value"]').val().trim();
+
+        if ((name && !value) || (!name && value)) {
+            showToast('Thuộc tính phải có đầy đủ tên và giá trị', 'error');
+            hasInvalidAttribute = true;
+            return false;
+        }
+    });
+
+    if (hasInvalidAttribute) {
+        return false;
+    }
+
+    return true;
+}
+
+function resetProductForm() {
+    $('#addProductForm')[0].reset();
+
+    // Reset trạng thái các field
+    $('#productStock').prop('disabled', true).val('0');
+    $('#productSubcategory').prop('disabled', true).empty().append('<option value="" selected disabled>Chọn danh mục phụ</option>');
+    $('#productSubSubcategory').prop('disabled', true).empty().append('<option value="" selected disabled>Chọn danh mục chi tiết</option>');
+
+    // Reset khuyến mãi
+    $('#enableSale').prop('checked', false);
+    $('#saleOptions').hide();
+    $('#effectivePricePreview').addClass('d-none');
+    $('input[name="saleType"][value="price"]').prop('checked', true);
+    $('#salePriceContainer').show();
+    $('#salePercentContainer').hide();
+
+    // Reset thuộc tính
+    $('#productAttributes').empty();
+
+    // Reset hình ảnh
+    selectedImages = [];
+    primaryImageIndex = -1;
+    updateImagePreview();
+
+    // Reset file input
+    $('#productImage').val('');
+
+    // Reload categories
+    loadCategoriesForAddProduct();
+
+    console.log('Product form reset successfully');
+}
+
+// Handle add attribute button
+$('#addAttributeBtn').click(function () {
+    const attributeHtml = `
+        <div class="attribute-item mb-2">
+            <div class="input-group">
+                <input type="text" class="form-control" placeholder="Tên thuộc tính (VD: Màu sắc)" name="attributes[].name">
+                <input type="text" class="form-control" placeholder="Giá trị (VD: Đỏ)" name="attributes[].value">
+                <button type="button" class="btn btn-outline-danger remove-attribute" title="Xóa thuộc tính">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    $('#productAttributes').append(attributeHtml);
+});
+
+// Handle remove attribute
+$(document).on('click', '.remove-attribute', function () {
+    $(this).closest('.attribute-item').remove();
+});

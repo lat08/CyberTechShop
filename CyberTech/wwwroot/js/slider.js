@@ -31,23 +31,49 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Set initial position
         let position = 0
-        const itemWidth = 200 // Width of each product card + margin
-        const visibleItems = Math.floor((slider.offsetWidth - 20) / itemWidth)
-        const maxPosition = Math.max(0, sliderTrack.children.length - visibleItems)
+        const itemWidth = 230 // Width: 180px card + 20px margin (10px mỗi bên)
+        
+        // Tính toán động số sản phẩm hiển thị và giới hạn
+        function calculateLimits() {
+            const sliderWidth = slider.offsetWidth
+            const totalItems = sliderTrack.children.length
+            const visibleItems = Math.floor(sliderWidth / itemWidth)
+            
+            // Sửa logic: maxPosition phải tính chính xác để không vượt quá
+            const maxPosition = Math.max(0, totalItems - visibleItems)
+            
+            console.log(`Slider width: ${sliderWidth}px, Item width: ${itemWidth}px`)
+            console.log(`Total items: ${totalItems}, Visible: ${visibleItems}, Max position: ${maxPosition}`)
+            return { visibleItems, maxPosition }
+        }
+        
+        let { visibleItems, maxPosition } = calculateLimits()
 
         // Update slider position
         function updateSliderPosition() {
-            const maxTranslate = sliderTrack.children.length * itemWidth - slider.offsetWidth + 40
-            const translateX = Math.min(position * itemWidth, maxTranslate)
+            // Cập nhật lại maxPosition để đảm bảo tính toán chính xác
+            const currentLimits = calculateLimits()
+            maxPosition = currentLimits.maxPosition
+            
+            // Giới hạn position trong phạm vi hợp lệ
+            position = Math.max(0, Math.min(position, maxPosition))
+            
+            // Di chuyển chính xác theo itemWidth
+            const translateX = position * itemWidth
             sliderTrack.style.transform = `translateX(${-translateX}px)`
 
-            // Update button states
-            prevBtn.disabled = position === 0
-            nextBtn.disabled = position >= maxPosition
+            // Update button states - KIỂM TRA CHẶT CHẼ
+            const isAtStart = position <= 0
+            const isAtEnd = position >= maxPosition
+            
+            prevBtn.disabled = isAtStart
+            nextBtn.disabled = isAtEnd
 
             // Update button appearance
-            prevBtn.style.opacity = position === 0 ? "0.5" : "1"
-            nextBtn.style.opacity = position >= maxPosition ? "0.5" : "1"
+            prevBtn.style.opacity = isAtStart ? "0.5" : "1"
+            nextBtn.style.opacity = isAtEnd ? "0.5" : "1"
+            
+            console.log(`Position: ${position}/${maxPosition}, TranslateX: ${-translateX}px, At end: ${isAtEnd}`)
         }
 
         // Add event listeners to controls
@@ -70,12 +96,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Update on window resize
         window.addEventListener("resize", () => {
-            const newSliderWidth = slider.offsetWidth
-            const newVisibleItems = Math.floor((newSliderWidth - 20) / itemWidth)
-            const newMaxPosition = Math.max(0, sliderTrack.children.length - newVisibleItems)
-
-            if (position > newMaxPosition) {
-                position = newMaxPosition
+            const newLimits = calculateLimits()
+            maxPosition = newLimits.maxPosition
+            visibleItems = newLimits.visibleItems
+            
+            // Điều chỉnh position nếu vượt giới hạn
+            if (position > maxPosition) {
+                position = maxPosition
             }
 
             updateSliderPosition()
@@ -102,9 +129,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     
     .slider-track .proloop {
-        flex: 0 0 180px;
-        margin: 0 10px;
-        max-width: 180px;
+        flex: 0 0 220px;
+        margin: 0 5px;
+        max-width: 220px;
         box-sizing: border-box;
     }
     
