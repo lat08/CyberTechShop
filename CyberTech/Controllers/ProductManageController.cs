@@ -8,19 +8,16 @@ using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace CyberTechShop.Controllers
 {
     public class ProductManageController : Controller
     {
         private readonly ApplicationDbContext _context;
-        private readonly IMemoryCache _cache;
 
-        public ProductManageController(ApplicationDbContext context, IMemoryCache cache)
+        public ProductManageController(ApplicationDbContext context)
         {
             _context = context;
-            _cache = cache;
         }
 
         public IActionResult Index()
@@ -53,13 +50,15 @@ namespace CyberTechShop.Controllers
         }
 
         [HttpGet]
-        [ResponseCache(Duration = 30, Location = ResponseCacheLocation.Client)] // Cache 30s
-        public async Task<IActionResult> GetProducts(string search, string status, string sort, int page = 1, int subsubcategoryId = 0)
+        public IActionResult GetProducts(string search, string status, string sort, int page = 1, int subsubcategoryId = 0)
         {
-            var query = _context.Products.AsNoTracking() // Không tracking để tăng tốc
+            var query = _context.Products
+                .Include(p => p.ProductImages)
+                .Include(p => p.ProductAttributeValues)
+                    .ThenInclude(pav => pav.AttributeValue)
+                        .ThenInclude(av => av.ProductAttribute)
                 .Where(p => subsubcategoryId == 0 || p.SubSubcategoryID == subsubcategoryId);
 
-            // Apply filters
             if (!string.IsNullOrEmpty(search))
                 query = query.Where(p => p.Name.Contains(search));
 
@@ -68,7 +67,6 @@ namespace CyberTechShop.Controllers
             else if (status == "0")
                 query = query.Where(p => p.Stock == 0);
 
-            // Apply sorting
             switch (sort)
             {
                 case "name_asc": query = query.OrderBy(p => p.Name); break;
@@ -78,72 +76,24 @@ namespace CyberTechShop.Controllers
                 default: query = query.OrderBy(p => p.Name); break;
             }
 
-            var total = await query.CountAsync();
-            var pageSize = 16;
-            
-            // Optimized query với minimal joins
-            var products = await query
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
+            var total = query.Count();
+            var pageSize = 10;
+            var products = query.Skip((page - 1) * pageSize).Take(pageSize)
                 .Select(p => new
                 {
                     id = p.ProductID,
                     name = p.Name,
-                    description = p.Description ?? "",
-                    price = p.SalePrice.HasValue ? p.SalePrice.Value : 
-                           (p.SalePercentage.HasValue ? p.Price * (1 - (p.SalePercentage.Value / 100)) : p.Price),
-                    originalPrice = p.Price,
-                    salePercentage = p.SalePercentage,
-                    salePrice = p.SalePrice,
-                    isOnSale = (p.SalePrice.HasValue && p.SalePrice.Value < p.Price) || p.SalePercentage.HasValue,
+                    price = p.Price,
                     stock = p.Stock,
-                    brand = p.Brand ?? "",
-                    subSubcategoryId = p.SubSubcategoryID,
-                    imageUrl = p.ProductImages.Where(pi => pi.IsPrimary).Select(pi => pi.ImageURL).FirstOrDefault() ?? ""
-                })
-                .ToListAsync();
+                    imageUrl = p.ProductImages.Where(pi => pi.IsPrimary).Select(pi => pi.ImageURL).FirstOrDefault() ?? "",
+                    attributes = p.ProductAttributeValues.Select(pav => new
+                    {
+                        name = pav.AttributeValue.ProductAttribute.AttributeName,
+                        value = pav.AttributeValue.ValueName
+                    }).ToList()
+                }).ToList();
 
-            // Sử dụng cache cho category names
-            var subSubcategoryIds = products.Select(p => p.subSubcategoryId).Distinct().ToList();
-            var categoryDict = new Dictionary<int, string>();
-
-            foreach (var id in subSubcategoryIds)
-            {
-                var cacheKey = $"category_name_{id}";
-                if (!_cache.TryGetValue(cacheKey, out string categoryName))
-                {
-                    var categoryData = await _context.SubSubcategories.AsNoTracking()
-                        .Where(ssc => ssc.SubSubcategoryID == id)
-                        .Select(ssc => ssc.Subcategory.Category.Name + " > " + 
-                                     ssc.Subcategory.Name + " > " + 
-                                     ssc.Name)
-                        .FirstOrDefaultAsync();
-                    
-                    categoryName = categoryData ?? "";
-                    _cache.Set(cacheKey, categoryName, TimeSpan.FromMinutes(30)); // Cache 30 phút
-                }
-                categoryDict[id] = categoryName;
-            }
-
-            // Map kết quả cuối
-            var result = products.Select(p => new
-            {
-                p.id,
-                p.name,
-                p.description,
-                p.price,
-                p.originalPrice,
-                p.salePercentage,
-                p.salePrice,
-                p.isOnSale,
-                p.stock,
-                p.brand,
-                categoryName = categoryDict.GetValueOrDefault(p.subSubcategoryId, ""),
-                p.imageUrl,
-                attributes = new object[0] // Bỏ attributes để tăng tốc
-            }).ToList();
-
-            return Json(new { products = result, totalPages = (int)Math.Ceiling(total / (double)pageSize) });
+            return Json(new { products, totalPages = (int)Math.Ceiling(total / (double)pageSize) });
         }
 
         [HttpPost]
@@ -448,19 +398,12 @@ namespace CyberTechShop.Controllers
                     name = product.Name,
                     description = product.Description ?? "",
                     price = product.Price,
-                    salePrice = product.SalePrice,
-                    salePercentage = product.SalePercentage,
-                    effectivePrice = product.GetEffectivePrice(),
-                    isOnSale = product.IsOnSale,
                     stock = product.Stock,
                     brand = product.Brand ?? "",
                     isActive = product.Stock > 0,
                     categoryId = product.SubSubcategory.Subcategory.CategoryID,
                     subcategoryId = product.SubSubcategory.SubcategoryID,
                     subSubcategoryId = product.SubSubcategoryID,
-                    categoryName = product.SubSubcategory.Subcategory.Category.Name + " > " + 
-                                  product.SubSubcategory.Subcategory.Name + " > " + 
-                                  product.SubSubcategory.Name,
                     images = product.ProductImages.Select(pi => new
                     {
                         id = pi.ImageID,
